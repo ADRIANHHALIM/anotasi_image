@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
     path('master/',include(('master.urls','master'),namespace='master')),
+    path('annotator/',include(('annotator.urls','annotator'),namespace='annotator'))
 ]
