@@ -25,13 +25,11 @@
         <p class="text-sm text-gray-300 text-center mt-1">Buat akun baru untuk melanjutkan</p>
 
         <!-- Error Handling -->
-        {% if form.errors %}
+        {% if errors %}
             <div class="mt-4 p-3 bg-red-100 text-red-600 rounded-md text-sm w-full">
                 <ul class="list-disc pl-5">
-                    {% for field in form %}
-                        {% for error in field.errors %}
-                            <li>{{ error }}</li>
-                        {% endfor %}
+                    {% for field, message in errors.items %}
+                        <li>{{ message|safe }}</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -39,7 +37,7 @@
 
         <!-- Form -->
         <form method="POST" class="mt-6 w-full space-y-4">
-            {% csrf_token %}
+            {% csrf_token %}  <!-- Ensure CSRF token is included -->
 
             <div>
                 <label class="block text-sm font-medium text-gray-700">Username</label>
@@ -50,17 +48,17 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Nama Depan</label>
+                    <label class="block text-sm font-medium text-gray-700">First Name</label>
                     <input type="text" name="first_name" required 
                         class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
-                        placeholder="Nama depan..." value="{{ request.POST.first_name }}">
+                        placeholder="Nama depan...">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700">Nama Belakang</label>
+                    <label class="block text-sm font-medium text-gray-700">Last Name</label>
                     <input type="text" name="last_name" required 
                         class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
-                        placeholder="Nama belakang..." value="{{ request.POST.last_name }}">
+                        placeholder="Nama belakang...">
                 </div>
             </div>
 
@@ -109,17 +107,17 @@
             <div class="flex flex-col space-y-3 mt-4">
                 <!-- Sign Up dengan Google -->
                 <a href="/accounts/google/signup/" class="w-full flex items-center justify-center p-3 border border-white rounded-lg bg-white text-gray-700 font-medium hover:bg-gray-100 transition shadow-md">
-                    <img src="/static/images/google-icon.png" alt="Google Sign Up" class="w-6 h-6 mr-3">
+                    <img src="/static/images/logo_google.png" alt="Google Sign Up" class="w-6 h-6 mr-3">
                     Sign Up dengan Google
                 </a>
                 
                 <!-- Sign Up dengan Apple -->
                 <a href="/accounts/apple/signup/" class="w-full flex items-center justify-center p-3 border border-white rounded-lg bg-black text-white font-medium hover:bg-gray-900 transition shadow-md">
-                    <img src="/static/images/apple-icon.png" alt="Apple Sign Up" class="w-6 h-6 mr-3">
+                    <img src="/static/images/logo_apple.png" alt="Apple Sign Up" class="w-6 h-6 mr-3">
                     Sign Up dengan Apple
                 </a>
             </div>
-        </div>s
+        </div>
     </div>
 
 </body>

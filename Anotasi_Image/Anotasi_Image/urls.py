@@ -18,8 +18,17 @@ from django.contrib import admin
 from django.urls import path,include
 
 urlpatterns = [
+    #General
     path('admin/', admin.site.urls),
-    path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
+    path("accounts/", include("allauth.urls")),
+    
+    # Annotator
+    path('annotator/',include(('annotator.urls','annotator'),namespace='annotator')),
+    
+    # Master
     path('master/', include('master.urls')),
-    path('annotator/',include(('annotator.urls','annotator'),namespace='annotator'))
+    path("", include("master.urls")),
+    
+    # Reviewer
+    path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
 ]
