@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 ]
 
 # Konfigurasi autentikasi
@@ -60,6 +61,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "allauth.account.middleware.AccountMiddleware",
 ]
+SITE_ID = 1
+
 
 # URL utama proyek
 ROOT_URLCONF = 'Anotasi_Image.urls'
@@ -91,6 +94,37 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+            'key': ''
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        }
+    }
+}
+
+#  Social Auth settings
+SOCIALACCOUNT_LOGIN_ON_GET = True
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_AUTO_SIGNUP = True
+
+SOCIALACCOUNT_ADAPTER = 'master.adapters.CustomSocialAccountAdapter'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
@@ -129,8 +163,10 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_BLACKLIST = ['admin', 'staff', 'superuser']
 
 # Redirect setelah login/logout
-LOGIN_REDIRECT_URL = "/home/"
-LOGOUT_REDIRECT_URL = "/login/"
+# Authentication settings
+LOGIN_URL = 'master:login'
+LOGIN_REDIRECT_URL = 'master:home'
+LOGOUT_REDIRECT_URL = 'master:login'
 
 # Email Configuration (Gunakan email Gmail untuk testing)
 if DEBUG:

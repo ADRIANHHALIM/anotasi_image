@@ -31,4 +31,7 @@ urlpatterns = [
     
     # Reviewer
     path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
+    
+    path('accounts/', include('allauth.urls')),
+
 ]
