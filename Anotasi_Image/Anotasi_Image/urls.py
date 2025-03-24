@@ -17,6 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path,include
 
+
 urlpatterns = [
     #General
     path('admin/', admin.site.urls),
@@ -26,8 +27,7 @@ urlpatterns = [
     path('annotator/',include(('annotator.urls','annotator'),namespace='annotator')),
     
     # Master
-    path('master/', include('master.urls')),
-    path("", include("master.urls")),
+    path('master/',include(('master.urls','master'),namespace='master')),
     
     # Reviewer
     path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
