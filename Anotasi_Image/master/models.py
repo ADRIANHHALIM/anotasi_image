@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+from django.utils import timezone
 
 class CustomUserManager(BaseUserManager):
     """Custom manager untuk model CustomUser agar mendukung login dengan email atau username."""
@@ -59,4 +60,42 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+class Dataset(models.Model):
+    name = models.CharField(max_length=255)
+    labeler = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(default=timezone.now)
+    file_path = models.FileField(upload_to='datasets/')
+    count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return self.name
+
+class JobProfile(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    image_count = models.IntegerField(default=0)
+    SEGMENTATION_CHOICES = [
+        ('semantic', 'Semantic'),
+        ('instance', 'Instance'),
+        ('panoptic', 'Panoptic')
+    ]
+    SHAPE_CHOICES = [
+        ('bounding_box', 'Bounding Box'),
+        ('polygon', 'Polygon')
+    ]
+    STATUS_CHOICES = [
+        ('not_assign', 'Not assign'),
+        ('in_progress', 'In progress'),
+        ('finish', 'Finish')
+    ]
+    segmentation_type = models.CharField(max_length=20, choices=SEGMENTATION_CHOICES)
+    shape_type = models.CharField(max_length=20, choices=SHAPE_CHOICES)
+    color = models.CharField(max_length=7)  # For hex color codes
+    start_date = models.DateField()
+    end_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_assign')
     
+    def __str__(self):
+        return self.title
+

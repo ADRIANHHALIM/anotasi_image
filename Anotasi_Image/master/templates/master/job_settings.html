@@ -1,8 +1,394 @@
 {% extends 'base_master.html' %}
+{% load static %}
+
 {% block content %}
-    <div class="ml-64 p-6">
-        <!-- Content for Home Page -->
-        <h1 class="text-3xl font-bold">Job Settings</h1>
-        <p class="text-lg">Welcome to the Anotasi Image Platform</p>
+<div class="w-full ml-64 p-6">
+    <h1 class="text-4xl font-bold mb-6">Job settings</h1>
+    
+    <!-- Tab Navigation -->
+    <div class="mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+                <button class="tab-btn active py-4 px-1 border-b-2 border-[#4527A0] text-[#4527A0] font-semibold" data-tab="jobProfile">
+                    Job Profile
+                </button>
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="jobAssign">
+                    Job Assign
+                </button>
+            </nav>
+        </div>
     </div>
+
+    <!-- Job Profile Content -->
+    <div id="jobProfileContent" class="tab-content active">
+        <div class="mb-4 flex justify-between items-center">
+            <h3 class="text-xl font-semibold">List Profile</h3>
+            <button id="addProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                Add Profile
+            </button>
+        </div>
+
+        <!-- Job Profile List -->
+        <div class="grid grid-cols-2 gap-6">
+            {% for job in jobs %}
+            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer" data-job-id="{{ job.id }}">
+                <div class="flex items-start space-x-4">
+                    <div class="w-24 h-24 bg-gray-200 rounded-lg"></div>
+                    <div class="flex-1">
+                        <h4 class="text-lg font-semibold">{{ job.title }}</h4>
+                        <div class="space-y-2 text-gray-500">
+                            <p class="flex justify-between"><span>Image:</span> <span>{{ job.image_count }}</span></p>
+                            <p class="flex justify-between"><span>Date:</span> <span>{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
+                            <p class="flex justify-between"><span>Status:</span> 
+                                <span class="px-2 py-1 rounded-full text-sm 
+                                    {% if job.status == 'not_assign' %}bg-red-100 text-red-700
+                                    {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
+                                    {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
+                                    {{ job.get_status_display }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Job Detail Modal -->
+<div id="jobDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg w-3/4 max-h-[90vh] overflow-y-auto">
+        <div class="p-8">
+            <div class="flex justify-between items-start">
+                <div class="flex space-x-8 w-full">
+                    <!-- Image placeholder -->
+                    <div class="w-1/3">
+                        <div class="bg-gray-200 w-full aspect-square rounded-lg"></div>
+                    </div>
+                    
+                    <!-- Job details -->
+                    <div class="w-2/3">
+                        <h2 id="detailTitle" class="text-2xl font-bold mb-8"></h2>
+                        
+                        <div class="grid grid-cols-2 gap-8">
+                            <!-- Left Column -->
+                            <div class="space-y-4">
+                                <div>
+                                    <span class="text-gray-500">ID Job:</span>
+                                    <span id="detailId" class="ml-2"></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Worker Annotator:</span>
+                                    <span id="detailAnnotator" class="ml-2">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Worker Reviwer:</span>
+                                    <span id="detailReviewer" class="ml-2">-</span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Deskripsi:</span>
+                                    <p id="detailDescription" class="mt-1"></p>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Hotkey:</span>
+                                    <span id="detailHotkey" class="ml-2">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="space-y-4">
+                                <div>
+                                    <span class="text-gray-500">Segmentasi:</span>
+                                    <ul id="detailSegmentation" class="mt-1 ml-4 list-disc"></ul>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Shape:</span>
+                                    <span id="detailShape" class="ml-2"></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Colour:</span>
+                                    <div class="flex items-center mt-1">
+                                        <div id="detailColorBox" class="w-6 h-6 rounded mr-2"></div>
+                                        <span id="detailColor"></span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Time & Date:</span>
+                                    <span id="detailDate" class="ml-2"></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Image:</span>
+                                    <span id="detailImageCount" class="ml-2"></span>
+                                </div>
+                                <div>
+                                    <span class="text-gray-500">Status:</span>
+                                    <span id="detailStatus" class="ml-2 px-2 py-1 rounded-full text-sm"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Close button -->
+                <button id="closeDetailBtn" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Profile Modal -->
+<div id="addProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg w-2/3 max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Create Profile</h2>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="jobProfileForm" class="space-y-6">
+                {% csrf_token %}
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
+                        <input type="text" name="title" required class="w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea name="description" rows="4" class="w-full p-2 border rounded-md"></textarea>
+                    </div>
+                </div>
+
+                <!-- Other form fields -->
+                <!-- Segmentation Options -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Segmentation <span class="text-red-500">*</span></label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="segmentation" value="semantic" class="mr-2">
+                            <span>Semantic</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="segmentation" value="instance" class="mr-2">
+                            <span>Instance</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="segmentation" value="panoptic" class="mr-2">
+                            <span>Panoptic</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Shape Options -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Shape <span class="text-red-500">*</span></label>
+                    <div class="space-y-2">
+                        <label class="flex items-center">
+                            <input type="radio" name="shape" value="bounding_box" class="mr-2">
+                            <span>Bounding Box</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="radio" name="shape" value="polygon" class="mr-2">
+                            <span>Polygon</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Color Picker -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Color <span class="text-red-500">*</span></label>
+                    <input type="color" name="color" required class="w-20 h-10">
+                </div>
+
+                <!-- Date Range -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Start Date <span class="text-red-500">*</span></label>
+                        <input type="date" name="start_date" required class="w-full p-2 border rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">End Date <span class="text-red-500">*</span></label>
+                        <input type="date" name="end_date" required class="w-full p-2 border rounded-md">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" id="cancelProfileBtn" class="px-4 py-2 border rounded-md text-gray-700 hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const addProfileBtn = document.getElementById('addProfileBtn');
+    const addProfileModal = document.getElementById('addProfileModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const jobProfileForm = document.getElementById('jobProfileForm');
+
+    // Show modal
+    addProfileBtn.addEventListener('click', function() {
+        addProfileModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Prevent background scrolling
+    });
+
+    // Hide modal
+    function hideModal() {
+        addProfileModal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+        jobProfileForm.reset();
+    }
+
+    closeModalBtn.addEventListener('click', hideModal);
+    
+    // Close modal when clicking outside
+    addProfileModal.addEventListener('click', function(e) {
+        if (e.target === addProfileModal) {
+            hideModal();
+        }
+    });
+
+    // Form submission
+    jobProfileForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch("{% url 'master:create_job_profile' %}", {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                hideModal();
+                window.location.reload();
+            } else {
+                alert(data.message || 'Error creating job profile');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error creating job profile');
+        });
+    });
+
+    // Add click event to job profile cards
+    document.querySelectorAll('[data-job-id]').forEach(card => {
+        card.addEventListener('click', function() {
+            const jobId = this.dataset.jobId;
+            
+            // Show detail modal
+            const detailModal = document.getElementById('jobDetailModal');
+            
+            // Fetch job details
+            fetch(`/master/job-profile/${jobId}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update modal content
+                    document.getElementById('detailTitle').textContent = data.title;
+                    document.getElementById('detailId').textContent = data.id;
+                    document.getElementById('detailAnnotator').textContent = data.worker_annotator || '-';
+                    document.getElementById('detailReviewer').textContent = data.worker_reviewer || '-';
+                    document.getElementById('detailDescription').textContent = data.description || '-';
+                    document.getElementById('detailHotkey').textContent = '-';
+                    document.getElementById('detailSegmentation').innerHTML = 
+                        `<li>- Semantic</li><li>- Panoptic</li>`;
+                    document.getElementById('detailShape').textContent = data.shape_type || '-';
+                    document.getElementById('detailColor').textContent = data.color || '-';
+                    document.getElementById('detailColorBox').style.backgroundColor = data.color || '#FFFFFF';
+                    document.getElementById('detailDate').textContent = `${data.start_date} - ${data.end_date} WIB`;
+                    document.getElementById('detailImageCount').textContent = data.image_count || '0';
+                    
+                    // Set status with appropriate styling
+                    const statusSpan = document.getElementById('detailStatus');
+                    statusSpan.textContent = data.get_status_display || data.status;
+                    statusSpan.className = 'px-2 py-1 rounded-full text-sm inline-block ' + 
+                        (data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
+                         data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+                         'bg-green-100 text-green-700');
+                    
+                    // Show modal
+                    detailModal.classList.remove('hidden');
+                    detailModal.classList.add('flex');
+                    document.body.style.overflow = 'hidden';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading job details');
+                });
+        });
+    });
+
+    // Close detail modal when clicking close button
+    document.getElementById('closeDetailBtn').addEventListener('click', function() {
+        const detailModal = document.getElementById('jobDetailModal');
+        detailModal.classList.add('hidden');
+        detailModal.classList.remove('flex');
+        document.body.style.overflow = 'auto';
+    });
+
+    // Close detail modal when clicking outside
+    document.getElementById('jobDetailModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+            this.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+    });
+});
+
+// Tab switching functionality
+const tabBtns = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+
+tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active class from all buttons and contents
+        tabBtns.forEach(b => b.classList.remove('active', 'border-[#4527A0]', 'text-[#4527A0]'));
+        tabContents.forEach(c => c.classList.add('hidden'));
+        
+        // Add active class to clicked button and show corresponding content
+        btn.classList.add('active', 'border-[#4527A0]', 'text-[#4527A0]');
+        document.getElementById(`${btn.dataset.tab}Content`).classList.remove('hidden');
+    });
+});
+
+// Modal functions
+function showCreateProfile() {
+    document.getElementById('createProfileModal').classList.remove('hidden');
+}
+
+function hideCreateProfile() {
+    document.getElementById('createProfileModal').classList.add('hidden');
+}
+
+// Form submission
+document.getElementById('createProfileForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    // Add your form submission logic here
+    hideCreateProfile();
+});
+</script>
 {% endblock %}

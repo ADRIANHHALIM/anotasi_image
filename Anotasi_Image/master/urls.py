@@ -18,4 +18,13 @@ urlpatterns = [
     
     # Update Role
     path("update_role/", views.update_role, name="update_role"),
+    path("add_dataset/", views.add_dataset_view, name="add_dataset"),
+    
+    # Job Settings
+    path('create_job_profile/', views.create_job_profile, name='create_job_profile'),
+    path('job-profile/<int:job_id>/', views.job_profile_detail, name='job_profile_detail'),
+    
+    # Home Dataset 
+    path('edit_dataset/<int:dataset_id>/', views.edit_dataset_view, name='edit_dataset'),
+    path('delete_dataset/<int:dataset_id>/', views.delete_dataset_view, name='delete_dataset'),
 ]

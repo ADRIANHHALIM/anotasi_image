@@ -149,6 +149,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Untuk production
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+# Allowed upload formats
+ALLOWED_UPLOAD_EXTENSIONS = ['.zip', '.rar', '.7zip']
+MAX_UPLOAD_SIZE = 52428800  # 50MB in bytes
+
 # Primary Key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

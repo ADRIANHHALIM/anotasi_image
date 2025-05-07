@@ -1,5 +1,6 @@
 {% extends 'base_master.html' %}
 {% block content %}
+    {% csrf_token %}
     <div class="ml-64 p-6">
         <!-- Content for Assign Role -->
         <h1 class="text-3xl font-bold">Roles and Job</h1>
@@ -88,12 +89,39 @@
             </div>
         </div>
     </div>
+    
+    <!-- Add this modal markup just before the script tag -->
+    <div id="updateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl">
+            <h3 class="text-xl mb-4" id="modalMessage"></h3>
+            <button onclick="closeModal()" class="bg-[#4527A0] text-white px-4 py-2 rounded">Close</button>
+        </div>
+    </div>
 
     <script>
+        function showModal(message) {
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('updateModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('updateModal').classList.add('hidden');
+            window.location.reload();
+        }
+
         function updateRole(userId, newRole) {
             const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            
-            fetch("{% url 'master:update_role' %}", {
+            if (!csrftoken) {
+                showModal('CSRF token not found. Please refresh the page.');
+                return Promise.reject('CSRF token missing');
+            }
+
+            if (!userId || !newRole) {
+                showModal('Missing required data');
+                return Promise.reject('Missing data');
+            }
+
+            return fetch("{% url 'master:update_role' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -106,34 +134,33 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.status === 'success') {
-                    console.log('Role updated successfully');
-                    // Wait a bit before reloading to ensure the database is updated
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 500);
-                } else {
-                    console.error('Failed to update role:', data.message);
+                if (data.status !== 'success') {
+                    throw new Error(data.message || 'Unknown error occurred');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+                return data;
             });
         }
-        
 
         function saveChanges() {
-            const promises = [];
             const newMembers = document.querySelectorAll('select[data-user-id]');
             
-            newMembers.forEach(selectElement => {
-                const userId = selectElement.getAttribute('data-user-id');
-                const newRole = selectElement.value;
-                promises.push(updateRole(userId, newRole));
-            });
-        
-            Promise.all(promises).then(() => {
-                window.location.reload();
+            if (newMembers.length === 0) {
+                showModal('No members to update');
+                return;
+            }
+
+            Promise.all(
+                Array.from(newMembers).map(selectElement => {
+                    const userId = selectElement.getAttribute('data-user-id');
+                    const newRole = selectElement.value;
+                    return updateRole(userId, newRole);
+                })
+            )
+            .then(() => {
+                showModal('All roles updated successfully!');
+            })
+            .catch(error => {
+                showModal('Error updating roles: ' + error.message);
             });
         }
 
