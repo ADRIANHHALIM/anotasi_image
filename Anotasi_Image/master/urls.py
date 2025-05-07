@@ -23,6 +23,7 @@ urlpatterns = [
     # Job Settings
     path('create_job_profile/', views.create_job_profile, name='create_job_profile'),
     path('job-profile/<int:job_id>/', views.job_profile_detail, name='job_profile_detail'),
+    path('upload-job-images/', views.upload_job_images, name='upload_job_images'),
     
     # Home Dataset 
     path('edit_dataset/<int:dataset_id>/', views.edit_dataset_view, name='edit_dataset'),

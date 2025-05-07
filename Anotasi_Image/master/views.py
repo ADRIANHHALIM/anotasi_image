@@ -13,10 +13,12 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 import json
 from .tokens import account_activation_token
-from .models import CustomUser, Dataset, JobProfile
+from .models import CustomUser, Dataset, JobProfile, JobImage
 from .forms import SignUpForm
 import os
 from django.core.files.storage import FileSystemStorage
+from django.conf import settings  # Add this at the top with other imports
+from .models import CustomUser, Dataset, JobProfile, JobImage  # Update your imports at the top
 
 def signup_view(request):
     if request.method == "POST":
@@ -284,23 +286,29 @@ def create_job_profile(request):
 @login_required
 def job_profile_detail(request, job_id):
     try:
-        job = JobProfile.objects.get(id=job_id)
-        return JsonResponse({
+        job = get_object_or_404(JobProfile, id=job_id)
+        data = {
             'id': job.id,
             'title': job.title,
             'description': job.description,
-            'worker_annotator': job.worker_annotator,
-            'worker_reviewer': job.worker_reviewer,
+            'image_count': job.image_count,
             'segmentation_type': job.segmentation_type,
             'shape_type': job.shape_type,
             'color': job.color,
-            'start_date': job.start_date.strftime('%d %B %Y'),
-            'end_date': job.end_date.strftime('%d %B %Y'),
-            'image_count': job.image_count,
+            'start_date': job.start_date.strftime('%d/%m/%Y') if job.start_date else None,
+            'end_date': job.end_date.strftime('%d/%m/%Y') if job.end_date else None,
             'status': job.status,
-        })
-    except JobProfile.DoesNotExist:
-        return JsonResponse({'error': 'Job profile not found'}, status=404)
+            'worker_annotator': job.worker_annotator if hasattr(job, 'worker_annotator') else None,
+            'worker_reviewer': job.worker_reviewer if hasattr(job, 'worker_reviewer') else None,
+            'unannotated_count': 0,  # Replace with actual count
+            'in_review_count': 0,    # Replace with actual count
+            'in_rework_count': 0,    # Replace with actual count
+            'finished_count': 0,      # Replace with actual count
+            'issues_count': 0,        # Replace with actual count
+        }
+        return JsonResponse(data)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 # Daataset flow for edit and delete
 @login_required
@@ -357,6 +365,79 @@ def delete_dataset_view(request, dataset_id):
         'message': 'Method not allowed'
     }, status=405)
 
+@login_required
+@require_http_methods(["POST"])
+def upload_job_images(request):
+    try:
+        job_id = request.POST.get('job_id')
+        if not job_id:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Job ID is required'
+            }, status=400)
+
+        job = JobProfile.objects.get(id=job_id)
+        files = request.FILES.getlist('images[]')
+        
+        # Get current count from actual images, not job.image_count
+        current_count = JobImage.objects.filter(job=job).count()
+        
+        if current_count + len(files) > 150:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Cannot add {len(files)} images. Maximum limit is 150 images.'
+            }, status=400)
+
+        uploaded_count = 0
+        errors = []
+
+        for file in files:
+            if file.content_type.startswith('image/'):
+                try:
+                    # Create JobImage instance and save
+                    job_image = JobImage(
+                        job=job,
+                        image=file,
+                        status='unannotated'
+                    )
+                    job_image.save()
+                    uploaded_count += 1
+                except Exception as e:
+                    errors.append(f"Error with {file.name}: {str(e)}")
+                    continue
+
+        if uploaded_count > 0:
+            # Update job status and count only if images were uploaded
+            job.image_count = current_count + uploaded_count
+            if job.status == 'not_assign':
+                job.status = 'in_progress'
+            job.save()
+
+            return JsonResponse({
+                'status': 'success',
+                'message': f'{uploaded_count} images uploaded successfully',
+                'new_image_count': job.image_count,
+                'new_status': job.status,
+                'errors': errors if errors else None
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No images were uploaded successfully',
+                'errors': errors
+            }, status=400)
+
+    except JobProfile.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Job not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
 def home(request):
     # Dummy data untuk development UI
     context = {
@@ -382,3 +463,21 @@ def home(request):
         ]
     }
     return render(request, 'master/home.html', context)
+
+def handle_dataset_upload(dataset_file):
+    """
+    Handle the upload of dataset files
+    Returns the file path where the dataset is stored
+    """
+    try:
+        fs = FileSystemStorage()
+        # Create datasets directory if it doesn't exist
+        dataset_dir = os.path.join('datasets')
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, dataset_dir), exist_ok=True)
+        
+        # Save file
+        filename = fs.save(f'datasets/{dataset_file.name}', dataset_file)
+        file_path = fs.url(filename)
+        return file_path
+    except Exception as e:
+        raise Exception(f"Error uploading dataset file: {str(e)}")

@@ -99,3 +99,23 @@ class JobProfile(models.Model):
     def __str__(self):
         return self.title
 
+def job_image_path(instance, filename):
+    # Generate path like: job_images/1/image.jpg
+    return f'job_images/{instance.job.id}/{filename}'
+
+class JobImage(models.Model):
+    STATUS_CHOICES = [
+        ('unannotated', 'Unannotated'),
+        ('in_review', 'In Review'),
+        ('in_rework', 'In Rework'),
+        ('finished', 'Finished'),
+        ('has_issues', 'Has Issues')
+    ]
+    
+    job = models.ForeignKey(JobProfile, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=job_image_path)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unannotated')  # Changed maxlength to max_length
+
+    def __str__(self):
+        return f"Image {self.id} for Job {self.job.title}"
