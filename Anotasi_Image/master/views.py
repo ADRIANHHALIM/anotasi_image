@@ -287,11 +287,20 @@ def create_job_profile(request):
 def job_profile_detail(request, job_id):
     try:
         job = get_object_or_404(JobProfile, id=job_id)
+        
+        # Get actual counts from JobImage
+        unannotated_count = JobImage.objects.filter(job=job, status='unannotated').count()
+        in_review_count = JobImage.objects.filter(job=job, status='in_review').count()
+        in_rework_count = JobImage.objects.filter(job=job, status='in_rework').count()
+        finished_count = JobImage.objects.filter(job=job, status='finished').count()
+        issues_count = JobImage.objects.filter(job=job, status='has_issues').count()
+        total_count = JobImage.objects.filter(job=job).count()
+
         data = {
             'id': job.id,
             'title': job.title,
             'description': job.description,
-            'image_count': job.image_count,
+            'image_count': total_count,
             'segmentation_type': job.segmentation_type,
             'shape_type': job.shape_type,
             'color': job.color,
@@ -300,11 +309,11 @@ def job_profile_detail(request, job_id):
             'status': job.status,
             'worker_annotator': job.worker_annotator if hasattr(job, 'worker_annotator') else None,
             'worker_reviewer': job.worker_reviewer if hasattr(job, 'worker_reviewer') else None,
-            'unannotated_count': 0,  # Replace with actual count
-            'in_review_count': 0,    # Replace with actual count
-            'in_rework_count': 0,    # Replace with actual count
-            'finished_count': 0,      # Replace with actual count
-            'issues_count': 0,        # Replace with actual count
+            'unannotated_count': unannotated_count,
+            'in_review_count': in_review_count,
+            'in_rework_count': in_rework_count,
+            'finished_count': finished_count,
+            'issues_count': issues_count
         }
         return JsonResponse(data)
     except Exception as e:
@@ -370,63 +379,53 @@ def delete_dataset_view(request, dataset_id):
 def upload_job_images(request):
     try:
         job_id = request.POST.get('job_id')
-        if not job_id:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Job ID is required'
-            }, status=400)
-
         job = JobProfile.objects.get(id=job_id)
         files = request.FILES.getlist('images[]')
         
-        # Get current count from actual images, not job.image_count
         current_count = JobImage.objects.filter(job=job).count()
-        
         if current_count + len(files) > 150:
             return JsonResponse({
                 'status': 'error',
                 'message': f'Cannot add {len(files)} images. Maximum limit is 150 images.'
             }, status=400)
 
+        # Upload new images
         uploaded_count = 0
-        errors = []
-
         for file in files:
             if file.content_type.startswith('image/'):
-                try:
-                    # Create JobImage instance and save
-                    job_image = JobImage(
-                        job=job,
-                        image=file,
-                        status='unannotated'
-                    )
-                    job_image.save()
-                    uploaded_count += 1
-                except Exception as e:
-                    errors.append(f"Error with {file.name}: {str(e)}")
-                    continue
+                JobImage.objects.create(
+                    job=job,
+                    image=file,
+                    status='unannotated'  # Default status for new uploads
+                )
+                uploaded_count += 1
+        
+        # Get updated counts after upload
+        new_total = JobImage.objects.filter(job=job).count()
+        unannotated_count = JobImage.objects.filter(job=job, status='unannotated').count()
+        in_review_count = JobImage.objects.filter(job=job, status='in_review').count()
+        in_rework_count = JobImage.objects.filter(job=job, status='in_rework').count()
+        finished_count = JobImage.objects.filter(job=job, status='finished').count()
+        issues_count = JobImage.objects.filter(job=job, status='has_issues').count()
+        
+        # Update job status and image count
+        if job.status == 'not_assign' and new_total > 0:
+            job.status = 'in_progress'
+        job.image_count = new_total
+        job.save()
 
-        if uploaded_count > 0:
-            # Update job status and count only if images were uploaded
-            job.image_count = current_count + uploaded_count
-            if job.status == 'not_assign':
-                job.status = 'in_progress'
-            job.save()
-
-            return JsonResponse({
-                'status': 'success',
-                'message': f'{uploaded_count} images uploaded successfully',
-                'new_image_count': job.image_count,
-                'new_status': job.status,
-                'errors': errors if errors else None
-            })
-        else:
-            return JsonResponse({
-                'status': 'error',
-                'message': 'No images were uploaded successfully',
-                'errors': errors
-            }, status=400)
-
+        return JsonResponse({
+            'status': 'success',
+            'message': f'{uploaded_count} images uploaded successfully',
+            'new_image_count': new_total,
+            'new_status': job.status,
+            'unannotated_count': unannotated_count,
+            'in_review_count': in_review_count,
+            'in_rework_count': in_rework_count,
+            'finished_count': finished_count,
+            'issues_count': issues_count
+        })
+        
     except JobProfile.DoesNotExist:
         return JsonResponse({
             'status': 'error',
