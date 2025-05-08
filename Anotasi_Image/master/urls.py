@@ -28,4 +28,8 @@ urlpatterns = [
     # Home Dataset 
     path('edit_dataset/<int:dataset_id>/', views.edit_dataset_view, name='edit_dataset'),
     path('delete_dataset/<int:dataset_id>/', views.delete_dataset_view, name='delete_dataset'),
+    
+    # New URLs
+    path('get-workers/<str:role>/', views.get_workers, name='get_workers'),
+    path('assign-worker/', views.assign_worker, name='assign_worker'),
 ]

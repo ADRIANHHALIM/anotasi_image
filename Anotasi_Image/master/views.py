@@ -437,6 +437,118 @@ def upload_job_images(request):
             'message': str(e)
         }, status=500)
 
+@login_required
+def get_workers(request, role):
+    """Get list of available workers by role"""
+    try:
+        workers = CustomUser.objects.filter(role=role, is_active=True)
+        return JsonResponse({
+            'workers': [{
+                'id': worker.id,
+                'email': worker.email,
+                'phone': worker.phone_number,  # Make sure this matches your model field
+                'name': f"{worker.first_name} {worker.last_name}".strip()
+            } for worker in workers]
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def assign_worker(request):
+    """Assign worker to a job"""
+    try:
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        worker_id = data.get('worker_id')
+        role = data.get('role')
+
+        job = JobProfile.objects.get(id=job_id)
+        worker = CustomUser.objects.get(id=worker_id)
+
+        if role == 'annotator':
+            job.worker_annotator = worker
+        elif role == 'reviewer':
+            job.worker_reviewer = worker
+        
+        job.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': f'{role.title()} assigned successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def assign_workers(request):
+    """Assign annotator and reviewer to a job"""
+    try:
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        annotator_id = data.get('annotator_id')
+        reviewer_id = data.get('reviewer_id')
+
+        # Validate input
+        if not all([job_id, annotator_id, reviewer_id]):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Missing required data'
+            }, status=400)
+
+        # Get job and workers
+        job = JobProfile.objects.get(id=job_id)
+        annotator = CustomUser.objects.get(id=annotator_id)
+        reviewer = CustomUser.objects.get(id=reviewer_id)
+
+        # Validate worker roles
+        if annotator.role != 'annotator':
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Selected annotator does not have annotator role'
+            }, status=400)
+            
+        if reviewer.role != 'reviewer':
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Selected reviewer does not have reviewer role'
+            }, status=400)
+
+        # Assign workers
+        job.worker_annotator = annotator
+        job.worker_reviewer = reviewer
+        job.save()
+
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Workers assigned successfully',
+            'annotator_name': f"{annotator.first_name} {annotator.last_name}".strip() or annotator.email,
+            'reviewer_name': f"{reviewer.first_name} {reviewer.last_name}".strip() or reviewer.email
+        })
+
+    except JobProfile.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Job not found'
+        }, status=404)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Worker not found'
+        }, status=404)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
 def home(request):
     # Dummy data untuk development UI
     context = {
