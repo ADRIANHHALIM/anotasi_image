@@ -85,16 +85,38 @@ class JobProfile(models.Model):
         ('polygon', 'Polygon')
     ]
     STATUS_CHOICES = [
-        ('not_assign', 'Not assign'),
-        ('in_progress', 'In progress'),
-        ('finish', 'Finish')
+        ('not_assign', 'Not Assigned'),
+        ('in_progress', 'In Progress'),
+        ('finish', 'Finished')
     ]
     segmentation_type = models.CharField(max_length=20, choices=SEGMENTATION_CHOICES)
     shape_type = models.CharField(max_length=20, choices=SHAPE_CHOICES)
     color = models.CharField(max_length=7)  # For hex color codes
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='not_assign')
+    worker_annotator = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='annotator_jobs'
+    )
+    worker_reviewer = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewer_jobs'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('not_assign', 'Not Assigned'),
+            ('in_progress', 'In Progress'),
+            ('finish', 'Finished')
+        ],
+        default='not_assign'
+    )
     
     def __str__(self):
         return self.title

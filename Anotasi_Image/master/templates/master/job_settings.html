@@ -4,16 +4,16 @@
 {% block content %}
 <div class="w-full ml-64 p-6">
     <h1 class="text-4xl font-bold mb-6">Job settings</h1>
-    
+
     <!-- Tab Navigation -->
     <div class="mb-6">
         <div class="border-b border-gray-200">
             <nav class="-mb-px flex space-x-8">
-                <button class="tab-btn py-4 px-1 border-b-2 border-transparent font-semibold" 
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent font-semibold"
                         data-tab="jobProfile">
                     Job Profile
                 </button>
-                <button class="tab-btn py-4 px-1 border-b-2 border-transparent font-semibold" 
+                <button class="tab-btn py-4 px-1 border-b-2 border-transparent font-semibold"
                         data-tab="jobAssign">
                     Job Assign
                 </button>
@@ -33,8 +33,9 @@
         <!-- Job Profile List -->
         <div class="grid grid-cols-2 gap-6">
             {% for job in jobs %}
-
-            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer job-card" onclick="showJobDetail({{ job.id }}, '{{ job.title }}', '{{ job.description }}', '{{ job.hotkey }}', '{{ job.worker_annotator|default:'-' }}', '{{ job.worker_reviewer|default:'-' }}', '{{ job.segmentation_list|join:',' }}')" data-job-id="{{ job.id }}">
+            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer job-card" 
+                onclick="showJobDetail({{ job.id }}, '{{ job.title }}', '{{ job.description }}', '{{ job.hotkey }}', '{{ job.worker_annotator|default:'-' }}', '{{ job.worker_reviewer|default:'-' }}', '{{ job.segmentation_list|join:',' }}')" 
+                data-job-id="{{ job.id }}">
                 <div class="flex items-start space-x-4">
                     <div class="w-24 h-24 bg-gray-200 rounded-lg"></div>
                     <div class="flex-1">
@@ -42,83 +43,64 @@
                         <div class="space-y-2 text-gray-500">
                             <p class="flex justify-between"><span>Image:</span> <span>{{ job.image_count }}</span></p>
                             <p class="flex justify-between"><span>Date:</span> <span>{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
-                            <p class="flex justify-between"><span>Status:</span> 
-                                <span class="px-2 py-1 rounded-full text-sm 
+                            <p class="flex justify-between"><span>Status:</span>
+                                <span class="px-2 py-1 rounded-full text-sm
                                     {% if job.status == 'not_assign' %}bg-red-100 text-red-700
                                     {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
                                     {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
                                     {{ job.get_status_display }}
                                 </span>
                             </p>
+                            <div class="worker-info space-y-2 text-gray-500">
+                                <p class="flex justify-between">
+                                    <span>Annotator:</span>
+                                    <span>{{ job.worker_annotator|default:'-' }}</span>
+                                </p>
+                                <p class="flex justify-between">
+                                    <span>Reviewer:</span>
+                                    <span>{{ job.worker_reviewer|default:'-' }}</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
+    </div>
 
-        <script>
-        function showJobDetail(id, title, description, hotkey, annotator, reviewer, segmentation) {
-            document.getElementById('detailId').textContent = id;
-            document.getElementById('detailTitle').textContent = title;
-            document.getElementById('detailDescription').textContent = description;
-            document.getElementById('detailHotkey').textContent = hotkey;
-            document.getElementById('detailAnnotator').textContent = annotator;
-            document.getElementById('detailReviewer').textContent = reviewer;
-            
-            // Handle segmentation list
-            const segmentationList = document.getElementById('detailSegmentation');
-            segmentationList.innerHTML = '';
-            if (segmentation) {
-                segmentation.split(',').forEach(item => {
-                    const li = document.createElement('li');
-                    li.textContent = item;
-                    segmentationList.appendChild(li);
-                });
-            }
-            
-            // Show Add Image button when in Job Profile context
-            const addImageBtn = document.querySelector('[onclick*="handleAddImage"]');
-            if (addImageBtn) {
-                addImageBtn.style.display = 'flex';
-            }
-
-            // Show modal
-            document.getElementById('jobDetailModal').classList.remove('hidden');
-        }
-        </script>    </div>
     <!-- Job Assign Content -->
     <div id="jobAssignContent" class="tab-content hidden">
-        <div class="mb-4">
-            <h3 class="text-xl font-semibold">List Profile</h3>
-        </div>
-
-        <!-- Job Profile List -->
         <div class="grid grid-cols-2 gap-6">
             {% for job in jobs %}
-            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer" onclick="showJobAssignDetail({{ job.id }})" data-job-id="{{ job.id }}">
+            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer job-card"
+                onclick="showJobAssignDetail({{ job.id }})"
+                data-job-id="{{ job.id }}">
                 <div class="flex items-start space-x-4">
                     <div class="w-24 h-24 bg-gray-200 rounded-lg"></div>
                     <div class="flex-1">
                         <h4 class="text-lg font-semibold">{{ job.title }}</h4>
                         <div class="space-y-2 text-gray-500">
-                            <p class="flex justify-between">
-                                <span>Image:</span> 
-                                <span>{{ job.image_count }}</span>
-                            </p>
-                            <p class="flex justify-between">
-                                <span>Date:</span> 
-                                <span>{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span>
-                            </p>
-                            <p class="flex justify-between">
-                                <span>Status:</span> 
-                                <span class="px-2 py-1 rounded-full text-sm 
+                            <p class="flex justify-between"><span>Image:</span> <span>{{ job.image_count }}</span></p>
+                            <p class="flex justify-between"><span>Date:</span> <span>{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
+                            <p class="flex justify-between"><span>Status:</span>
+                                <span class="px-2 py-1 rounded-full text-sm
                                     {% if job.status == 'not_assign' %}bg-red-100 text-red-700
                                     {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
                                     {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
                                     {{ job.get_status_display }}
                                 </span>
                             </p>
+                            <div class="worker-info space-y-2 text-gray-500">
+                                <p class="flex justify-between">
+                                    <span>Annotator:</span>
+                                    <span>{{ job.worker_annotator|default:'-' }}</span>
+                                </p>
+                                <p class="flex justify-between">
+                                    <span>Reviewer:</span>
+                                    <span>{{ job.worker_reviewer|default:'-' }}</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -126,57 +108,57 @@
             {% endfor %}
         </div>
     </div>
+</div>
 
-    <!-- Worker Selection Modal -->
-    <div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-        <div class="bg-white rounded-lg w-2/3 max-h-[80vh] overflow-y-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">Choose Worker</h2>
-                    <button onclick="closeWorkerSelection()" class="text-gray-500 hover:text-gray-700">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
+<!-- Modals -->
+<!-- Worker Selection Modal -->
+<div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-2/3 max-h-[80vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Choose Worker</h2>
+                <button onclick="closeWorkerSelection()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
 
-                <!-- Search and Filter -->
-                <div class="flex gap-4 mb-6">
-                    <div class="flex-1">
-                        <input type="text" 
-                               id="workerSearch" 
-                               placeholder="Search by email/No.hp" 
-                               class="w-full p-2 border rounded-lg">
-                    </div>
-                    <select id="roleFilter" class="p-2 border rounded-lg w-40" disabled>
-                        <option value="annotator">Annotator</option>
-                        <option value="reviewer">Reviewer</option>
-                    </select>
+            <!-- Search and Filter -->
+            <div class="flex gap-4 mb-6">
+                <div class="flex-1">
+                    <input type="text"
+                           id="workerSearch"
+                           placeholder="Search by email/No.hp"
+                           class="w-full p-2 border rounded-lg">
                 </div>
+                <select id="roleFilter" class="p-2 border rounded-lg w-40" disabled>
+                    <option value="annotator">Annotator</option>
+                    <option value="reviewer">Reviewer</option>
+                </select>
+            </div>
 
-                <!-- Workers List -->
-                <div class="space-y-2" id="workersList">
-                    <!-- Workers will be populated here dynamically -->
-                </div>
+            <!-- Workers List -->
+            <div class="space-y-2" id="workersList">
+                <!-- Workers will be populated here dynamically -->
+            </div>
 
-                <!-- Footer -->
-                <div class="flex justify-end mt-6">
-                    <button onclick="closeWorkerSelection()" 
-                            class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg mr-2">
-                        Cancel
-                    </button>
-                    <button id="nextBtn" 
-                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                            disabled>
-                        Next
-                    </button>
-                </div>
+            <!-- Footer -->
+            <div class="flex justify-end mt-6">
+                <button onclick="closeWorkerSelection()"
+                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg mr-2">
+                    Cancel
+                </button>
+                <button id="nextBtn"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        disabled>
+                    Next
+                </button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Job Detail Modal -->
 <!-- Job Detail Modal -->
 <div id="jobDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white rounded-lg w-3/4 max-h-[90vh] overflow-y-auto m-auto relative">
@@ -185,7 +167,7 @@
             <div class="mb-8">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-xl font-semibold">Labeling Progress</h3>
-                    <button onclick="handleAddImage(document.getElementById('detailId').textContent)" 
+                    <button onclick="handleAddImage(document.getElementById('detailId').textContent)"
                             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
@@ -200,25 +182,25 @@
                         <div class="text-4xl font-bold text-center" id="detailUnannotated">0</div>
                         <div class="text-gray-500 text-center">Unannotated</div>
                     </div>
-                    
+
                     <!-- In Review -->
                     <div class="bg-white p-4 rounded-lg shadow">
                         <div class="text-4xl font-bold text-center" id="detailInReview">0</div>
                         <div class="text-gray-500 text-center">In Review</div>
                     </div>
-                    
+
                     <!-- In Rework -->
                     <div class="bg-white p-4 rounded-lg shadow">
                         <div class="text-4xl font-bold text-center" id="detailInRework">0</div>
                         <div class="text-gray-500 text-center">In Rework</div>
                     </div>
-                    
+
                     <!-- Finished -->
                     <div class="bg-white p-4 rounded-lg shadow">
                         <div class="text-4xl font-bold text-center" id="detailFinished">0</div>
                         <div class="text-gray-500 text-center">Finished</div>
                     </div>
-                    
+
                     <!-- Issues -->
                     <div class="bg-white p-4 rounded-lg shadow">
                         <div class="text-4xl font-bold text-center" id="detailIssues">0</div>
@@ -234,11 +216,11 @@
                     <div class="w-1/3">
                         <div class="bg-gray-200 w-full aspect-square rounded-lg"></div>
                     </div>
-                    
+
                     <!-- Job details -->
                     <div class="w-2/3">
                         <h2 id="detailTitle" class="text-2xl font-bold mb-8"></h2>
-                        
+
                         <div class="grid grid-cols-2 gap-8">
                             <!-- Left Column -->
                             <div class="space-y-4">
@@ -297,7 +279,7 @@
                         </div>
                     </div>
                 </div>
-                
+
             </div>
         </div>
     </div>
@@ -341,7 +323,7 @@
                     <div class="w-1/3">
                         <div class="bg-gray-200 w-full aspect-square rounded-lg"></div>
                     </div>
-                    
+
                     <!-- Right side with details -->
                     <div class="w-2/3">
                         <h2 id="assignDetailTitle" class="text-2xl font-bold mb-8"></h2>
@@ -392,7 +374,7 @@
 
             <!-- Bottom section with Assignment button -->
             <div class="flex justify-end mt-8">
-                <button onclick="showWorkerSelection(document.getElementById('assignDetailId').textContent)" 
+                <button onclick="showWorkerSelection(document.getElementById('assignDetailId').textContent)"
                         class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
                     Assignment
                 </button>
@@ -413,7 +395,7 @@
                     </svg>
                 </button>
             </div>
-            
+
             <form id="jobProfileForm" class="space-y-6">
                 {% csrf_token %}
                 <div class="grid grid-cols-2 gap-6">
@@ -498,7 +480,7 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .file-input-button input[type=file] {
         position: absolute;
         top: 0;
@@ -531,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     closeModalBtn.addEventListener('click', hideModal);
-    
+
     // Close modal when clicking outside
     addProfileModal.addEventListener('click', function(e) {
         if (e.target === addProfileModal) {
@@ -543,7 +525,7 @@ document.addEventListener('DOMContentLoaded', function() {
     jobProfileForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
-        
+
         fetch("{% url 'master:create_job_profile' %}", {
             method: 'POST',
             body: formData,
@@ -571,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
         card.addEventListener('click', function() {
             const jobId = this.dataset.jobId;
             const detailModal = document.getElementById('jobDetailModal');
-            
+
             // Update the fetch URL to use the correct URL pattern
             fetch(`/master/job-profile/${jobId}/`, {
                 method: 'GET',
@@ -590,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!data) {
                     throw new Error('No data received');
                 }
-                
+
                 // Update modal content with null checks
                 document.getElementById('detailTitle').textContent = data.title || '-';
                 document.getElementById('detailId').textContent = data.id || '-';
@@ -598,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('detailReviewer').textContent = data.worker_reviewer || '-';
                 document.getElementById('detailDescription').textContent = data.description || '-';
                 document.getElementById('detailHotkey').textContent = data.hotkey || '-';
-                
+
                 // Update segmentation list
                 const segmentationList = document.getElementById('detailSegmentation');
                 segmentationList.innerHTML = '';
@@ -607,22 +589,22 @@ document.addEventListener('DOMContentLoaded', function() {
                     li.textContent = data.segmentation_type;
                     segmentationList.appendChild(li);
                 }
-                
+
                 document.getElementById('detailShape').textContent = data.shape_type || '-';
                 document.getElementById('detailColor').textContent = data.color || '-';
                 document.getElementById('detailColorBox').style.backgroundColor = data.color || '#FFFFFF';
-                document.getElementById('detailDate').textContent = 
+                document.getElementById('detailDate').textContent =
                     `${data.start_date || '-'} - ${data.end_date || '-'} WIB`;
                 document.getElementById('detailImageCount').textContent = data.image_count || '0';
-                
+
                 // Set status with appropriate styling
                 const statusSpan = document.getElementById('detailStatus');
                 statusSpan.textContent = data.status || 'Unknown';
-                statusSpan.className = 'px-2 py-1 rounded-full text-sm inline-block ' + 
+                statusSpan.className = 'px-2 py-1 rounded-full text-sm inline-block ' +
                     (data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
                      data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
                      'bg-green-100 text-green-700');
-                
+
                 // Update labeling progress
                 document.getElementById('detailUnannotated').textContent = data.unannotated_count || '0';
                 document.getElementById('detailInReview').textContent = data.in_review_count || '0';
@@ -667,7 +649,7 @@ tabBtns.forEach(btn => {
         const jobDetailModal = document.getElementById('jobDetailModal');
         const jobAssignModal = document.getElementById('jobAssignDetailModal');
         const addImageModal = document.querySelector('.modal-add-image'); // If exists
-        
+
         // Hide all modals when switching tabs
         [jobDetailModal, jobAssignModal, addImageModal].forEach(modal => {
             if (modal) {
@@ -675,11 +657,11 @@ tabBtns.forEach(btn => {
                 modal.classList.remove('flex');
             }
         });
-        
+
         // Remove active class from all buttons and contents
         tabBtns.forEach(b => b.classList.remove('active', 'border-[#4527A0]', 'text-[#4527A0]'));
         tabContents.forEach(c => c.classList.add('hidden'));
-        
+
         // Add active class to clicked button and show corresponding content
         btn.classList.add('active', 'border-[#4527A0]', 'text-[#4527A0]');
         document.getElementById(`${btn.dataset.tab}Content`).classList.remove('hidden');
@@ -711,7 +693,7 @@ document.getElementById('createProfileForm').addEventListener('submit', function
 function handleAddImage(jobId) {
     const currentImages = parseInt(document.getElementById('detailImageCount').textContent) || 0;
     const maxImages = 150;
-    
+
     if (currentImages >= maxImages) {
         alert('Maximum number of images (150) has been reached');
         return;
@@ -738,9 +720,9 @@ function handleAddImage(jobId) {
                 <!-- Drag & Drop Zone -->
                 <div class="mb-6">
                     <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors">
-                        <input type="file" 
-                               id="imageInput" 
-                               multiple 
+                        <input type="file"
+                               id="imageInput"
+                               multiple
                                accept="image/*"
                                class="hidden"
                                onchange="handleFiles(this.files, ${maxImages - currentImages}, ${jobId})" />
@@ -751,7 +733,7 @@ function handleAddImage(jobId) {
                             <div class="text-gray-600">
                                 <p class="font-medium">Drag and drop your images here</p>
                                 <p class="text-sm">or</p>
-                                <button type="button" 
+                                <button type="button"
                                         onclick="document.getElementById('imageInput').click()"
                                         class="mt-2 text-blue-500 hover:text-blue-600 font-medium">
                                     Browse files
@@ -773,7 +755,7 @@ function handleAddImage(jobId) {
                 <!-- Footer Actions -->
                 <div class="flex justify-end items-center gap-4 pt-4 border-t">
                     <span class="text-sm text-gray-500" id="selectedCount">0 images selected</span>
-                    <button onclick="this.closest('.fixed').remove()" 
+                    <button onclick="this.closest('.fixed').remove()"
                             class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                         Cancel
                     </button>
@@ -793,7 +775,7 @@ function handleAddImage(jobId) {
 
 function setupDragAndDrop(remainingSlots, jobId) {
     const dropZone = document.getElementById('dropZone');
-    
+
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, preventDefaults, false);
     });
@@ -831,7 +813,7 @@ function setupDragAndDrop(remainingSlots, jobId) {
 function handleFiles(files, remainingSlots, jobId) {
     files = Array.from(files).filter(file => file.type.startsWith('image/'));
     const selectedFiles = []; // Keep track of selected files
-    
+
     if (files.length > remainingSlots) {
         alert(`You can only select ${remainingSlots} more images`);
         return;
@@ -852,7 +834,7 @@ function handleFiles(files, remainingSlots, jobId) {
             div.innerHTML = `
                 <img src="${e.target.result}" class="w-full h-full object-cover rounded-lg" />
                 <div class="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                    <button onclick="removeImage(this, '${file.name}')" 
+                    <button onclick="removeImage(this, '${file.name}')"
                             class="bg-red-500 text-white rounded-full p-2 hover:bg-red-600 focus:outline-none">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -898,7 +880,7 @@ function handleFiles(files, remainingSlots, jobId) {
 function uploadImages(files, jobId) {
     const formData = new FormData();
     const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
+
     files.forEach(file => {
         formData.append('images[]', file);
     });
@@ -907,7 +889,7 @@ function uploadImages(files, jobId) {
     // Show loading state
     const saveButton = document.getElementById('saveImagesBtn');
     const modal = saveButton.closest('.fixed'); // Find the modal container
-    
+
     saveButton.disabled = true;
     saveButton.textContent = 'Uploading...';
 
@@ -929,14 +911,14 @@ function uploadImages(files, jobId) {
         if (data.status === 'success') {
             // Update image counts
             document.getElementById('detailImageCount').textContent = data.new_image_count;
-            
+
             // Update Labeling Progress counts
             document.getElementById('detailUnannotated').textContent = data.new_image_count; // All new images are unannotated
             document.getElementById('detailInReview').textContent = data.in_review_count || '0';
             document.getElementById('detailInRework').textContent = data.in_rework_count || '0';
             document.getElementById('detailFinished').textContent = data.finished_count || '0';
             document.getElementById('detailIssues').textContent = data.issues_count || '0';
-            
+
             // Update job card in the list
             const jobCard = document.querySelector(`[data-job-id="${jobId}"]`);
             if (jobCard) {
@@ -944,7 +926,7 @@ function uploadImages(files, jobId) {
                 if (imageCountEl) {
                     imageCountEl.textContent = data.new_image_count;
                 }
-                
+
                 // Update status if changed
                 if (data.new_status) {
                     const statusEl = jobCard.querySelector('.rounded-full');
@@ -959,7 +941,7 @@ function uploadImages(files, jobId) {
                     }
                 }
             }
-            
+
             // Close modal and show success message
             if (modal) {
                 modal.remove();
@@ -1012,7 +994,7 @@ function showJobAssignDetail(jobId) {
         document.getElementById('assignDetailAnnotator').textContent = data.worker_annotator || '-';
         document.getElementById('assignDetailReviewer').textContent = data.worker_reviewer || '-';
         document.getElementById('assignDetailDescription').textContent = data.description;
-        
+
         // Update segmentation list
         const segmentationList = document.getElementById('assignDetailSegmentation');
         segmentationList.innerHTML = '';
@@ -1021,10 +1003,10 @@ function showJobAssignDetail(jobId) {
             li.textContent = data.segmentation_type;
             segmentationList.appendChild(li);
         }
-        
+
         document.getElementById('assignDetailShape').textContent = data.shape_type;
         document.getElementById('assignDetailImageCount').textContent = data.image_count;
-        
+
         // Update status with styling
         const statusSpan = document.getElementById('assignDetailStatus');
         statusSpan.textContent = data.status;
@@ -1033,7 +1015,7 @@ function showJobAssignDetail(jobId) {
             data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
             'bg-green-100 text-green-700'
         }`;
-        
+
         // Update labeling progress
         document.getElementById('assignDetailUnannotated').textContent = data.unannotated_count || '0';
         document.getElementById('assignDetailInReview').textContent = data.in_review_count || '0';
@@ -1067,11 +1049,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (event.target === jobAssignModal) {
             jobAssignModal.classList.add('hidden');
             jobAssignModal.classList.remove('flex');
-            
+
             // Hide other modals if they exist
             const jobDetailModal = document.getElementById('jobDetailModal');
             const addImageModal = document.querySelector('.modal-add-image');
-            
+
             if (jobDetailModal) {
                 jobDetailModal.classList.add('hidden');
                 jobDetailModal.classList.remove('flex');
@@ -1084,25 +1066,122 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-function showWorkerSelection(jobId) {
-    let currentStep = 'annotator';
-    let selections = {};
+let selections = {}; // Global selections object
 
-    // Get all modals
-    const jobDetailModal = document.getElementById('jobDetailModal');
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    const workerSelectionModal = document.getElementById('workerSelectionModal');
-    const addImageModal = document.querySelector('.modal-add-image');
+function submitAssignments(jobId, annotatorId, reviewerId) {
+    if (!jobId || !annotatorId || !reviewerId) {
+        alert('Please select both annotator and reviewer');
+        return;
+    }
 
-    // Hide all modals first
-    [jobDetailModal, jobAssignModal, addImageModal].forEach(modal => {
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+    const data = {
+        job_id: parseInt(jobId),
+        annotator_id: parseInt(annotatorId),
+        reviewer_id: parseInt(reviewerId)
+    };
+
+    fetch('/master/assign-workers/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update job cards in both tabs
+            const jobCards = document.querySelectorAll(`[data-job-id="${jobId}"]`);
+            jobCards.forEach(card => {
+                const workerInfo = card.querySelector('.worker-info');
+                if (workerInfo) {
+                    workerInfo.innerHTML = `
+                        <p class="flex justify-between">
+                            <span>Annotator:</span>
+                            <span>${data.annotator_name}</span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span>Reviewer:</span>
+                            <span>${data.reviewer_name}</span>
+                        </p>
+                    `;
+                }
+
+                // Update status
+                const statusEl = card.querySelector('.rounded-full');
+                if (statusEl) {
+                    statusEl.textContent = data.new_status;
+                    statusEl.className = `px-2 py-1 rounded-full text-sm ${
+                        data.new_status === 'not_assign' ? 'bg-red-100 text-red-700' :
+                        data.new_status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+                        'bg-green-100 text-green-700'
+                    }`;
+                }
+            });
+
+            // Update worker info in detail modal
+            const detailAnnotator = document.getElementById('detailAnnotator');
+            const detailReviewer = document.getElementById('detailReviewer');
+            if (detailAnnotator) detailAnnotator.textContent = data.annotator_name;
+            if (detailReviewer) detailReviewer.textContent = data.reviewer_name;
+
+            // Update worker info in assign modal
+            const assignDetailAnnotator = document.getElementById('assignDetailAnnotator');
+            const assignDetailReviewer = document.getElementById('assignDetailReviewer');
+            if (assignDetailAnnotator) assignDetailAnnotator.textContent = data.annotator_name;
+            if (assignDetailReviewer) assignDetailReviewer.textContent = data.reviewer_name;
+
+            // Close worker selection modal
+            const workerSelectionModal = document.getElementById('workerSelectionModal');
+            const jobAssignModal = document.getElementById('jobAssignDetailModal');
+            
+            workerSelectionModal.classList.add('hidden');
+            workerSelectionModal.classList.remove('flex');
+            
+            // Show job assign modal with updated info
+            jobAssignModal.classList.remove('hidden');
+            jobAssignModal.classList.add('flex');
+
+            // Show success message
+            alert('Workers assigned successfully');
+        } else {
+            throw new Error(data.message || 'Error assigning workers');
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'Error assigning workers. Please try again.');
     });
+}
 
-    // Show worker selection modal directly
+// Also update the handleWorkerSelection function
+function handleWorkerSelection(workerId) {
+    const nextBtn = document.getElementById('nextBtn');
+    const currentStep = document.querySelector('#workerSelectionModal h2')
+        .textContent.toLowerCase()
+        .includes('annotator') ? 'annotator' : 'reviewer';
+
+    selections[currentStep] = workerId;
+    nextBtn.disabled = false;
+}
+
+// Update showWorkerSelection to properly initialize selections
+function showWorkerSelection(jobId) {
+    if (!jobId) {
+        console.error('No job ID provided');
+        return;
+    }
+
+    selections = {}; // Reset selections
+    let currentStep = 'annotator';
+
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+
+    // Hide assign modal and show worker selection modal
+    jobAssignModal.classList.add('hidden');
+    jobAssignModal.classList.remove('flex');
     workerSelectionModal.classList.remove('hidden');
     workerSelectionModal.classList.add('flex');
 
@@ -1110,6 +1189,11 @@ function showWorkerSelection(jobId) {
         const title = document.querySelector('#workerSelectionModal h2');
         const roleFilter = document.getElementById('roleFilter');
         const nextBtn = document.getElementById('nextBtn');
+
+        if (!title || !roleFilter || !nextBtn) {
+            console.error('Required modal elements not found');
+            return;
+        }
 
         title.textContent = `Choose ${currentStep.charAt(0).toUpperCase() + currentStep.slice(1)}`;
         roleFilter.value = currentStep;
@@ -1119,32 +1203,18 @@ function showWorkerSelection(jobId) {
         nextBtn.disabled = true;
     }
 
-    // Handle close button click
-    const closeButton = workerSelectionModal.querySelector('[onclick*="closeWorkerSelection"]');
-    closeButton.onclick = function() {
-        workerSelectionModal.classList.add('hidden');
-        workerSelectionModal.classList.remove('flex');
-        jobAssignModal.classList.remove('hidden');
-        jobAssignModal.classList.add('flex');
-    };
-
-    // Handle next/finish button click
     const nextBtn = document.getElementById('nextBtn');
-    nextBtn.onclick = function() {
-        if (currentStep === 'annotator') {
-            currentStep = 'reviewer';
-            updateModalContent();
-            this.disabled = true;
-        } else {
-            submitAssignments(jobId, selections.annotator, selections.reviewer);
-        }
-    };
-
-    // Handle worker selection
-    window.handleWorkerSelection = function(workerId) {
-        selections[currentStep] = workerId;
-        nextBtn.disabled = false;
-    };
+    if (nextBtn) {
+        nextBtn.onclick = function() {
+            if (currentStep === 'annotator') {
+                currentStep = 'reviewer';
+                updateModalContent();
+                this.disabled = true;
+            } else {
+                submitAssignments(jobId, selections.annotator, selections.reviewer);
+            }
+        };
+    }
 
     updateModalContent();
 }
@@ -1152,10 +1222,10 @@ function showWorkerSelection(jobId) {
 function closeWorkerSelection() {
     const workerSelectionModal = document.getElementById('workerSelectionModal');
     const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    
+
     workerSelectionModal.classList.add('hidden');
     workerSelectionModal.classList.remove('flex');
-    
+
     // Show the job assign modal again
     jobAssignModal.classList.remove('hidden');
     jobAssignModal.classList.add('flex');
@@ -1172,7 +1242,7 @@ function fetchWorkers(role) {
             }
 
             workersList.innerHTML = data.workers.map(worker => {
-                const isSelected = role === 'annotator' ? 
+                const isSelected = role === 'annotator' ?
                     worker.email === document.getElementById('assignDetailAnnotator').textContent :
                     worker.email === document.getElementById('assignDetailReviewer').textContent;
 
@@ -1186,8 +1256,8 @@ function fetchWorkers(role) {
                         </div>
                     </div>
                     <label class="inline-flex items-center">
-                        <input type="radio" 
-                               name="selected_worker" 
+                        <input type="radio"
+                               name="selected_worker"
                                value="${worker.id}"
                                ${isSelected ? 'checked' : ''}
                                class="form-radio h-5 w-5 text-blue-600"
@@ -1212,38 +1282,35 @@ function fetchWorkers(role) {
 function handleWorkerSelection(workerId) {
     const nextBtn = document.getElementById('nextBtn');
     nextBtn.disabled = false;
-    
+
     // Make sure workerId is stored as a number
     const numericId = parseInt(workerId);
     if (isNaN(numericId)) {
         console.error('Invalid worker ID');
         return;
     }
-    
+
     // Get current step and store the selection
     const currentStep = document.querySelector('#workerSelectionModal h2')
         .textContent.toLowerCase()
         .includes('annotator') ? 'annotator' : 'reviewer';
-    
+
     // Store the numeric ID
     selections[currentStep] = numericId;
 }
 
 function submitAssignments(jobId, annotatorId, reviewerId) {
-    // Validate IDs before sending
     if (!jobId || !annotatorId || !reviewerId) {
         alert('Please select both annotator and reviewer');
         return;
     }
 
-    // Ensure IDs are numbers and prepare data
     const data = {
         job_id: parseInt(jobId),
         annotator_id: parseInt(annotatorId),
         reviewer_id: parseInt(reviewerId)
     };
 
-    // Send both assignments in a single request
     fetch('/master/assign-workers/', {
         method: 'POST',
         headers: {
@@ -1252,25 +1319,20 @@ function submitAssignments(jobId, annotatorId, reviewerId) {
         },
         body: JSON.stringify(data)
     })
-    .then(response => {
-        if (!response.ok) {
-            return response.json().then(err => Promise.reject(err));
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
-            // Update UI with new data
-            document.getElementById('assignDetailAnnotator').textContent = data.annotator_name;
-            document.getElementById('assignDetailReviewer').textContent = data.reviewer_name;
+            // Update all instances of worker info in the page
+            updateAllWorkerInfo(jobId, data.annotator_name, data.reviewer_name, data.new_status);
             
-            // Close modals and show success message
+            // Close modals
             const workerSelectionModal = document.getElementById('workerSelectionModal');
             workerSelectionModal.classList.add('hidden');
             workerSelectionModal.classList.remove('flex');
-            
+
+            // Show success message and refresh the page
             alert('Workers assigned successfully');
-            window.location.reload(); // Refresh to update all data
+            window.location.reload(); // This will refresh the page to show updated data
         } else {
             throw new Error(data.message || 'Error assigning workers');
         }
@@ -1278,6 +1340,102 @@ function submitAssignments(jobId, annotatorId, reviewerId) {
     .catch(error => {
         console.error('Error:', error);
         alert(error.message || 'Error assigning workers. Please try again.');
+    });
+}
+
+// Helper function to update all worker info instances
+function updateAllWorkerInfo(jobId, annotatorName, reviewerName, newStatus) {
+    // Update both job cards (in Profile and Assign tabs)
+    const jobCards = document.querySelectorAll(`[data-job-id="${jobId}"]`);
+    jobCards.forEach(card => {
+        // Update worker info
+        const workerInfo = card.querySelector('.worker-info');
+        if (workerInfo) {
+            workerInfo.innerHTML = `
+                <p class="flex justify-between">
+                    <span>Annotator:</span>
+                    <span>${annotatorName}</span>
+                </p>
+                <p class="flex justify-between">
+                    <span>Reviewer:</span>
+                    <span>${reviewerName}</span>
+                </p>
+            `;
+        }
+
+        // Update status if provided
+        if (newStatus) {
+            const statusEl = card.querySelector('.rounded-full');
+            if (statusEl) {
+                statusEl.textContent = newStatus;
+                statusEl.className = `px-2 py-1 rounded-full text-sm ${
+                    newStatus === 'not_assign' ? 'bg-red-100 text-red-700' :
+                    newStatus === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+                    'bg-green-100 text-green-700'
+                }`;
+            }
+        }
+    });
+
+    // Update detail modal
+    const detailAnnotator = document.getElementById('detailAnnotator');
+    const detailReviewer = document.getElementById('detailReviewer');
+    if (detailAnnotator) detailAnnotator.textContent = annotatorName;
+    if (detailReviewer) detailReviewer.textContent = reviewerName;
+
+    // Update assign modal
+    const assignDetailAnnotator = document.getElementById('assignDetailAnnotator');
+    const assignDetailReviewer = document.getElementById('assignDetailReviewer');
+    if (assignDetailAnnotator) assignDetailAnnotator.textContent = annotatorName;
+    if (assignDetailReviewer) assignDetailReviewer.textContent = reviewerName;
+}
+
+// Add this to your document ready event listener
+document.addEventListener('DOMContentLoaded', function() {
+    const assignmentBtns = document.querySelectorAll('[onclick*="showWorkerSelection"]');
+    console.log('Found assignment buttons:', assignmentBtns.length);
+
+    assignmentBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            console.log('Assignment button clicked');
+            const jobId = document.getElementById('assignDetailId').textContent;
+            console.log('Job ID:', jobId);
+        });
+    });
+});
+
+function updateJobCardInfo(jobId, annotatorName, reviewerName, newStatus) {
+    const jobCards = document.querySelectorAll(`[data-job-id="${jobId}"]`);
+    jobCards.forEach(card => {
+        // Update worker info
+        let workerInfo = card.querySelector('.worker-info');
+        if (!workerInfo) {
+            workerInfo = document.createElement('div');
+            workerInfo.className = 'worker-info space-y-2 text-gray-500';
+            card.querySelector('.space-y-2').appendChild(workerInfo);
+        }
+
+        workerInfo.innerHTML = `
+            <p class="flex justify-between">
+                <span>Annotator:</span>
+                <span>${annotatorName}</span>
+            </p>
+            <p class="flex justify-between">
+                <span>Reviewer:</span>
+                <span>${reviewerName}</span>
+            </p>
+        `;
+
+        // Update status
+        const statusEl = card.querySelector('.rounded-full');
+        if (statusEl) {
+            statusEl.textContent = newStatus;
+            statusEl.className = `px-2 py-1 rounded-full text-sm ${
+                newStatus === 'Not Assigned' ? 'bg-red-100 text-red-700' :
+                newStatus === 'In Progress' ? 'bg-orange-100 text-orange-700' :
+                'bg-green-100 text-green-700'
+            }`;
+        }
     });
 }
 </script>

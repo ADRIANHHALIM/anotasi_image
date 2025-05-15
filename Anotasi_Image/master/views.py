@@ -489,59 +489,38 @@ def assign_worker(request):
 @login_required
 @require_http_methods(["POST"])
 def assign_workers(request):
-    """Assign annotator and reviewer to a job"""
     try:
         data = json.loads(request.body)
         job_id = data.get('job_id')
         annotator_id = data.get('annotator_id')
         reviewer_id = data.get('reviewer_id')
-
-        # Validate input
+        
         if not all([job_id, annotator_id, reviewer_id]):
             return JsonResponse({
                 'status': 'error',
-                'message': 'Missing required data'
+                'message': 'Missing required fields'
             }, status=400)
 
-        # Get job and workers
         job = JobProfile.objects.get(id=job_id)
         annotator = CustomUser.objects.get(id=annotator_id)
         reviewer = CustomUser.objects.get(id=reviewer_id)
-
-        # Validate worker roles
-        if annotator.role != 'annotator':
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Selected annotator does not have annotator role'
-            }, status=400)
-            
-        if reviewer.role != 'reviewer':
-            return JsonResponse({
-                'status': 'error',
-                'message': 'Selected reviewer does not have reviewer role'
-            }, status=400)
-
-        # Assign workers
+        
+        # Update job with worker assignments
         job.worker_annotator = annotator
         job.worker_reviewer = reviewer
+        job.status = 'in_progress'
         job.save()
-
+        
         return JsonResponse({
             'status': 'success',
-            'message': 'Workers assigned successfully',
-            'annotator_name': f"{annotator.first_name} {annotator.last_name}".strip() or annotator.email,
-            'reviewer_name': f"{reviewer.first_name} {reviewer.last_name}".strip() or reviewer.email
+            'annotator_name': annotator.email,
+            'reviewer_name': reviewer.email,
+            'new_status': 'In Progress'  # Match dengan get_status_display()
         })
-
-    except JobProfile.DoesNotExist:
+    except (JobProfile.DoesNotExist, CustomUser.DoesNotExist) as e:
         return JsonResponse({
             'status': 'error',
-            'message': 'Job not found'
-        }, status=404)
-    except CustomUser.DoesNotExist:
-        return JsonResponse({
-            'status': 'error',
-            'message': 'Worker not found'
+            'message': 'Job or User not found'
         }, status=404)
     except Exception as e:
         return JsonResponse({
@@ -592,3 +571,83 @@ def handle_dataset_upload(dataset_file):
         return file_path
     except Exception as e:
         raise Exception(f"Error uploading dataset file: {str(e)}")
+
+@login_required
+def get_job_profile(request, job_id):
+    try:
+        job = JobProfile.objects.select_related('worker_annotator', 'worker_reviewer').get(id=job_id)
+        
+        # Debug logging
+        print(f"Retrieved job: {job.id}, annotator: {job.worker_annotator}, reviewer: {job.worker_reviewer}")
+        
+        # Get worker information with explicit error handling
+        try:
+            worker_annotator_info = {
+                'email': job.worker_annotator.email,
+                'name': f"{job.worker_annotator.first_name} {job.worker_annotator.last_name}".strip()
+            } if job.worker_annotator else None
+        except AttributeError:
+            worker_annotator_info = None
+            print("Error accessing annotator info")
+
+        try:
+            worker_reviewer_info = {
+                'email': job.worker_reviewer.email,
+                'name': f"{job.worker_reviewer.first_name} {job.worker_reviewer.last_name}".strip()
+            } if job.worker_reviewer else None
+        except AttributeError:
+            worker_reviewer_info = None
+            print("Error accessing reviewer info")
+
+        # Get job image counts with error handling
+        try:
+            job_images = JobImage.objects.filter(job=job)
+            image_counts = {
+                'total': job_images.count(),
+                'unannotated': job_images.filter(status='unannotated').count(),
+                'in_review': job_images.filter(status='in_review').count(),
+                'in_rework': job_images.filter(status='in_rework').count(),
+                'finished': job_images.filter(status='finished').count(),
+                'issues': job_images.filter(status='issues').count(),
+            }
+        except Exception as e:
+            print(f"Error getting image counts: {e}")
+            image_counts = {
+                'total': 0, 'unannotated': 0, 'in_review': 0,
+                'in_rework': 0, 'finished': 0, 'issues': 0
+            }
+
+        data = {
+            'id': job.id,
+            'title': job.title or '',
+            'description': job.description or '',
+            'hotkey': getattr(job, 'hotkey', '') or '',
+            'worker_annotator': worker_annotator_info['email'] if worker_annotator_info else '-',
+            'worker_reviewer': worker_reviewer_info['email'] if worker_reviewer_info else '-',
+            'worker_annotator_name': worker_annotator_info['name'] if worker_annotator_info else '-',
+            'worker_reviewer_name': worker_reviewer_info['name'] if worker_reviewer_info else '-',
+            'segmentation_type': job.segmentation_type or '',
+            'shape_type': job.shape_type or '',
+            'color': job.color or '#000000',
+            'status': job.get_status_display() or 'Not Assigned',
+            'start_date': job.start_date.strftime('%Y-%m-%d') if job.start_date else None,
+            'end_date': job.end_date.strftime('%Y-%m-%d') if job.end_date else None,
+            'image_count': image_counts['total'],
+            'unannotated_count': image_counts['unannotated'],
+            'in_review_count': image_counts['in_review'],
+            'in_rework_count': image_counts['in_rework'],
+            'finished_count': image_counts['finished'],
+            'issues_count': image_counts['issues'],
+        }
+
+        # Debug logging
+        print("Sending response data:", data)
+        return JsonResponse(data)
+
+    except JobProfile.DoesNotExist:
+        return JsonResponse({'error': 'Job not found'}, status=404)
+    except Exception as e:
+        import traceback
+        print("Error in get_job_profile:")
+        print(traceback.format_exc())
+        return JsonResponse({'error': str(e)}, status=500)
