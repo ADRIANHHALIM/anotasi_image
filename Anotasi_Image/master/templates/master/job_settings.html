@@ -999,82 +999,21 @@ function uploadImages(files, jobId) {
     });
 }
 
-function showJobDetail(jobId) {
-    fetch(`/master/job-profile/${jobId}/`, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            'Accept': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data) {
-            throw new Error('No data received');
-        }
-
-        // Update modal content with null checks
-        document.getElementById('detailTitle').textContent = data.title || '-';
-        document.getElementById('detailId').textContent = data.id || '-';
-        document.getElementById('detailAnnotator').textContent = data.worker_annotator || '-';
-        document.getElementById('detailReviewer').textContent = data.worker_reviewer || '-';
-        document.getElementById('detailDescription').textContent = data.description || '-';
-        document.getElementById('detailHotkey').textContent = data.hotkey || '-';
-
-        // Update segmentation list
-        const segmentationList = document.getElementById('detailSegmentation');
-        segmentationList.innerHTML = '';
-        if (data.segmentation_type) {
-            const li = document.createElement('li');
-            li.textContent = data.segmentation_type;
-            segmentationList.appendChild(li);
-        }
-
-        document.getElementById('detailShape').textContent = data.shape_type || '-';
-        document.getElementById('detailColor').textContent = data.color || '-';
-        document.getElementById('detailColorBox').style.backgroundColor = data.color || '#FFFFFF';
-        document.getElementById('detailDate').textContent =
-            `${data.start_date || '-'} - ${data.end_date || '-'} WIB`;
-        document.getElementById('detailImageCount').textContent = data.image_count || '0';
-
-        // Set status with appropriate styling
-        const statusSpan = document.getElementById('detailStatus');
-        statusSpan.textContent = data.status || 'Unknown';
-        statusSpan.className = 'px-2 py-1 rounded-full text-sm inline-block ' +
-            (data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
-             data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
-             'bg-green-100 text-green-700');
-
-        // Update labeling progress
-        document.getElementById('detailUnannotated').textContent = data.unannotated_count || '0';
-        document.getElementById('detailInReview').textContent = data.in_review_count || '0';
-        document.getElementById('detailInRework').textContent = data.in_rework_count || '0';
-        document.getElementById('detailFinished').textContent = data.finished_count || '0';
-        document.getElementById('detailIssues').textContent = data.issues_count || '0';
-
-        // Update the image if available
-        const imageContainer = document.querySelector('#jobDetailModal .w-1/3 .bg-gray-200');
-        if (data.first_image_url) {
-            imageContainer.innerHTML = `
-                <img src="${data.first_image_url}" alt="${data.title}" 
-                     class="w-full h-full object-cover">
-            `;
-        }
-
-        // Show modal
-        detailModal.classList.remove('hidden');
-        detailModal.classList.add('flex');
-        document.body.style.overflow = 'hidden';
-    })
-    .catch(error => {
-        console.error('Error fetching job details:', error);
-        // Show a more user-friendly error message
-        const errorMessage = 'Unable to load job details. Please try again later.';
-        alert(errorMessage);
-    });
-}
-
 function showJobAssignDetail(jobId) {
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    
+    // Prevent event bubbling
+    event?.stopPropagation();
+    
+    // Add click event listener for background click
+    jobAssignModal.addEventListener('click', function(event) {
+        if (event.target === jobAssignModal) {
+            closeJobAssignModal();
+            // Prevent event from bubbling up
+            event.stopPropagation();
+        }
+    });
+
     fetch(`/master/job-profile/${jobId}/`, {
         method: 'GET',
         headers: {
@@ -1119,14 +1058,480 @@ function showJobAssignDetail(jobId) {
         document.getElementById('assignDetailFinished').textContent = data.finished_count || '0';
         document.getElementById('assignDetailIssues').textContent = data.issues_count || '0';
 
-        // Update the image if available
-        const imageContainer = document.querySelector('#jobAssignDetailModal .w-1/3 .bg-gray-200');
-        if (data.first_image_url) {
-            imageContainer.innerHTML = `
-                <img src="${data.first_image_url}" alt="${data.title}" 
-                     class="w-full h-full object-cover">
-            `;
+        // Update the Assignment button to use a direct click handler
+        const assignBtn = jobAssignModal.querySelector('button[onclick*="showWorkerSelection"]');
+        if (assignBtn) {
+            assignBtn.onclick = () => {
+                const jobId = document.getElementById('assignDetailId').textContent;
+                showWorkerSelection(jobId);
+            };
         }
+
+        // Show the modal
+        jobAssignModal.classList.remove('hidden');
+        jobAssignModal.classList.add('flex');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading job details');
+    });
+}
+
+let selections = {}; // Global selections object
+
+function submitAssignments(jobId, annotatorId, reviewerId) {
+    if (!jobId || !annotatorId || !reviewerId) {
+        alert('Please select both annotator and reviewer');
+        return;
+    }
+
+    const data = {
+        job_id: parseInt(jobId),
+        annotator_id: parseInt(annotatorId),
+        reviewer_id: parseInt(reviewerId)
+    };
+
+    fetch('/master/assign-workers/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update job cards in both tabs
+            const jobCards = document.querySelectorAll(`[data-job-id="${jobId}"]`);
+            jobCards.forEach(card => {
+                const workerInfo = card.querySelector('.worker-info');
+                if (workerInfo) {
+                    workerInfo.innerHTML = `
+                        <p class="flex justify-between">
+                            <span>Annotator:</span>
+                            <span>${data.annotator_name}</span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span>Reviewer:</span>
+                            <span>${data.reviewer_name}</span>
+                        </p>
+                    `;
+                }
+
+                // Update status
+                const statusEl = card.querySelector('.rounded-full');
+                if (statusEl) {
+                    statusEl.textContent = data.new_status;
+                    statusEl.className = `px-2 py-1 rounded-full text-sm ${
+                        data.new_status === 'not_assign' ? 'bg-red-100 text-red-700' :
+                        data.new_status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+                        'bg-green-100 text-green-700'
+                    }`;
+                }
+            });
+
+            // Update worker info in detail modal
+            const detailAnnotator = document.getElementById('detailAnnotator');
+            const detailReviewer = document.getElementById('detailReviewer');
+            if (detailAnnotator) detailAnnotator.textContent = data.annotator_name;
+            if (detailReviewer) detailReviewer.textContent = data.reviewer_name;
+
+            // Update worker info in assign modal
+            const assignDetailAnnotator = document.getElementById('assignDetailAnnotator');
+            const assignDetailReviewer = document.getElementById('assignDetailReviewer');
+            if (assignDetailAnnotator) assignDetailAnnotator.textContent = data.annotator_name;
+            if (assignDetailReviewer) assignDetailReviewer.textContent = data.reviewer_name;
+
+            // Close worker selection modal
+            const workerSelectionModal = document.getElementById('workerSelectionModal');
+            const jobAssignModal = document.getElementById('jobAssignDetailModal');
+
+            workerSelectionModal.classList.add('hidden');
+            workerSelectionModal.classList.remove('flex');
+
+            // Show job assign modal with updated info
+            jobAssignModal.classList.remove('hidden');
+            jobAssignModal.classList.add('flex');
+
+            // Show success message
+            alert('Workers assigned successfully');
+        } else {
+            throw new Error(data.message || 'Error assigning workers');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'Error assigning workers. Please try again.');
+    });
+}
+
+// Update showWorkerSelection to properly initialize selections
+function showWorkerSelection(jobId) {
+    console.log('showWorkerSelection called with jobId:', jobId);
+    
+    if (!jobId) {
+        console.error('No job ID provided');
+        return;
+    }
+
+    // Reset selections and set initial step
+    window.selections = {};
+    window.currentStep = 'annotator';
+
+    // Get modals
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    if (jobAssignModal) {
+        jobAssignModal.classList.add('hidden');
+        jobAssignModal.classList.remove('flex');
+    }
+    const jobDetailModal = document.getElementById('jobDetailModal');
+
+    // Hide other modals
+    [jobAssignModal, jobDetailModal].forEach(modal => {
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    });
+
+    // Update modal content
+    const title = workerSelectionModal.querySelector('h2');
+    const roleFilter = document.getElementById('roleFilter');
+    const nextBtn = document.getElementById('nextBtn');
+    const workersList = document.getElementById('workersList');
+
+    if (title) title.textContent = 'Choose Annotator';
+    if (roleFilter) {
+        roleFilter.value = 'annotator';
+        roleFilter.disabled = true;
+    }
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.textContent = 'Next';
+        
+        // Set up next button click handler
+        nextBtn.onclick = () => {
+            if (window.currentStep === 'annotator') {
+                // Move to reviewer selection
+                window.currentStep = 'reviewer';
+                title.textContent = 'Choose Reviewer';
+                roleFilter.value = 'reviewer';
+                nextBtn.textContent = 'Finish';
+                nextBtn.disabled = true;
+                // Clear previous selections in the UI
+                const radios = workersList.querySelectorAll('input[type="radio"]');
+                radios.forEach(radio => radio.checked = false);
+                // Fetch reviewers
+                fetchWorkers('reviewer');
+            } else {
+                // Submit final selections
+                submitAssignments(jobId, window.selections.annotator, window.selections.reviewer);
+            }
+        };
+    }
+
+    // Show loading state
+    if (workersList) {
+        workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
+    }
+
+    // Show worker selection modal
+    workerSelectionModal.classList.remove('hidden');
+    workerSelectionModal.classList.add('flex');
+
+    // Fetch initial workers
+    fetchWorkers('annotator');
+}
+// Update handleWorkerSelection function
+function handleWorkerSelection(workerId) {
+    console.log('Worker selected:', workerId);
+    
+    const nextBtn = document.getElementById('nextBtn');
+    const currentStep = document.querySelector('#workerSelectionModal h2')
+        .textContent.toLowerCase()
+        .includes('annotator') ? 'annotator' : 'reviewer';
+
+    // Update radio button state
+    const radioButtons = document.querySelectorAll('input[name="selected_worker"]');
+    radioButtons.forEach(radio => {
+        radio.checked = radio.value === workerId.toString();
+    });
+
+    // Store selection
+    window.selections[currentStep] = workerId;
+    
+    // Enable next button
+    if (nextBtn) {
+        nextBtn.disabled = false;
+    }
+
+    console.log('Current selections:', window.selections);
+}
+
+// Add close button functionality
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Job Assign Modal close handler
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    if (jobAssignModal) {
+        // Add close button to modal header
+        const closeButton = document.createElement('button');
+        closeButton.className = 'absolute top-4 right-4 text-gray-500 hover:text-gray-700';
+        closeButton.innerHTML = `
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        `;
+        closeButton.onclick = () => closeAllModals();
+        
+        const header = jobAssignModal.querySelector('.p-8');
+        if (header) {
+            header.insertBefore(closeButton, header.firstChild);
+        }
+
+        // Background click handler
+        jobAssignModal.addEventListener('click', function(event) {
+            if (event.target === jobAssignModal) {
+                closeAllModals();
+            }
+        });
+    }
+
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    if (workerSelectionModal) {
+        // Update cancel button
+        const cancelBtn = workerSelectionModal.querySelector('button[onclick="closeWorkerSelection()"]');
+        if (cancelBtn) {
+            cancelBtn.onclick = (e) => {
+                e.preventDefault();
+                closeWorkerSelection();
+            };
+        }
+
+        // Background click handler
+        workerSelectionModal.addEventListener('click', function(event) {
+            if (event.target === workerSelectionModal) {
+                closeWorkerSelection();
+            }
+        });
+
+        // Close button in header
+        const closeBtn = workerSelectionModal.querySelector('button.text-gray-500');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                closeWorkerSelection();
+            };
+        }
+    }
+});
+
+// Update the fetchWorkers function
+function fetchWorkers(role) {
+    console.log('Fetching workers for role:', role);
+    
+    const workersList = document.getElementById('workersList');
+    if (!workersList) return;
+
+    // Show loading state
+    workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
+
+    fetch(`/master/get-workers/${role}/`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        if (!data.workers || data.workers.length === 0) {
+            workersList.innerHTML = '<div class="p-4 text-gray-500">No workers available for this role</div>';
+            return;
+        }
+
+        workersList.innerHTML = data.workers.map(worker => `
+            <div class="worker-item bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer p-4"
+                 onclick="handleWorkerSelection(${worker.id})">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+                        <div>
+                            <div class="font-medium">${worker.email}</div>
+                            <div class="text-sm text-gray-500">${worker.phone || 'No phone'}</div>
+                        </div>
+                    </div>
+                    <input type="radio" name="selected_worker" value="${worker.id}" 
+                           class="form-radio h-5 w-5 text-blue-600">
+                </div>
+            </div>
+        `).join('');
+    })
+    .catch(error => {
+        console.error('Error fetching workers:', error);
+        workersList.innerHTML = '<div class="p-4 text-red-500">Error loading workers. Please try again.</div>';
+    });
+}
+
+function handleWorkerSelection(workerId) {
+    console.log('Worker selected:', workerId);
+    
+    const nextBtn = document.getElementById('nextBtn');
+    const currentStep = document.querySelector('#workerSelectionModal h2')
+        .textContent.toLowerCase()
+        .includes('annotator') ? 'annotator' : 'reviewer';
+
+    // Update radio button state
+    const radioButtons = document.querySelectorAll('input[name="selected_worker"]');
+    radioButtons.forEach(radio => {
+        radio.checked = radio.value === workerId.toString();
+    });
+
+    // Store selection
+    window.selections[currentStep] = workerId;
+    
+    // Enable next button
+    if (nextBtn) {
+        nextBtn.disabled = false;
+    }
+
+    console.log('Current selections:', window.selections);
+}
+
+// Add this to your document ready event listener
+document.addEventListener('DOMContentLoaded', function() {
+    const assignmentBtns = document.querySelectorAll('[onclick*="showWorkerSelection"]');
+    console.log('Found assignment buttons:', assignmentBtns.length);
+
+    // Remove the event listeners that might interfere with the onclick attribute
+    // Instead, we'll ensure the onclick attribute works correctly
+
+    // Check if the worker selection modal exists
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    if (!workerSelectionModal) {
+        console.error('Worker selection modal not found');
+    }
+});
+
+// Add a general close modal function
+function closeAllModals() {
+    const modals = ['workerSelectionModal', 'jobAssignDetailModal', 'jobDetailModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    });
+}
+
+function closeWorkerSelection() {
+    console.log('Closing worker selection modal');
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    
+    if (workerSelectionModal) {
+        workerSelectionModal.classList.add('hidden');
+        workerSelectionModal.classList.remove('flex');
+    }
+    
+    // Show job assign modal again
+    if (jobAssignModal) {
+        jobAssignModal.classList.remove('hidden');
+        jobAssignModal.classList.add('flex');
+    }
+}
+
+function closeJobAssignModal() {
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    const jobDetailModal = document.getElementById('jobDetailModal');
+    
+    // Close job assign modal
+    if (jobAssignModal) {
+        jobAssignModal.classList.add('hidden');
+        jobAssignModal.classList.remove('flex');
+    }
+    
+    // Ensure job detail modal stays hidden
+    if (jobDetailModal) {
+        jobDetailModal.classList.add('hidden');
+        jobDetailModal.classList.remove('flex');
+    }
+
+    // Stop event propagation to prevent other modals from showing
+    event?.stopPropagation();
+}
+
+// Update the click handler in the job card
+function showJobAssignDetail(jobId) {
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    
+    // Prevent event bubbling
+    event?.stopPropagation();
+    
+    // Add click event listener for background click
+    jobAssignModal.addEventListener('click', function(event) {
+        if (event.target === jobAssignModal) {
+            closeJobAssignModal();
+            // Prevent event from bubbling up
+            event.stopPropagation();
+        }
+    });
+
+    fetch(`/master/job-profile/${jobId}/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Accept': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update assign modal content
+        document.getElementById('assignDetailTitle').textContent = data.title;
+        document.getElementById('assignDetailId').textContent = data.id;
+        document.getElementById('assignDetailAnnotator').textContent = data.worker_annotator || '-';
+        document.getElementById('assignDetailReviewer').textContent = data.worker_reviewer || '-';
+        document.getElementById('assignDetailDescription').textContent = data.description;
+
+        // Update segmentation list
+        const segmentationList = document.getElementById('assignDetailSegmentation');
+        segmentationList.innerHTML = '';
+        if (data.segmentation_type) {
+            const li = document.createElement('li');
+            li.textContent = data.segmentation_type;
+            segmentationList.appendChild(li);
+        }
+
+        document.getElementById('assignDetailShape').textContent = data.shape_type;
+        document.getElementById('assignDetailImageCount').textContent = data.image_count;
+
+        // Update status with styling
+        const statusSpan = document.getElementById('assignDetailStatus');
+        statusSpan.textContent = data.status;
+        statusSpan.className = `px-2 py-1 rounded-full text-sm ${
+            data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
+            data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+            'bg-green-100 text-green-700'
+        }`;
+
+        // Update labeling progress
+        document.getElementById('assignDetailUnannotated').textContent = data.unannotated_count || '0';
+        document.getElementById('assignDetailInReview').textContent = data.in_review_count || '0';
+        document.getElementById('assignDetailInRework').textContent = data.in_rework_count || '0';
+        document.getElementById('assignDetailFinished').textContent = data.finished_count || '0';
+        document.getElementById('assignDetailIssues').textContent = data.issues_count || '0';
 
         // Update the Assignment button to use a direct click handler
         const assignBtn = jobAssignModal.querySelector('button[onclick*="showWorkerSelection"]');

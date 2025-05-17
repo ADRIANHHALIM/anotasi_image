@@ -169,8 +169,31 @@
 
             <!-- Main Image Area -->
             <div class="flex-1 relative overflow-auto p-4">
-                <div id="imageContainer" class="w-full h-full flex items-center justify-center">
-                    <img id="mainImage" src="" alt="Main Image" class="max-w-full max-h-full object-contain">
+                <!-- Image Slider Container -->
+                <div id="imageSliderContainer" class="w-full h-full flex items-center justify-center relative">
+                    <!-- Previous Button -->
+                    <button id="prevImage" class="absolute left-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Image Container -->
+                    <div id="imageContainer" class="w-full h-full flex items-center justify-center">
+                        <img id="mainImage" src="" alt="Main Image" class="max-w-full max-h-full object-contain">
+                    </div>
+
+                    <!-- Next Button -->
+                    <button id="nextImage" class="absolute right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
+                    <!-- Image Counter -->
+                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full">
+                        <span id="currentImageIndex">1</span>/<span id="totalImages">1</span>
+                    </div>
                 </div>
 
                 <!-- Issue Information Box -->
@@ -220,62 +243,139 @@
 </div>
 
 <script>
-function showIssueDetail(jobId) {
-    const modal = document.getElementById('issueDetailModal');
-    const modalTitle = document.getElementById('modalJobTitle');
-    const mainImage = document.getElementById('mainImage');
+let currentImages = [];
+let currentImageIndex = 0;
+
+function showImage(index) {
+    console.log("=== Show Image Debug ===");
+    console.log("Showing image at index:", index);
+    console.log("Total images:", currentImages.length);
+    
+    if (index < 0 || index >= currentImages.length) {
+        console.log("Invalid index, returning");
+        return;
+    }
+    
+    const image = currentImages[index];
+    console.log("Image data:", image);
     
     // Show loading state
+    const imageContainer = document.getElementById('imageContainer');
+    imageContainer.innerHTML = `
+        <div class="flex items-center justify-center w-full h-full">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        </div>
+    `;
+    
+    // Create new image element
+    const img = new Image();
+    img.onload = function() {
+        img.id = 'mainImage';
+        img.className = 'max-w-full max-h-[70vh] object-contain';
+        imageContainer.innerHTML = '';
+        imageContainer.appendChild(img);
+        
+        // Update issue details
+        document.getElementById('issueAnnotator').textContent = image.annotator || 'Unassigned';
+        document.getElementById('issueDescription').textContent = image.issue_description || 'No description';
+        
+        // Update counter
+        document.getElementById('currentImageIndex').textContent = (index + 1).toString();
+        document.getElementById('totalImages').textContent = currentImages.length.toString();
+        
+        currentImageIndex = index;
+        updateImageControls();
+    };
+    
+    img.onerror = function() {
+        console.error('Failed to load image:', image.url);
+        imageContainer.innerHTML = `
+            <div class="text-center text-gray-500">
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p>Failed to load image</p>
+            </div>
+        `;
+    };
+    
+    img.src = image.url;
+}
+
+function showIssueDetail(jobId) {
+    console.log("=== Debug Info ===");
+    console.log("Opening modal for job:", jobId);
+    
+    const modal = document.getElementById('issueDetailModal');
+    const modalTitle = document.getElementById('modalJobTitle');
+    const imageContainer = document.getElementById('imageContainer');
+    
+    // Verify elements exist
+    console.log("Modal exists:", !!modal);
+    console.log("Modal title exists:", !!modalTitle);
+    console.log("Image container exists:", !!imageContainer);
+    
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modalTitle.textContent = 'Loading...';
-    mainImage.src = '';
     
     fetch(`/master/issue-detail/${jobId}/`)
-        .then(response => response.json())
+        .then(response => {
+            console.log("Response status:", response.status);
+            return response.json();
+        })
         .then(data => {
-            console.log('Received data:', data); // Debug log
+            console.log("Received data:", data);
+            console.log("Number of images:", data.images?.length || 0);
+            if (data.images && data.images.length > 0) {
+                console.log("First image URL:", data.images[0].url);
+            }
             
             modalTitle.textContent = data.title || 'No Title';
+            updateStatusCounts(data);
             
-            // Update status counts
-            document.getElementById('modalUnannotated').textContent = data.unannotated_count || 0;
-            document.getElementById('modalInReview').textContent = data.in_review_count || 0;
-            document.getElementById('modalInRework').textContent = data.in_rework_count || 0;
-            document.getElementById('modalIssues').textContent = data.issues_count || 0;
-            document.getElementById('modalFinished').textContent = data.finished_count || 0;
-
-            // Update image and issue details if available
             if (data.images && data.images.length > 0) {
-                const image = data.images[0];
-                mainImage.src = image.url;
-                mainImage.style.display = 'block';
-                document.getElementById('issueAnnotator').textContent = image.annotator;
-                document.getElementById('issueDescription').textContent = image.issue_description;
+                console.log('Found images:', data.images);
+                currentImages = data.images;
+                showImage(0);
             } else {
-                mainImage.style.display = 'none';
-                document.getElementById('issueAnnotator').textContent = 'No annotator';
-                document.getElementById('issueDescription').textContent = 'No issues found';
+                console.log('No images found');
+                showError('No images available');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            modalTitle.textContent = 'Error Loading Job';
-            alert('Error loading issue details: ' + error.message);
+            console.error("Error:", error);
         });
 }
 
-function closeIssueModal() {
-    const modal = document.getElementById('issueDetailModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
+function updateStatusCounts(data) {
+    document.getElementById('modalUnannotated').textContent = data.unannotated_count || '0';
+    document.getElementById('modalInReview').textContent = data.in_review_count || '0';
+    document.getElementById('modalInRework').textContent = data.in_rework_count || '0';
+    document.getElementById('modalIssues').textContent = data.issues_count || '0';
+    document.getElementById('modalFinished').textContent = data.finished_count || '0';
 }
 
-// Close modal when clicking outside the content area
-document.getElementById('issueDetailModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeIssueModal();
+function updateImageControls() {
+    const prevButton = document.getElementById('prevImage');
+    const nextButton = document.getElementById('nextImage');
+    
+    if (prevButton) prevButton.style.display = currentImageIndex > 0 ? 'block' : 'none';
+    if (nextButton) nextButton.style.display = currentImageIndex < currentImages.length - 1 ? 'block' : 'none';
+}
+
+function showError(message) {
+    const imageContainer = document.getElementById('imageContainer');
+    if (imageContainer) {
+        imageContainer.innerHTML = `
+            <div class="text-center text-gray-500">
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p>${message}</p>
+            </div>
+        `;
     }
-});
+}
 </script>
 {% endblock %}

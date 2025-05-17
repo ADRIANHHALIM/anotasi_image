@@ -132,6 +132,14 @@ def job_image_path(instance, filename):
     return f'job_images/{instance.job.id}/{filename}'
 
 class JobImage(models.Model):
+    STATUS_CHOICES = [
+        ('unannotated', 'Unannotated'),
+        ('in_review', 'In Review'),
+        ('in_rework', 'In Rework'),
+        ('finished', 'Finished'),
+        ('Issue', 'Issue'),  # Make sure 'Issue' is exactly as used in the filter
+    ]
+    
     job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='job_images/')
     annotator = models.ForeignKey(
@@ -141,9 +149,18 @@ class JobImage(models.Model):
         blank=True,
         related_name='annotated_images'
     )
-    status = models.CharField(max_length=20, default='unannotated')
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='unannotated'
+    )
     issue_description = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Image {self.id} for Job {self.job.title}"
+
+    def get_image_url(self):
+        if self.image:
+            return self.image.url
+        return None

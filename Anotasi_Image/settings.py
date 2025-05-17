@@ -40,8 +40,12 @@ ADMIN_PORT = 8001
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
+# Make sure these settings are correct
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Add this for debugging
+DEBUG = True
 
 # Django AllAuth settings
 ACCOUNT_SETTINGS = {
