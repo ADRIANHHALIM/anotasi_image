@@ -121,23 +121,29 @@ class JobProfile(models.Model):
     def __str__(self):
         return self.title
 
+    def get_first_image_url(self):
+        first_image = self.images.first()
+        if first_image:
+            return first_image.image.url
+        return None
+
 def job_image_path(instance, filename):
     # Generate path like: job_images/1/image.jpg
     return f'job_images/{instance.job.id}/{filename}'
 
 class JobImage(models.Model):
-    STATUS_CHOICES = [
-        ('unannotated', 'Unannotated'),
-        ('in_review', 'In Review'),
-        ('in_rework', 'In Rework'),
-        ('finished', 'Finished'),
-        ('has_issues', 'Has Issues')
-    ]
-    
-    job = models.ForeignKey(JobProfile, related_name='images', on_delete=models.CASCADE)
-    image = models.ImageField(upload_to=job_image_path)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unannotated')  # Changed maxlength to max_length
+    job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='job_images/')
+    annotator = models.ForeignKey(
+        'CustomUser',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='annotated_images'
+    )
+    status = models.CharField(max_length=20, default='unannotated')
+    issue_description = models.TextField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Image {self.id} for Job {self.job.title}"

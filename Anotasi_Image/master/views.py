@@ -11,6 +11,8 @@ from django.contrib.auth import get_backends
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.db.models import Count, Q
+from django.utils import timezone
 import json
 from .tokens import account_activation_token
 from .models import CustomUser, Dataset, JobProfile, JobImage
@@ -168,8 +170,57 @@ def job_settings_view(request):
     return render(request, "master/job_settings.html", {'jobs': jobs})
 
 @login_required
-def issue_solving_view(request):
-    return render(request, "master/issue_solving.html")
+def issue_detail_view(request, job_id):
+    """View for handling individual job issue details"""
+    try:
+        job = get_object_or_404(JobProfile, id=job_id)
+        
+        # Get counts for different statuses
+        job_images = JobImage.objects.filter(job=job)
+        data = {
+            'title': job.title,
+            'unannotated_count': job_images.filter(status='unannotated').count(),
+            'in_review_count': job_images.filter(status='in_review').count(),
+            'in_rework_count': job_images.filter(status='in_rework').count(),
+            'finished_count': job_images.filter(status='finished').count(),
+            'issues_count': job_images.filter(status='Issue').count(),
+            'images': []
+        }
+
+        # Get images with issues and their details
+        images_with_issues = job_images.filter(status='Issue')
+        
+        # Debug print
+        print(f"Found {images_with_issues.count()} images with issues")
+        
+        for img in images_with_issues:
+            try:
+                image_url = img.image.url if img.image else None
+                data['images'].append({
+                    'url': image_url,
+                    'issue_number': img.id,
+                    'annotator': img.annotator.email if img.annotator else 'Unassigned',
+                    'date': img.updated_at.strftime('%d/%m/%Y %H:%M'),
+                    'status': 'Issue',
+                    'issue_description': img.issue_description or 'No description provided'
+                })
+            except Exception as e:
+                print(f"Error processing image {img.id}: {e}")
+                continue
+
+        return JsonResponse(data)
+    except Exception as e:
+        print(f"Error in issue_detail_view: {e}")
+        return JsonResponse({
+            'error': str(e),
+            'title': 'Error',
+            'unannotated_count': 0,
+            'in_review_count': 0,
+            'in_rework_count': 0,
+            'finished_count': 0,
+            'issues_count': 0,
+            'images': []
+        }, status=200)
 
 @login_required
 def performance_view(request):
@@ -331,13 +382,11 @@ def job_profile_detail(request, job_id):
             'in_review_count': in_review_count,
             'in_rework_count': in_rework_count,
             'finished_count': finished_count,
-            'issues_count': issues_count
+            'issues_count': issues_count,
+            'first_image_url': job.get_first_image_url(),  # Add first image URL to response data
         }
         return JsonResponse(data)
     except Exception as e:
-        import traceback
-        print("Error in job_profile_detail:")
-        print(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
 
 # Daataset flow for edit and delete
@@ -675,3 +724,42 @@ def get_job_profile(request, job_id):
         print("Error in get_job_profile:")
         print(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
+
+@login_required
+def issue_solving_view(request):
+    """View for handling issue solving page"""
+    try:
+        # Get all jobs with their image counts and issues
+        jobs = JobProfile.objects.all().order_by('-start_date')
+        
+        # Add additional data for each job
+        for job in jobs:
+            # Get total images count
+            total_images = job.images.count()
+            
+            # Get finished images count
+            finished_count = job.images.filter(status='finished').count()
+            
+            # Calculate progress percentage
+            job.progress_percentage = int((finished_count / total_images * 100) if total_images > 0 else 0)
+            
+            # Get issues count
+            job.issues_count = job.images.filter(status='Issue').count()
+            
+            # Get first image for display
+            job.first_image_url = job.get_first_image_url()
+
+        context = {
+            'jobs': jobs,
+            'current_date': timezone.now().strftime('%d %B %Y')
+        }
+        
+        return render(request, 'master/Issue_solving.html', context)
+        
+    except Exception as e:
+        print(f"Error in issue_solving_view: {e}")
+        return render(request, 'master/Issue_solving.html', {
+            'jobs': [],
+            'current_date': timezone.now().strftime('%d %B %Y'),
+            'error': str(e)
+        })
