@@ -74,7 +74,7 @@
         <div class="grid grid-cols-2 gap-6">
             {% for job in jobs %}
             <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer job-card"
-                onclick="showJobAssignDetail({{ job.id }})"
+                onclick="showJobAssignDetail({{ job.id }}); event.stopPropagation();"
                 data-job-id="{{ job.id }}">
                 <div class="flex items-start space-x-4">
                     <div class="w-24 h-24 bg-gray-200 rounded-lg"></div>
@@ -112,12 +112,14 @@
 
 <!-- Modals -->
 <!-- Worker Selection Modal -->
-<div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
-    <div class="bg-white rounded-lg w-2/3 max-h-[80vh] overflow-y-auto">
+<div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg w-2/3 max-h-[80vh] overflow-y-auto relative">
         <div class="p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold">Choose Worker</h2>
-                <button onclick="closeWorkerSelection()" class="text-gray-500 hover:text-gray-700">
+                <button type="button" 
+                        class="text-gray-500 hover:text-gray-700"
+                        onclick="closeWorkerSelection()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -138,15 +140,18 @@
                 </select>
             </div>
 
-            <!-- Workers List -->
+            <!-- Workers List Section -->
             <div class="space-y-2" id="workersList">
-                <!-- Workers will be populated here dynamically -->
+                <div class="p-4 text-gray-500 text-center">
+                    Loading workers...
+                </div>
             </div>
 
             <!-- Footer -->
             <div class="flex justify-end mt-6">
-                <button onclick="closeWorkerSelection()"
-                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg mr-2">
+                <button type="button"
+                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg mr-2"
+                        onclick="closeWorkerSelection()">
                     Cancel
                 </button>
                 <button id="nextBtn"
@@ -160,7 +165,7 @@
 </div>
 
 <!-- Job Detail Modal -->
-<div id="jobDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<div id="jobDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white rounded-lg w-3/4 max-h-[90vh] overflow-y-auto m-auto relative">
         <div class="p-8">
             <!-- Modify the Labeling Progress section -->
@@ -286,9 +291,20 @@
 </div>
 
 <!-- Job Assign Detail Modal -->
-<div id="jobAssignDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+<div id="jobAssignDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
     <div class="bg-white rounded-lg w-3/4 max-h-[90vh] overflow-y-auto m-auto relative">
         <div class="p-8">
+            <!-- Add a close button in the header -->
+            <div class="flex justify-between items-center mb-6">
+                <button type="button" 
+                        class="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+                        onclick="closeJobAssignModal()">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
             <!-- Labeling Progress -->
             <div class="mb-8">
                 <h3 class="text-xl font-semibold mb-4">Labeling Progress</h3>
@@ -374,10 +390,14 @@
 
             <!-- Bottom section with Assignment button -->
             <div class="flex justify-end mt-8">
-                <button onclick="showWorkerSelection(document.getElementById('assignDetailId').textContent)"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                <!-- Update the Assignment button -->
+                <div class="flex justify-end mt-8">
+                <button type="button" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        onclick="showWorkerSelection({{ job.id }})">
                     Assignment
                 </button>
+                </div>
             </div>
         </div>
     </div>
@@ -960,24 +980,19 @@ function uploadImages(files, jobId) {
 }
 
 function showJobAssignDetail(jobId) {
-    // Get all modals
-    const jobDetailModal = document.getElementById('jobDetailModal');
     const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    const addImageModal = document.querySelector('.modal-add-image');
-    const addImageBtn = document.querySelector('[onclick*="handleAddImage"]'); // Get the Add Image button
-
-    // Hide all modals first
-    [jobDetailModal, jobAssignModal, addImageModal].forEach(modal => {
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+    
+    // Prevent event bubbling
+    event?.stopPropagation();
+    
+    // Add click event listener for background click
+    jobAssignModal.addEventListener('click', function(event) {
+        if (event.target === jobAssignModal) {
+            closeJobAssignModal();
+            // Prevent event from bubbling up
+            event.stopPropagation();
         }
     });
-
-    // Hide Add Image button when in Job Assign context
-    if (addImageBtn) {
-        addImageBtn.style.display = 'none';
-    }
 
     fetch(`/master/job-profile/${jobId}/`, {
         method: 'GET',
@@ -1023,48 +1038,24 @@ function showJobAssignDetail(jobId) {
         document.getElementById('assignDetailFinished').textContent = data.finished_count || '0';
         document.getElementById('assignDetailIssues').textContent = data.issues_count || '0';
 
-        // Show only the assign modal
+        // Update the Assignment button to use a direct click handler
+        const assignBtn = jobAssignModal.querySelector('button[onclick*="showWorkerSelection"]');
+        if (assignBtn) {
+            assignBtn.onclick = () => {
+                const jobId = document.getElementById('assignDetailId').textContent;
+                showWorkerSelection(jobId);
+            };
+        }
+
+        // Show the modal
         jobAssignModal.classList.remove('hidden');
         jobAssignModal.classList.add('flex');
-
-        // Add click event listener for modal background
-        jobAssignModal.addEventListener('click', function(event) {
-            if (event.target === jobAssignModal) {
-                jobAssignModal.classList.add('hidden');
-                jobAssignModal.classList.remove('flex');
-            }
-        });
     })
     .catch(error => {
         console.error('Error:', error);
         alert('Error loading job details');
     });
 }
-
-// Add event listener to handle modal close
-document.addEventListener('DOMContentLoaded', function() {
-    // Add click event listener for modal background
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-    jobAssignModal.addEventListener('click', function(event) {
-        if (event.target === jobAssignModal) {
-            jobAssignModal.classList.add('hidden');
-            jobAssignModal.classList.remove('flex');
-
-            // Hide other modals if they exist
-            const jobDetailModal = document.getElementById('jobDetailModal');
-            const addImageModal = document.querySelector('.modal-add-image');
-
-            if (jobDetailModal) {
-                jobDetailModal.classList.add('hidden');
-                jobDetailModal.classList.remove('flex');
-            }
-            if (addImageModal) {
-                addImageModal.classList.add('hidden');
-                addImageModal.classList.remove('flex');
-            }
-        }
-    });
-});
 
 let selections = {}; // Global selections object
 
@@ -1135,10 +1126,10 @@ function submitAssignments(jobId, annotatorId, reviewerId) {
             // Close worker selection modal
             const workerSelectionModal = document.getElementById('workerSelectionModal');
             const jobAssignModal = document.getElementById('jobAssignDetailModal');
-            
+
             workerSelectionModal.classList.add('hidden');
             workerSelectionModal.classList.remove('flex');
-            
+
             // Show job assign modal with updated info
             jobAssignModal.classList.remove('hidden');
             jobAssignModal.classList.add('flex');
@@ -1155,239 +1146,247 @@ function submitAssignments(jobId, annotatorId, reviewerId) {
     });
 }
 
-// Also update the handleWorkerSelection function
-function handleWorkerSelection(workerId) {
-    const nextBtn = document.getElementById('nextBtn');
-    const currentStep = document.querySelector('#workerSelectionModal h2')
-        .textContent.toLowerCase()
-        .includes('annotator') ? 'annotator' : 'reviewer';
-
-    selections[currentStep] = workerId;
-    nextBtn.disabled = false;
-}
-
 // Update showWorkerSelection to properly initialize selections
 function showWorkerSelection(jobId) {
+    console.log('showWorkerSelection called with jobId:', jobId);
+    
     if (!jobId) {
         console.error('No job ID provided');
         return;
     }
 
-    selections = {}; // Reset selections
-    let currentStep = 'annotator';
+    // Reset selections and set initial step
+    window.selections = {};
+    window.currentStep = 'annotator';
 
+    // Get modals
     const workerSelectionModal = document.getElementById('workerSelectionModal');
     const jobAssignModal = document.getElementById('jobAssignDetailModal');
-
-    // Hide assign modal and show worker selection modal
-    jobAssignModal.classList.add('hidden');
-    jobAssignModal.classList.remove('flex');
-    workerSelectionModal.classList.remove('hidden');
-    workerSelectionModal.classList.add('flex');
-
-    function updateModalContent() {
-        const title = document.querySelector('#workerSelectionModal h2');
-        const roleFilter = document.getElementById('roleFilter');
-        const nextBtn = document.getElementById('nextBtn');
-
-        if (!title || !roleFilter || !nextBtn) {
-            console.error('Required modal elements not found');
-            return;
-        }
-
-        title.textContent = `Choose ${currentStep.charAt(0).toUpperCase() + currentStep.slice(1)}`;
-        roleFilter.value = currentStep;
-        roleFilter.disabled = true;
-        fetchWorkers(currentStep);
-        nextBtn.textContent = currentStep === 'annotator' ? 'Next' : 'Finish';
-        nextBtn.disabled = true;
+    if (jobAssignModal) {
+        jobAssignModal.classList.add('hidden');
+        jobAssignModal.classList.remove('flex');
     }
+    const jobDetailModal = document.getElementById('jobDetailModal');
 
+    // Hide other modals
+    [jobAssignModal, jobDetailModal].forEach(modal => {
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    });
+
+    // Update modal content
+    const title = workerSelectionModal.querySelector('h2');
+    const roleFilter = document.getElementById('roleFilter');
     const nextBtn = document.getElementById('nextBtn');
+    const workersList = document.getElementById('workersList');
+
+    if (title) title.textContent = 'Choose Annotator';
+    if (roleFilter) {
+        roleFilter.value = 'annotator';
+        roleFilter.disabled = true;
+    }
     if (nextBtn) {
-        nextBtn.onclick = function() {
-            if (currentStep === 'annotator') {
-                currentStep = 'reviewer';
-                updateModalContent();
-                this.disabled = true;
+        nextBtn.disabled = true;
+        nextBtn.textContent = 'Next';
+        
+        // Set up next button click handler
+        nextBtn.onclick = () => {
+            if (window.currentStep === 'annotator') {
+                // Move to reviewer selection
+                window.currentStep = 'reviewer';
+                title.textContent = 'Choose Reviewer';
+                roleFilter.value = 'reviewer';
+                nextBtn.textContent = 'Finish';
+                nextBtn.disabled = true;
+                // Clear previous selections in the UI
+                const radios = workersList.querySelectorAll('input[type="radio"]');
+                radios.forEach(radio => radio.checked = false);
+                // Fetch reviewers
+                fetchWorkers('reviewer');
             } else {
-                submitAssignments(jobId, selections.annotator, selections.reviewer);
+                // Submit final selections
+                submitAssignments(jobId, window.selections.annotator, window.selections.reviewer);
             }
         };
     }
 
-    updateModalContent();
-}
-
-function closeWorkerSelection() {
-    const workerSelectionModal = document.getElementById('workerSelectionModal');
-    const jobAssignModal = document.getElementById('jobAssignDetailModal');
-
-    workerSelectionModal.classList.add('hidden');
-    workerSelectionModal.classList.remove('flex');
-
-    // Show the job assign modal again
-    jobAssignModal.classList.remove('hidden');
-    jobAssignModal.classList.add('flex');
-}
-
-function fetchWorkers(role) {
-    fetch(`/master/get-workers/${role}/`)
-        .then(response => response.json())
-        .then(data => {
-            const workersList = document.getElementById('workersList');
-            if (!data.workers || data.workers.length === 0) {
-                workersList.innerHTML = '<div class="p-4 text-gray-500">No workers available for this role</div>';
-                return;
-            }
-
-            workersList.innerHTML = data.workers.map(worker => {
-                const isSelected = role === 'annotator' ?
-                    worker.email === document.getElementById('assignDetailAnnotator').textContent :
-                    worker.email === document.getElementById('assignDetailReviewer').textContent;
-
-                return `
-                <div class="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
-                        <div>
-                            <p class="font-medium">${worker.email}</p>
-                            <p class="text-sm text-gray-500">${worker.phone || ''}</p>
-                        </div>
-                    </div>
-                    <label class="inline-flex items-center">
-                        <input type="radio"
-                               name="selected_worker"
-                               value="${worker.id}"
-                               ${isSelected ? 'checked' : ''}
-                               class="form-radio h-5 w-5 text-blue-600"
-                               onchange="handleWorkerSelection('${worker.id}')">
-                    </label>
-                </div>
-                `;
-            }).join('');
-
-            // Enable/disable next button based on selection
-            const nextBtn = document.getElementById('nextBtn');
-            nextBtn.disabled = !document.querySelector('input[name="selected_worker"]:checked');
-        })
-        .catch(error => {
-            console.error('Error fetching workers:', error);
-            const workersList = document.getElementById('workersList');
-            workersList.innerHTML = '<div class="p-4 text-red-500">Error loading workers</div>';
-        });
-}
-
-// Update handleWorkerSelection to ensure we store numeric IDs
-function handleWorkerSelection(workerId) {
-    const nextBtn = document.getElementById('nextBtn');
-    nextBtn.disabled = false;
-
-    // Make sure workerId is stored as a number
-    const numericId = parseInt(workerId);
-    if (isNaN(numericId)) {
-        console.error('Invalid worker ID');
-        return;
+    // Show loading state
+    if (workersList) {
+        workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
     }
 
-    // Get current step and store the selection
+    // Show worker selection modal
+    workerSelectionModal.classList.remove('hidden');
+    workerSelectionModal.classList.add('flex');
+
+    // Fetch initial workers
+    fetchWorkers('annotator');
+}
+// Update handleWorkerSelection function
+function handleWorkerSelection(workerId) {
+    console.log('Worker selected:', workerId);
+    
+    const nextBtn = document.getElementById('nextBtn');
     const currentStep = document.querySelector('#workerSelectionModal h2')
         .textContent.toLowerCase()
         .includes('annotator') ? 'annotator' : 'reviewer';
 
-    // Store the numeric ID
-    selections[currentStep] = numericId;
-}
+    // Update radio button state
+    const radioButtons = document.querySelectorAll('input[name="selected_worker"]');
+    radioButtons.forEach(radio => {
+        radio.checked = radio.value === workerId.toString();
+    });
 
-function submitAssignments(jobId, annotatorId, reviewerId) {
-    if (!jobId || !annotatorId || !reviewerId) {
-        alert('Please select both annotator and reviewer');
-        return;
+    // Store selection
+    window.selections[currentStep] = workerId;
+    
+    // Enable next button
+    if (nextBtn) {
+        nextBtn.disabled = false;
     }
 
-    const data = {
-        job_id: parseInt(jobId),
-        annotator_id: parseInt(annotatorId),
-        reviewer_id: parseInt(reviewerId)
-    };
+    console.log('Current selections:', window.selections);
+}
 
-    fetch('/master/assign-workers/', {
-        method: 'POST',
+// Add close button functionality
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Job Assign Modal close handler
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    if (jobAssignModal) {
+        // Add close button to modal header
+        const closeButton = document.createElement('button');
+        closeButton.className = 'absolute top-4 right-4 text-gray-500 hover:text-gray-700';
+        closeButton.innerHTML = `
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        `;
+        closeButton.onclick = () => closeAllModals();
+        
+        const header = jobAssignModal.querySelector('.p-8');
+        if (header) {
+            header.insertBefore(closeButton, header.firstChild);
+        }
+
+        // Background click handler
+        jobAssignModal.addEventListener('click', function(event) {
+            if (event.target === jobAssignModal) {
+                closeAllModals();
+            }
+        });
+    }
+
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    if (workerSelectionModal) {
+        // Update cancel button
+        const cancelBtn = workerSelectionModal.querySelector('button[onclick="closeWorkerSelection()"]');
+        if (cancelBtn) {
+            cancelBtn.onclick = (e) => {
+                e.preventDefault();
+                closeWorkerSelection();
+            };
+        }
+
+        // Background click handler
+        workerSelectionModal.addEventListener('click', function(event) {
+            if (event.target === workerSelectionModal) {
+                closeWorkerSelection();
+            }
+        });
+
+        // Close button in header
+        const closeBtn = workerSelectionModal.querySelector('button.text-gray-500');
+        if (closeBtn) {
+            closeBtn.onclick = (e) => {
+                e.preventDefault();
+                closeWorkerSelection();
+            };
+        }
+    }
+});
+
+// Update the fetchWorkers function
+function fetchWorkers(role) {
+    console.log('Fetching workers for role:', role);
+    
+    const workersList = document.getElementById('workersList');
+    if (!workersList) return;
+
+    // Show loading state
+    workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
+
+    fetch(`/master/get-workers/${role}/`, {
         headers: {
-            'Content-Type': 'application/json',
+            'Accept': 'application/json',
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            // Update all instances of worker info in the page
-            updateAllWorkerInfo(jobId, data.annotator_name, data.reviewer_name, data.new_status);
-            
-            // Close modals
-            const workerSelectionModal = document.getElementById('workerSelectionModal');
-            workerSelectionModal.classList.add('hidden');
-            workerSelectionModal.classList.remove('flex');
-
-            // Show success message and refresh the page
-            alert('Workers assigned successfully');
-            window.location.reload(); // This will refresh the page to show updated data
-        } else {
-            throw new Error(data.message || 'Error assigning workers');
         }
     })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        if (!data.workers || data.workers.length === 0) {
+            workersList.innerHTML = '<div class="p-4 text-gray-500">No workers available for this role</div>';
+            return;
+        }
+
+        workersList.innerHTML = data.workers.map(worker => `
+            <div class="worker-item bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors cursor-pointer p-4"
+                 onclick="handleWorkerSelection(${worker.id})">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-10 h-10 bg-gray-200 rounded-full"></div>
+                        <div>
+                            <div class="font-medium">${worker.email}</div>
+                            <div class="text-sm text-gray-500">${worker.phone || 'No phone'}</div>
+                        </div>
+                    </div>
+                    <input type="radio" name="selected_worker" value="${worker.id}" 
+                           class="form-radio h-5 w-5 text-blue-600">
+                </div>
+            </div>
+        `).join('');
+    })
     .catch(error => {
-        console.error('Error:', error);
-        alert(error.message || 'Error assigning workers. Please try again.');
+        console.error('Error fetching workers:', error);
+        workersList.innerHTML = '<div class="p-4 text-red-500">Error loading workers. Please try again.</div>';
     });
 }
 
-// Helper function to update all worker info instances
-function updateAllWorkerInfo(jobId, annotatorName, reviewerName, newStatus) {
-    // Update both job cards (in Profile and Assign tabs)
-    const jobCards = document.querySelectorAll(`[data-job-id="${jobId}"]`);
-    jobCards.forEach(card => {
-        // Update worker info
-        const workerInfo = card.querySelector('.worker-info');
-        if (workerInfo) {
-            workerInfo.innerHTML = `
-                <p class="flex justify-between">
-                    <span>Annotator:</span>
-                    <span>${annotatorName}</span>
-                </p>
-                <p class="flex justify-between">
-                    <span>Reviewer:</span>
-                    <span>${reviewerName}</span>
-                </p>
-            `;
-        }
+function handleWorkerSelection(workerId) {
+    console.log('Worker selected:', workerId);
+    
+    const nextBtn = document.getElementById('nextBtn');
+    const currentStep = document.querySelector('#workerSelectionModal h2')
+        .textContent.toLowerCase()
+        .includes('annotator') ? 'annotator' : 'reviewer';
 
-        // Update status if provided
-        if (newStatus) {
-            const statusEl = card.querySelector('.rounded-full');
-            if (statusEl) {
-                statusEl.textContent = newStatus;
-                statusEl.className = `px-2 py-1 rounded-full text-sm ${
-                    newStatus === 'not_assign' ? 'bg-red-100 text-red-700' :
-                    newStatus === 'in_progress' ? 'bg-orange-100 text-orange-700' :
-                    'bg-green-100 text-green-700'
-                }`;
-            }
-        }
+    // Update radio button state
+    const radioButtons = document.querySelectorAll('input[name="selected_worker"]');
+    radioButtons.forEach(radio => {
+        radio.checked = radio.value === workerId.toString();
     });
 
-    // Update detail modal
-    const detailAnnotator = document.getElementById('detailAnnotator');
-    const detailReviewer = document.getElementById('detailReviewer');
-    if (detailAnnotator) detailAnnotator.textContent = annotatorName;
-    if (detailReviewer) detailReviewer.textContent = reviewerName;
+    // Store selection
+    window.selections[currentStep] = workerId;
+    
+    // Enable next button
+    if (nextBtn) {
+        nextBtn.disabled = false;
+    }
 
-    // Update assign modal
-    const assignDetailAnnotator = document.getElementById('assignDetailAnnotator');
-    const assignDetailReviewer = document.getElementById('assignDetailReviewer');
-    if (assignDetailAnnotator) assignDetailAnnotator.textContent = annotatorName;
-    if (assignDetailReviewer) assignDetailReviewer.textContent = reviewerName;
+    console.log('Current selections:', window.selections);
 }
 
 // Add this to your document ready event listener
@@ -1395,47 +1394,141 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignmentBtns = document.querySelectorAll('[onclick*="showWorkerSelection"]');
     console.log('Found assignment buttons:', assignmentBtns.length);
 
-    assignmentBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            console.log('Assignment button clicked');
-            const jobId = document.getElementById('assignDetailId').textContent;
-            console.log('Job ID:', jobId);
-        });
-    });
+    // Remove the event listeners that might interfere with the onclick attribute
+    // Instead, we'll ensure the onclick attribute works correctly
+
+    // Check if the worker selection modal exists
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    if (!workerSelectionModal) {
+        console.error('Worker selection modal not found');
+    }
 });
 
-function updateJobCardInfo(jobId, annotatorName, reviewerName, newStatus) {
-    const jobCards = document.querySelectorAll(`[data-job-id="${jobId}"]`);
-    jobCards.forEach(card => {
-        // Update worker info
-        let workerInfo = card.querySelector('.worker-info');
-        if (!workerInfo) {
-            workerInfo = document.createElement('div');
-            workerInfo.className = 'worker-info space-y-2 text-gray-500';
-            card.querySelector('.space-y-2').appendChild(workerInfo);
+// Add a general close modal function
+function closeAllModals() {
+    const modals = ['workerSelectionModal', 'jobAssignDetailModal', 'jobDetailModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    });
+}
+
+function closeWorkerSelection() {
+    console.log('Closing worker selection modal');
+    const workerSelectionModal = document.getElementById('workerSelectionModal');
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    
+    if (workerSelectionModal) {
+        workerSelectionModal.classList.add('hidden');
+        workerSelectionModal.classList.remove('flex');
+    }
+    
+    // Show job assign modal again
+    if (jobAssignModal) {
+        jobAssignModal.classList.remove('hidden');
+        jobAssignModal.classList.add('flex');
+    }
+}
+
+function closeJobAssignModal() {
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    const jobDetailModal = document.getElementById('jobDetailModal');
+    
+    // Close job assign modal
+    if (jobAssignModal) {
+        jobAssignModal.classList.add('hidden');
+        jobAssignModal.classList.remove('flex');
+    }
+    
+    // Ensure job detail modal stays hidden
+    if (jobDetailModal) {
+        jobDetailModal.classList.add('hidden');
+        jobDetailModal.classList.remove('flex');
+    }
+
+    // Stop event propagation to prevent other modals from showing
+    event?.stopPropagation();
+}
+
+// Update the click handler in the job card
+function showJobAssignDetail(jobId) {
+    const jobAssignModal = document.getElementById('jobAssignDetailModal');
+    
+    // Prevent event bubbling
+    event?.stopPropagation();
+    
+    // Add click event listener for background click
+    jobAssignModal.addEventListener('click', function(event) {
+        if (event.target === jobAssignModal) {
+            closeJobAssignModal();
+            // Prevent event from bubbling up
+            event.stopPropagation();
+        }
+    });
+
+    fetch(`/master/job-profile/${jobId}/`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Accept': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update assign modal content
+        document.getElementById('assignDetailTitle').textContent = data.title;
+        document.getElementById('assignDetailId').textContent = data.id;
+        document.getElementById('assignDetailAnnotator').textContent = data.worker_annotator || '-';
+        document.getElementById('assignDetailReviewer').textContent = data.worker_reviewer || '-';
+        document.getElementById('assignDetailDescription').textContent = data.description;
+
+        // Update segmentation list
+        const segmentationList = document.getElementById('assignDetailSegmentation');
+        segmentationList.innerHTML = '';
+        if (data.segmentation_type) {
+            const li = document.createElement('li');
+            li.textContent = data.segmentation_type;
+            segmentationList.appendChild(li);
         }
 
-        workerInfo.innerHTML = `
-            <p class="flex justify-between">
-                <span>Annotator:</span>
-                <span>${annotatorName}</span>
-            </p>
-            <p class="flex justify-between">
-                <span>Reviewer:</span>
-                <span>${reviewerName}</span>
-            </p>
-        `;
+        document.getElementById('assignDetailShape').textContent = data.shape_type;
+        document.getElementById('assignDetailImageCount').textContent = data.image_count;
 
-        // Update status
-        const statusEl = card.querySelector('.rounded-full');
-        if (statusEl) {
-            statusEl.textContent = newStatus;
-            statusEl.className = `px-2 py-1 rounded-full text-sm ${
-                newStatus === 'Not Assigned' ? 'bg-red-100 text-red-700' :
-                newStatus === 'In Progress' ? 'bg-orange-100 text-orange-700' :
-                'bg-green-100 text-green-700'
-            }`;
+        // Update status with styling
+        const statusSpan = document.getElementById('assignDetailStatus');
+        statusSpan.textContent = data.status;
+        statusSpan.className = `px-2 py-1 rounded-full text-sm ${
+            data.status === 'not_assign' ? 'bg-red-100 text-red-700' :
+            data.status === 'in_progress' ? 'bg-orange-100 text-orange-700' :
+            'bg-green-100 text-green-700'
+        }`;
+
+        // Update labeling progress
+        document.getElementById('assignDetailUnannotated').textContent = data.unannotated_count || '0';
+        document.getElementById('assignDetailInReview').textContent = data.in_review_count || '0';
+        document.getElementById('assignDetailInRework').textContent = data.in_rework_count || '0';
+        document.getElementById('assignDetailFinished').textContent = data.finished_count || '0';
+        document.getElementById('assignDetailIssues').textContent = data.issues_count || '0';
+
+        // Update the Assignment button to use a direct click handler
+        const assignBtn = jobAssignModal.querySelector('button[onclick*="showWorkerSelection"]');
+        if (assignBtn) {
+            assignBtn.onclick = () => {
+                const jobId = document.getElementById('assignDetailId').textContent;
+                showWorkerSelection(jobId);
+            };
         }
+
+        // Show the modal
+        jobAssignModal.classList.remove('hidden');
+        jobAssignModal.classList.add('flex');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading job details');
     });
 }
 </script>
