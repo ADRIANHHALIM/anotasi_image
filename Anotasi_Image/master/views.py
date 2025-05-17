@@ -171,56 +171,54 @@ def job_settings_view(request):
 
 @login_required
 def issue_detail_view(request, job_id):
-    """View for handling individual job issue details"""
     try:
         job = get_object_or_404(JobProfile, id=job_id)
+        print("=== Debug Info ===")
+        print(f"Job ID: {job_id}")
+        print(f"Job Title: {job.title}")
         
-        # Get counts for different statuses
-        job_images = JobImage.objects.filter(job=job)
+        images_with_issues = JobImage.objects.filter(job=job, status='Issue')
+        print(f"Images with issues found: {images_with_issues.count()}")
+        
+        for img in images_with_issues:
+            print(f"Image ID: {img.id}")
+            print(f"Image URL: {img.image.url if img.image else 'No URL'}")
+            print(f"Image Path: {img.image.path if img.image else 'No Path'}")
+            print(f"Image Exists: {os.path.exists(img.image.path) if img.image else False}")
+            print("---")
+
+        # Get images with issues
+        job_images = JobImage.objects.filter(job=job, status='Issue')
+        print(f"Number of images with issues: {job_images.count()}")
+        
+        # Check first image if exists
+        if job_images.exists():
+            first_image = job_images.first()
+            print(f"First image path: {first_image.image.path if first_image.image else 'No image'}")
+            print(f"First image URL: {first_image.image.url if first_image.image else 'No URL'}")
+        
         data = {
             'title': job.title,
-            'unannotated_count': job_images.filter(status='unannotated').count(),
-            'in_review_count': job_images.filter(status='in_review').count(),
-            'in_rework_count': job_images.filter(status='in_rework').count(),
-            'finished_count': job_images.filter(status='finished').count(),
-            'issues_count': job_images.filter(status='Issue').count(),
             'images': []
         }
 
-        # Get images with issues and their details
-        images_with_issues = job_images.filter(status='Issue')
-        
-        # Debug print
-        print(f"Found {images_with_issues.count()} images with issues")
-        
-        for img in images_with_issues:
-            try:
-                image_url = img.image.url if img.image else None
+        for img in job_images:
+            if img.image:
+                image_url = request.build_absolute_uri(img.image.url)
+                print(f"Processing image ID {img.id}: {image_url}")
                 data['images'].append({
                     'url': image_url,
-                    'issue_number': img.id,
                     'annotator': img.annotator.email if img.annotator else 'Unassigned',
-                    'date': img.updated_at.strftime('%d/%m/%Y %H:%M'),
-                    'status': 'Issue',
-                    'issue_description': img.issue_description or 'No description provided'
+                    'issue_description': img.issue_description or 'No description'
                 })
-            except Exception as e:
-                print(f"Error processing image {img.id}: {e}")
-                continue
 
+        print(f"Returning {len(data['images'])} images")
+        print("=== End Debug Info ===")
+        
         return JsonResponse(data)
     except Exception as e:
-        print(f"Error in issue_detail_view: {e}")
-        return JsonResponse({
-            'error': str(e),
-            'title': 'Error',
-            'unannotated_count': 0,
-            'in_review_count': 0,
-            'in_rework_count': 0,
-            'finished_count': 0,
-            'issues_count': 0,
-            'images': []
-        }, status=200)
+        print(f"Error in issue_detail_view: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 @login_required
 def performance_view(request):
@@ -338,55 +336,34 @@ def create_job_profile(request):
 def job_profile_detail(request, job_id):
     try:
         job = get_object_or_404(JobProfile, id=job_id)
-
-        # Get actual counts from JobImage
-        unannotated_count = JobImage.objects.filter(job=job, status='unannotated').count()
-        in_review_count = JobImage.objects.filter(job=job, status='in_review').count()
-        in_rework_count = JobImage.objects.filter(job=job, status='in_rework').count()
-        finished_count = JobImage.objects.filter(job=job, status='finished').count()
-        issues_count = JobImage.objects.filter(job=job, status='has_issues').count()
-        total_count = JobImage.objects.filter(job=job).count()
-
-        # Safely get worker information
-        worker_annotator_info = '-'
-        worker_reviewer_info = '-'
-
-        # Handle annotator information
-        if job.worker_annotator:
-            try:
-                worker_annotator_info = job.worker_annotator.email
-            except Exception as e:
-                print(f"Error accessing annotator info: {e}")
-
-        # Handle reviewer information
-        if job.worker_reviewer:
-            try:
-                worker_reviewer_info = job.worker_reviewer.email
-            except Exception as e:
-                print(f"Error accessing reviewer info: {e}")
-
+        print(f"Found job: {job.id}")  # Debug log
+        
         data = {
             'id': job.id,
             'title': job.title,
             'description': job.description,
-            'image_count': total_count,
+            'worker_annotator': job.worker_annotator.email if job.worker_annotator else None,
+            'worker_reviewer': job.worker_reviewer.email if job.worker_reviewer else None,
             'segmentation_type': job.segmentation_type,
             'shape_type': job.shape_type,
             'color': job.color,
-            'start_date': job.start_date.strftime('%d/%m/%Y') if job.start_date else None,
-            'end_date': job.end_date.strftime('%d/%m/%Y') if job.end_date else None,
             'status': job.status,
-            'worker_annotator': worker_annotator_info,
-            'worker_reviewer': worker_reviewer_info,
-            'unannotated_count': unannotated_count,
-            'in_review_count': in_review_count,
-            'in_rework_count': in_rework_count,
-            'finished_count': finished_count,
-            'issues_count': issues_count,
-            'first_image_url': job.get_first_image_url(),  # Add first image URL to response data
+            'start_date': job.start_date.strftime('%Y-%m-%d') if job.start_date else None,
+            'end_date': job.end_date.strftime('%Y-%m-%d') if job.end_date else None,
+            'first_image_url': job.get_first_image_url(),
+            'image_count': JobImage.objects.filter(job=job).count(),
+            'unannotated_count': JobImage.objects.filter(job=job, status='unannotated').count(),
+            'in_review_count': JobImage.objects.filter(job=job, status='in_review').count(),
+            'in_rework_count': JobImage.objects.filter(job=job, status='in_rework').count(),
+            'finished_count': JobImage.objects.filter(job=job, status='finished').count(),
+            'issues_count': JobImage.objects.filter(job=job, status='Issue').count(),
         }
+        
+        print(f"Returning data: {data}")  # Debug log
         return JsonResponse(data)
+        
     except Exception as e:
+        print(f"Error in job_profile_detail: {str(e)}")  # Debug log
         return JsonResponse({'error': str(e)}, status=500)
 
 # Daataset flow for edit and delete
