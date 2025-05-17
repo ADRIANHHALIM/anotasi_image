@@ -35,7 +35,7 @@ def signup_view(request):
         }
         print("Form data:", data)
         form = SignUpForm(data)
-        
+
         if form.is_valid():
             print("Form is valid")
             user = form.save()
@@ -59,7 +59,7 @@ def signup_view(request):
                     messages.error(request, f"{field}: {error}")
     else:
         form = SignUpForm()
-    
+
     return render(request, "master/signup.html", {"form": form})
 
 def login_view(request):
@@ -67,13 +67,13 @@ def login_view(request):
     if request.method == "POST":
         username_or_email = request.POST.get("username")
         password = request.POST.get("password")
-        
+
         # First try to authenticate with email
         user = authenticate(request, email=username_or_email, password=password)
         if user is None:
             # If email auth fails, try with username
             user = authenticate(request, username=username_or_email, password=password)
-        
+
         if user is not None:
             if user.is_active:
                 login(request, user)
@@ -84,7 +84,7 @@ def login_view(request):
         else:
             error_message = "Username/Email atau Password salah!"
             messages.error(request, error_message)
-    
+
     return render(request, "master/login.html", {"error_message": error_message})
 
 def logout_view(request):
@@ -195,7 +195,7 @@ def add_dataset(request):
 
         # Handle file upload
         file_path = handle_dataset_upload(dataset_file)
-        
+
         # Create dataset record
         dataset = Dataset.objects.create(
             name=name,
@@ -287,7 +287,7 @@ def create_job_profile(request):
 def job_profile_detail(request, job_id):
     try:
         job = get_object_or_404(JobProfile, id=job_id)
-        
+
         # Get actual counts from JobImage
         unannotated_count = JobImage.objects.filter(job=job, status='unannotated').count()
         in_review_count = JobImage.objects.filter(job=job, status='in_review').count()
@@ -295,6 +295,24 @@ def job_profile_detail(request, job_id):
         finished_count = JobImage.objects.filter(job=job, status='finished').count()
         issues_count = JobImage.objects.filter(job=job, status='has_issues').count()
         total_count = JobImage.objects.filter(job=job).count()
+
+        # Safely get worker information
+        worker_annotator_info = '-'
+        worker_reviewer_info = '-'
+
+        # Handle annotator information
+        if job.worker_annotator:
+            try:
+                worker_annotator_info = job.worker_annotator.email
+            except Exception as e:
+                print(f"Error accessing annotator info: {e}")
+
+        # Handle reviewer information
+        if job.worker_reviewer:
+            try:
+                worker_reviewer_info = job.worker_reviewer.email
+            except Exception as e:
+                print(f"Error accessing reviewer info: {e}")
 
         data = {
             'id': job.id,
@@ -307,8 +325,8 @@ def job_profile_detail(request, job_id):
             'start_date': job.start_date.strftime('%d/%m/%Y') if job.start_date else None,
             'end_date': job.end_date.strftime('%d/%m/%Y') if job.end_date else None,
             'status': job.status,
-            'worker_annotator': job.worker_annotator if hasattr(job, 'worker_annotator') else None,
-            'worker_reviewer': job.worker_reviewer if hasattr(job, 'worker_reviewer') else None,
+            'worker_annotator': worker_annotator_info,
+            'worker_reviewer': worker_reviewer_info,
             'unannotated_count': unannotated_count,
             'in_review_count': in_review_count,
             'in_rework_count': in_rework_count,
@@ -317,27 +335,30 @@ def job_profile_detail(request, job_id):
         }
         return JsonResponse(data)
     except Exception as e:
+        import traceback
+        print("Error in job_profile_detail:")
+        print(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
 
 # Daataset flow for edit and delete
 @login_required
 def edit_dataset_view(request, dataset_id):
     dataset = get_object_or_404(Dataset, id=dataset_id)
-    
+
     if request.method == 'POST':
         try:
             dataset.name = request.POST.get('name')
             dataset.labeler_id = request.POST.get('labeler')
-            
+
             if 'dataset_file' in request.FILES:
                 # Handle new file upload if provided
                 dataset_file = request.FILES['dataset_file']
                 fs = FileSystemStorage()
                 filename = fs.save(f'datasets/{dataset_file.name}', dataset_file)
                 dataset.file_path = fs.url(filename)
-            
+
             dataset.save()
-            
+
             return JsonResponse({
                 'status': 'success',
                 'message': 'Dataset updated successfully'
@@ -347,7 +368,7 @@ def edit_dataset_view(request, dataset_id):
                 'status': 'error',
                 'message': str(e)
             }, status=500)
-    
+
     return JsonResponse({
         'status': 'error',
         'message': 'Method not allowed'
@@ -368,7 +389,7 @@ def delete_dataset_view(request, dataset_id):
                 'status': 'error',
                 'message': str(e)
             }, status=500)
-    
+
     return JsonResponse({
         'status': 'error',
         'message': 'Method not allowed'
@@ -381,7 +402,7 @@ def upload_job_images(request):
         job_id = request.POST.get('job_id')
         job = JobProfile.objects.get(id=job_id)
         files = request.FILES.getlist('images[]')
-        
+
         current_count = JobImage.objects.filter(job=job).count()
         if current_count + len(files) > 150:
             return JsonResponse({
@@ -399,7 +420,7 @@ def upload_job_images(request):
                     status='unannotated'  # Default status for new uploads
                 )
                 uploaded_count += 1
-        
+
         # Get updated counts after upload
         new_total = JobImage.objects.filter(job=job).count()
         unannotated_count = JobImage.objects.filter(job=job, status='unannotated').count()
@@ -407,7 +428,7 @@ def upload_job_images(request):
         in_rework_count = JobImage.objects.filter(job=job, status='in_rework').count()
         finished_count = JobImage.objects.filter(job=job, status='finished').count()
         issues_count = JobImage.objects.filter(job=job, status='has_issues').count()
-        
+
         # Update job status and image count
         if job.status == 'not_assign' and new_total > 0:
             job.status = 'in_progress'
@@ -425,7 +446,7 @@ def upload_job_images(request):
             'finished_count': finished_count,
             'issues_count': issues_count
         })
-        
+
     except JobProfile.DoesNotExist:
         return JsonResponse({
             'status': 'error',
@@ -473,7 +494,7 @@ def assign_worker(request):
             job.worker_annotator = worker
         elif role == 'reviewer':
             job.worker_reviewer = worker
-        
+
         job.save()
 
         return JsonResponse({
@@ -494,7 +515,7 @@ def assign_workers(request):
         job_id = data.get('job_id')
         annotator_id = data.get('annotator_id')
         reviewer_id = data.get('reviewer_id')
-        
+
         if not all([job_id, annotator_id, reviewer_id]):
             return JsonResponse({
                 'status': 'error',
@@ -504,13 +525,13 @@ def assign_workers(request):
         job = JobProfile.objects.get(id=job_id)
         annotator = CustomUser.objects.get(id=annotator_id)
         reviewer = CustomUser.objects.get(id=reviewer_id)
-        
+
         # Update job with worker assignments
         job.worker_annotator = annotator
         job.worker_reviewer = reviewer
         job.status = 'in_progress'
         job.save()
-        
+
         return JsonResponse({
             'status': 'success',
             'annotator_name': annotator.email,
@@ -564,7 +585,7 @@ def handle_dataset_upload(dataset_file):
         # Create datasets directory if it doesn't exist
         dataset_dir = os.path.join('datasets')
         os.makedirs(os.path.join(settings.MEDIA_ROOT, dataset_dir), exist_ok=True)
-        
+
         # Save file
         filename = fs.save(f'datasets/{dataset_file.name}', dataset_file)
         file_path = fs.url(filename)
@@ -576,28 +597,31 @@ def handle_dataset_upload(dataset_file):
 def get_job_profile(request, job_id):
     try:
         job = JobProfile.objects.select_related('worker_annotator', 'worker_reviewer').get(id=job_id)
-        
+
         # Debug logging
         print(f"Retrieved job: {job.id}, annotator: {job.worker_annotator}, reviewer: {job.worker_reviewer}")
-        
-        # Get worker information with explicit error handling
-        try:
-            worker_annotator_info = {
-                'email': job.worker_annotator.email,
-                'name': f"{job.worker_annotator.first_name} {job.worker_annotator.last_name}".strip()
-            } if job.worker_annotator else None
-        except AttributeError:
-            worker_annotator_info = None
-            print("Error accessing annotator info")
 
-        try:
-            worker_reviewer_info = {
-                'email': job.worker_reviewer.email,
-                'name': f"{job.worker_reviewer.first_name} {job.worker_reviewer.last_name}".strip()
-            } if job.worker_reviewer else None
-        except AttributeError:
-            worker_reviewer_info = None
-            print("Error accessing reviewer info")
+        # Get worker information with improved error handling
+        worker_annotator_email = '-'
+        worker_annotator_name = '-'
+        worker_reviewer_email = '-'
+        worker_reviewer_name = '-'
+
+        # Safely get annotator information
+        if job.worker_annotator:
+            try:
+                worker_annotator_email = job.worker_annotator.email
+                worker_annotator_name = f"{job.worker_annotator.first_name or ''} {job.worker_annotator.last_name or ''}".strip() or job.worker_annotator.email
+            except Exception as e:
+                print(f"Error accessing annotator info: {e}")
+
+        # Safely get reviewer information
+        if job.worker_reviewer:
+            try:
+                worker_reviewer_email = job.worker_reviewer.email
+                worker_reviewer_name = f"{job.worker_reviewer.first_name or ''} {job.worker_reviewer.last_name or ''}".strip() or job.worker_reviewer.email
+            except Exception as e:
+                print(f"Error accessing reviewer info: {e}")
 
         # Get job image counts with error handling
         try:
@@ -622,10 +646,10 @@ def get_job_profile(request, job_id):
             'title': job.title or '',
             'description': job.description or '',
             'hotkey': getattr(job, 'hotkey', '') or '',
-            'worker_annotator': worker_annotator_info['email'] if worker_annotator_info else '-',
-            'worker_reviewer': worker_reviewer_info['email'] if worker_reviewer_info else '-',
-            'worker_annotator_name': worker_annotator_info['name'] if worker_annotator_info else '-',
-            'worker_reviewer_name': worker_reviewer_info['name'] if worker_reviewer_info else '-',
+            'worker_annotator': worker_annotator_email,
+            'worker_reviewer': worker_reviewer_email,
+            'worker_annotator_name': worker_annotator_name,
+            'worker_reviewer_name': worker_reviewer_name,
             'segmentation_type': job.segmentation_type or '',
             'shape_type': job.shape_type or '',
             'color': job.color or '#000000',
