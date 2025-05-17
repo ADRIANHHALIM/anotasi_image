@@ -171,6 +171,11 @@ def job_settings_view(request):
 
 @login_required
 def issue_detail_view(request, job_id):
+    """
+    Returns details about all images with issues for a specific job as JSON.
+    
+    Retrieves the job by ID and gathers all associated images marked with status 'Issue'. For each image, includes its absolute URL, annotator's email (or 'Unassigned'), and issue description. Returns a JSON response containing the job title and a list of issue images. On error, returns a JSON error message with status 500.
+    """
     try:
         job = get_object_or_404(JobProfile, id=job_id)
         print("=== Debug Info ===")
@@ -222,6 +227,9 @@ def issue_detail_view(request, job_id):
 
 @login_required
 def performance_view(request):
+    """
+    Renders the performance page for authenticated users.
+    """
     return render(request, "master/performance.html")
 
 @login_required
@@ -334,6 +342,11 @@ def create_job_profile(request):
 
 @login_required
 def job_profile_detail(request, job_id):
+    """
+    Returns detailed information about a specific job profile as JSON.
+    
+    Retrieves a job by its ID and constructs a JSON response containing job details, assigned worker emails, segmentation and shape types, color, status, formatted start and end dates, the URL of the first associated image, and counts of images by various statuses. Returns an error response if the job cannot be retrieved or another exception occurs.
+    """
     try:
         job = get_object_or_404(JobProfile, id=job_id)
         print(f"Found job: {job.id}")  # Debug log

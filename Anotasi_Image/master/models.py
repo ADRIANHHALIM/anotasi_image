@@ -129,6 +129,16 @@ class JobProfile(models.Model):
 
 def job_image_path(instance, filename):
     # Generate path like: job_images/1/image.jpg
+    """
+    Generates a file path for a job image based on its associated job ID and filename.
+    
+    Args:
+        instance: The JobImage instance containing the related job.
+        filename: The original name of the uploaded image file.
+    
+    Returns:
+        A string representing the storage path in the format 'job_images/{job_id}/{filename}'.
+    """
     return f'job_images/{instance.job.id}/{filename}'
 
 class JobImage(models.Model):
@@ -158,9 +168,15 @@ class JobImage(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
+        """
+        Returns a string representation of the image with its ID and associated job title.
+        """
         return f"Image {self.id} for Job {self.job.title}"
 
     def get_image_url(self):
+        """
+        Returns the URL of the associated image if available, or None if no image is present.
+        """
         if self.image:
             return self.image.url
         return None
