@@ -171,50 +171,79 @@ def job_settings_view(request):
 
 @login_required
 def issue_detail_view(request, job_id):
+    """
+    Returns details about all images with issues for a specific job as JSON.
+    
+    Retrieves the job by ID and gathers all associated images marked with status 'Issue'. For each image, includes its absolute URL, annotator's email (or 'Unassigned'), and issue description. Returns a JSON response containing the job title and a list of issue images. On error, returns a JSON error message with status 500.
+    """
     try:
         job = get_object_or_404(JobProfile, id=job_id)
         print("=== Debug Info ===")
         print(f"Job ID: {job_id}")
         print(f"Job Title: {job.title}")
-        
-        images_with_issues = JobImage.objects.filter(job=job, status='Issue')
-        print(f"Images with issues found: {images_with_issues.count()}")
-        
-        for img in images_with_issues:
-            print(f"Image ID: {img.id}")
-            print(f"Image URL: {img.image.url if img.image else 'No URL'}")
-            print(f"Image Path: {img.image.path if img.image else 'No Path'}")
-            print(f"Image Exists: {os.path.exists(img.image.path) if img.image else False}")
-            print("---")
 
-        # Get images with issues
-        job_images = JobImage.objects.filter(job=job, status='Issue')
-        print(f"Number of images with issues: {job_images.count()}")
-        
-        # Check first image if exists
-        if job_images.exists():
-            first_image = job_images.first()
-            print(f"First image path: {first_image.image.path if first_image.image else 'No image'}")
-            print(f"First image URL: {first_image.image.url if first_image.image else 'No URL'}")
-        
+        # Get all images for the job, not just those with issues
+        job_images = JobImage.objects.filter(job=job)
+        print(f"Total images found: {job_images.count()}")
+
+        # Also log the count of images with issues for debugging
+        issues_images_count = job_images.filter(status='Issue').count()
+        print(f"Images with issues found: {issues_images_count}")
+
+        # Add status counts to the response
+        unannotated_count = JobImage.objects.filter(job=job, status='unannotated').count()
+        in_review_count = JobImage.objects.filter(job=job, status='in_review').count()
+        in_rework_count = JobImage.objects.filter(job=job, status='in_rework').count()
+        finished_count = JobImage.objects.filter(job=job, status='finished').count()
+        issues_count = JobImage.objects.filter(job=job, status='Issue').count()
+
         data = {
             'title': job.title,
+            'unannotated_count': unannotated_count,
+            'in_review_count': in_review_count,
+            'in_rework_count': in_rework_count,
+            'finished_count': finished_count,
+            'issues_count': issues_count,
             'images': []
         }
 
+        # Detailed logging for each image
         for img in job_images:
-            if img.image:
+            if not img.image:
+                print(f"Image ID {img.id}: No image file attached")
+                continue
+
+            try:
+                # Verify image file exists
+                image_exists = os.path.exists(img.image.path)
+                print(f"Image ID: {img.id}")
+                print(f"Image URL: {img.image.url}")
+                print(f"Image Path: {img.image.path}")
+                print(f"Image Exists: {image_exists}")
+
+                if not image_exists:
+                    print(f"WARNING: Image file does not exist at {img.image.path}")
+                    continue
+
+                # Build absolute URI for the image
                 image_url = request.build_absolute_uri(img.image.url)
                 print(f"Processing image ID {img.id}: {image_url}")
+
+                # Add image data to response
                 data['images'].append({
                     'url': image_url,
                     'annotator': img.annotator.email if img.annotator else 'Unassigned',
                     'issue_description': img.issue_description or 'No description'
                 })
+            except Exception as img_error:
+                print(f"Error processing image ID {img.id}: {str(img_error)}")
+                # Continue with next image instead of failing completely
+                continue
 
+        # Log the number of images being returned
         print(f"Returning {len(data['images'])} images")
         print("=== End Debug Info ===")
-        
+
         return JsonResponse(data)
     except Exception as e:
         print(f"Error in issue_detail_view: {str(e)}")
@@ -222,6 +251,9 @@ def issue_detail_view(request, job_id):
 
 @login_required
 def performance_view(request):
+    """
+    Renders the performance page for authenticated users.
+    """
     return render(request, "master/performance.html")
 
 @login_required
@@ -334,10 +366,15 @@ def create_job_profile(request):
 
 @login_required
 def job_profile_detail(request, job_id):
+    """
+    Returns detailed information about a specific job profile as JSON.
+    
+    Retrieves a job by its ID and constructs a JSON response containing job details, assigned worker emails, segmentation and shape types, color, status, formatted start and end dates, the URL of the first associated image, and counts of images by various statuses. Returns an error response if the job cannot be retrieved or another exception occurs.
+    """
     try:
         job = get_object_or_404(JobProfile, id=job_id)
         print(f"Found job: {job.id}")  # Debug log
-        
+
         data = {
             'id': job.id,
             'title': job.title,
@@ -358,10 +395,10 @@ def job_profile_detail(request, job_id):
             'finished_count': JobImage.objects.filter(job=job, status='finished').count(),
             'issues_count': JobImage.objects.filter(job=job, status='Issue').count(),
         }
-        
+
         print(f"Returning data: {data}")  # Debug log
         return JsonResponse(data)
-        
+
     except Exception as e:
         print(f"Error in job_profile_detail: {str(e)}")  # Debug log
         return JsonResponse({'error': str(e)}, status=500)
@@ -708,21 +745,21 @@ def issue_solving_view(request):
     try:
         # Get all jobs with their image counts and issues
         jobs = JobProfile.objects.all().order_by('-start_date')
-        
+
         # Add additional data for each job
         for job in jobs:
             # Get total images count
             total_images = job.images.count()
-            
+
             # Get finished images count
             finished_count = job.images.filter(status='finished').count()
-            
+
             # Calculate progress percentage
             job.progress_percentage = int((finished_count / total_images * 100) if total_images > 0 else 0)
-            
+
             # Get issues count
             job.issues_count = job.images.filter(status='Issue').count()
-            
+
             # Get first image for display
             job.first_image_url = job.get_first_image_url()
 
@@ -730,9 +767,9 @@ def issue_solving_view(request):
             'jobs': jobs,
             'current_date': timezone.now().strftime('%d %B %Y')
         }
-        
+
         return render(request, 'master/Issue_solving.html', context)
-        
+
     except Exception as e:
         print(f"Error in issue_solving_view: {e}")
         return render(request, 'master/Issue_solving.html', {

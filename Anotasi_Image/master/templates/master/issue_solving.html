@@ -53,7 +53,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Status Progress Bar -->
             <div class="mt-4">
                 <div class="flex justify-between text-sm text-gray-600 mb-1">
@@ -77,7 +77,7 @@
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">Annotations</h3>
                 <div class="border-b-2 border-red-500 w-16 mb-4"></div>
-                
+
                 <!-- Search Classes -->
                 <div class="mb-4">
                     <h4 class="text-sm font-medium mb-2">CLASSES</h4>
@@ -180,7 +180,7 @@
 
                     <!-- Image Container -->
                     <div id="imageContainer" class="w-full h-full flex items-center justify-center">
-                        <img id="mainImage" src="" alt="Main Image" class="max-w-full max-h-full object-contain">
+                        <!-- Image will be loaded here dynamically -->
                     </div>
 
                     <!-- Next Button -->
@@ -250,15 +250,15 @@ function showImage(index) {
     console.log("=== Show Image Debug ===");
     console.log("Showing image at index:", index);
     console.log("Total images:", currentImages.length);
-    
+
     if (index < 0 || index >= currentImages.length) {
         console.log("Invalid index, returning");
         return;
     }
-    
+
     const image = currentImages[index];
     console.log("Image data:", image);
-    
+
     // Show loading state
     const imageContainer = document.getElementById('imageContainer');
     imageContainer.innerHTML = `
@@ -266,27 +266,56 @@ function showImage(index) {
             <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
         </div>
     `;
-    
-    // Create new image element
-    const img = new Image();
-    img.onload = function() {
+
+    // Validate image URL
+    if (!image.url) {
+        console.error('Image URL is missing or invalid');
+        showError('Image URL is missing or invalid');
+        return;
+    }
+
+    // Use a pre-existing img element or create a new one
+    let img = document.getElementById('mainImage');
+    if (!img) {
+        img = new Image();
         img.id = 'mainImage';
-        img.className = 'max-w-full max-h-[70vh] object-contain';
+    }
+
+    // Set image attributes
+    img.className = 'max-w-full max-h-[70vh] object-contain';
+    img.alt = 'Main Image';
+
+    // Set up onload handler
+    img.onload = function() {
+        // Clear the container and add the image
         imageContainer.innerHTML = '';
-        imageContainer.appendChild(img);
-        
+
+        // Ensure the image is properly added to the DOM
+        try {
+            imageContainer.appendChild(img);
+            console.log('Image appended to container');
+        } catch (error) {
+            console.error('Error appending image to container:', error);
+            // Try an alternative approach if the first one fails
+            imageContainer.innerHTML = `<img id="mainImage" src="${image.url}" alt="Main Image" class="max-w-full max-h-[70vh] object-contain">`;
+            console.log('Used innerHTML as fallback');
+        }
+
         // Update issue details
         document.getElementById('issueAnnotator').textContent = image.annotator || 'Unassigned';
         document.getElementById('issueDescription').textContent = image.issue_description || 'No description';
-        
+
         // Update counter
         document.getElementById('currentImageIndex').textContent = (index + 1).toString();
         document.getElementById('totalImages').textContent = currentImages.length.toString();
-        
+
         currentImageIndex = index;
         updateImageControls();
+
+        console.log('Image loaded successfully:', image.url);
     };
-    
+
+    // Set up onerror handler
     img.onerror = function() {
         console.error('Failed to load image:', image.url);
         imageContainer.innerHTML = `
@@ -294,34 +323,49 @@ function showImage(index) {
                 <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                 </svg>
-                <p>Failed to load image</p>
+                <p>Failed to load image: ${image.url}</p>
             </div>
         `;
     };
-    
+
+    // Set the source after all handlers are defined
+    console.log('Setting image source to:', image.url);
     img.src = image.url;
 }
 
 function showIssueDetail(jobId) {
     console.log("=== Debug Info ===");
     console.log("Opening modal for job:", jobId);
-    
+
     const modal = document.getElementById('issueDetailModal');
     const modalTitle = document.getElementById('modalJobTitle');
     const imageContainer = document.getElementById('imageContainer');
-    
+
     // Verify elements exist
     console.log("Modal exists:", !!modal);
     console.log("Modal title exists:", !!modalTitle);
     console.log("Image container exists:", !!imageContainer);
-    
+
+    // Show loading state in image container
+    if (imageContainer) {
+        imageContainer.innerHTML = `
+            <div class="flex items-center justify-center w-full h-full">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                <p class="ml-3 text-gray-600">Loading images...</p>
+            </div>
+        `;
+    }
+
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     modalTitle.textContent = 'Loading...';
-    
+
     fetch(`/master/issue-detail/${jobId}/`)
         .then(response => {
             console.log("Response status:", response.status);
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
             return response.json();
         })
         .then(data => {
@@ -330,21 +374,24 @@ function showIssueDetail(jobId) {
             if (data.images && data.images.length > 0) {
                 console.log("First image URL:", data.images[0].url);
             }
-            
+
             modalTitle.textContent = data.title || 'No Title';
             updateStatusCounts(data);
-            
+
             if (data.images && data.images.length > 0) {
                 console.log('Found images:', data.images);
                 currentImages = data.images;
                 showImage(0);
+                // Set up image slider controls after images are loaded
+                setupImageSliderControls();
             } else {
                 console.log('No images found');
-                showError('No images available');
+                showError('No images available for this job. Please check if there are any issues reported.');
             }
         })
         .catch(error => {
             console.error("Error:", error);
+            showError(`Failed to load data: ${error.message}`);
         });
 }
 
@@ -359,9 +406,33 @@ function updateStatusCounts(data) {
 function updateImageControls() {
     const prevButton = document.getElementById('prevImage');
     const nextButton = document.getElementById('nextImage');
-    
+
     if (prevButton) prevButton.style.display = currentImageIndex > 0 ? 'block' : 'none';
     if (nextButton) nextButton.style.display = currentImageIndex < currentImages.length - 1 ? 'block' : 'none';
+}
+
+// Add event listeners for previous and next buttons
+function setupImageSliderControls() {
+    const prevButton = document.getElementById('prevImage');
+    const nextButton = document.getElementById('nextImage');
+
+    if (prevButton) {
+        prevButton.addEventListener('click', function() {
+            if (currentImageIndex > 0) {
+                showImage(currentImageIndex - 1);
+            }
+        });
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener('click', function() {
+            if (currentImageIndex < currentImages.length - 1) {
+                showImage(currentImageIndex + 1);
+            }
+        });
+    }
+
+    console.log('Image slider controls set up');
 }
 
 function showError(message) {
