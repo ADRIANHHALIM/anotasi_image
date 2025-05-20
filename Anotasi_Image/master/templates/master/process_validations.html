@@ -34,7 +34,7 @@
                                  class="w-full h-full object-cover">
                         {% endif %}
                     </div>
-                    
+
                     <!-- Job Details -->
                     <div class="flex-1">
                         <h4 class="text-lg font-semibold">{{ job.title }}</h4>
@@ -93,8 +93,10 @@
                         <td class="px-6 py-4 whitespace-nowrap">{{ image.id }}.jpg</td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="px-2 py-1 text-sm rounded-full 
-                                {% if image.status == 'annotated' %}bg-orange-100 text-orange-700
-                                {% elif image.status == 'reviewed' %}bg-green-100 text-green-700
+                                {% if image.status == 'in_review' %}bg-orange-100 text-orange-700
+                                {% elif image.status == 'finished' %}bg-green-100 text-green-700
+                                {% elif image.status == 'Issue' %}bg-red-100 text-red-700
+                                {% elif image.status == 'in_rework' %}bg-yellow-100 text-yellow-700
                                 {% else %}bg-gray-100 text-gray-700{% endif %}">
                                 {{ image.get_status_display }}
                             </span>
@@ -120,9 +122,8 @@
 {% block extra_js %}
 <script>
 function showValidationDetail(jobId) {
-    console.log('Clicked job:', jobId);
-    // Fix the URL path to match your URLs configuration
-    window.location.href = `/master/process_validations/${jobId}/`;
+    console.log('Clicking job:', jobId); // Debug log
+    window.location.href = "{% url 'master:process_validation_detail' 0 %}".replace('0', jobId);
 }
 </script>
 {% endblock %}
