@@ -267,27 +267,24 @@ def process_validations_view(request, job_id=None):
             # Debug print
             print(f"Fetching job details for job_id: {job_id}")
             
-            # Get specific job and its images
-            job = JobProfile.objects.select_related(
+            job = JobProfile.objects.annotate(
+                total_images=Count('images')
+            ).select_related(
                 'worker_annotator',
                 'worker_reviewer'
             ).get(id=job_id)
             
             images = job.images.all().order_by('id')
             
-            # Debug print
-            print(f"Found {images.count()} images for job {job.title}")
+            print(f"Found {images.count()} images for job {job.title}")  # Debug log
             
-            context = {
+            return render(request, 'master/process_validations.html', {
                 'job': job,
                 'images': images,
                 'show_details': True,
                 'current_date': timezone.now().strftime('%d %B %Y')
-            }
-            
-            return render(request, 'master/process_validations.html', context)
+            })
         else:
-            # Show job list view
             jobs = JobProfile.objects.annotate(
                 total_images=Count('images'),
                 annotator_email=F('worker_annotator__email'),
@@ -296,22 +293,15 @@ def process_validations_view(request, job_id=None):
                 'worker_annotator',
                 'worker_reviewer'
             ).order_by('-start_date')
-
-            logger.debug(f"Jobs query returned: {jobs.count() if jobs else 0} jobs")
-            for job in jobs:
-                logger.debug(f"Job {job.id}: {job.title} - {job.total_images} images")
-
+            
             return render(request, 'master/process_validations.html', {
                 'jobs': jobs,
                 'show_details': False,
                 'current_date': timezone.now().strftime('%d %B %Y')
             })
 
-    except JobProfile.DoesNotExist:
-        print(f"Job with id {job_id} not found")
-        return redirect('master:process_validations')
     except Exception as e:
-        print(f"Error in process_validations_view: {str(e)}")
+        print(f"Error in process_validations_view: {str(e)}")  # Debug log
         return render(request, 'master/process_validations.html', {
             'error': str(e),
             'show_details': False
