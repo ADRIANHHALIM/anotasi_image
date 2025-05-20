@@ -1,8 +1,128 @@
 {% extends 'base_master.html' %}
+{% load static %}
+
 {% block content %}
-    <div class="ml-64 p-6">
-        <!-- Content for Home Page -->
-        <h1 class="text-3xl font-bold">Process Validation</h1>
-        <p class="text-lg">Welcome to the Anotasi Image Platform</p>
+<div class="w-full ml-64 p-6">
+    <!-- Grey background header section -->
+    <div class="w-full bg-gray-100 p-6">
+        <h1 class="text-3xl font-bold">Validation</h1>
+        {% if show_details %}
+            <p class="text-lg mt-2">{{ job.title }}</p>
+            <p class="text-sm text-gray-600">({{ job.total_images }} images)</p>
+        {% endif %}
     </div>
+
+    <!-- Profile List Section -->
+    <div class="mb-4">
+        <h2 class="text-xl font-semibold">Profile List</h2>
+        <p class="text-gray-500 text-sm">{{ current_date }}</p>
+    </div>
+
+    {% if not show_details %}
+        <!-- Job Profile List -->
+        <div class="mt-6 grid grid-cols-2 gap-6">
+            {% for job in jobs %}
+            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer" 
+                 onclick="showValidationDetail({{ job.id }})"
+                 data-job-id="{{ job.id }}">
+                <div class="flex items-start space-x-4">
+                    <!-- Image Preview -->
+                    <div class="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+                        {% if job.get_first_image_url %}
+                            <img src="{{ job.get_first_image_url }}" 
+                                 alt="{{ job.title }}" 
+                                 class="w-full h-full object-cover">
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Job Details -->
+                    <div class="flex-1">
+                        <h4 class="text-lg font-semibold">{{ job.title }}</h4>
+                        <div class="space-y-2 text-gray-500">
+                            <p class="flex justify-between">
+                                <span>Total Images:</span>
+                                <span>{{ job.total_images }}</span>
+                            </p>
+                            <p class="flex justify-between">
+                                <span>Date:</span>
+                                <span>{{ job.start_date|date:"d M" }} - {{ job.end_date|date:"d M Y" }}</span>
+                            </p>
+                            <p class="flex justify-between">
+                                <span>Status:</span>
+                                <span class="px-2 py-1 rounded-full text-sm 
+                                    {% if job.status == 'not_started' %}bg-gray-100 text-gray-700
+                                    {% elif job.status == 'in_progress' %}bg-blue-100 text-blue-700
+                                    {% elif job.status == 'completed' %}bg-green-100 text-green-700
+                                    {% endif %}">
+                                    {{ job.get_status_display }}
+                                </span>
+                            </p>
+                            <p class="flex justify-between">
+                                <span>Annotator:</span>
+                                <span>{{ job.annotator_email|default:'-' }}</span>
+                            </p>
+                            <p class="flex justify-between">
+                                <span>Reviewer:</span>
+                                <span>{{ job.reviewer_email|default:'-' }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-span-2 text-center py-8 bg-gray-50 rounded-lg">
+                <p class="text-gray-500">No profiles available</p>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Image Details Table -->
+        <div class="mt-6">
+            <table class="min-w-full bg-white">
+                <thead>
+                    <tr class="bg-gray-50 border-b">
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Images ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Workflow Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Label time</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Review time</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for image in images %}
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ image.id }}.jpg</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-sm rounded-full 
+                                {% if image.status == 'annotated' %}bg-orange-100 text-orange-700
+                                {% elif image.status == 'reviewed' %}bg-green-100 text-green-700
+                                {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                {{ image.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ image.label_time|default:"" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">{{ image.review_time|default:"3m50s" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Accept Job Button -->
+        <div class="mt-6 flex justify-end">
+            <button class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                accept job
+            </button>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showValidationDetail(jobId) {
+    console.log('Clicked job:', jobId);
+    // Fix the URL path to match your URLs configuration
+    window.location.href = `/master/process_validations/${jobId}/`;
+}
+</script>
 {% endblock %}

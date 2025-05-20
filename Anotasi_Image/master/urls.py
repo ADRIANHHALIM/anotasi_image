@@ -14,7 +14,6 @@ urlpatterns = [
     path("job_settings/", views.job_settings_view, name="job_settings"),
     path("issue_solving/", views.issue_solving_view, name="issue_solving"),
     path("performance/", views.performance_view, name="performance"),
-    path("process_validations/", views.process_validation_view, name="process_validations"),
 
     # Update Role
     path("update_role/", views.update_role, name="update_role"),
@@ -37,4 +36,8 @@ urlpatterns = [
     # Issue Solving
     path('issue_solving/', views.issue_solving_view, name='issue_solving'),
     path('issue-detail/<int:job_id>/', views.issue_detail_view, name='issue_detail'),
+    
+    # Process Validation
+    path("process_validations/", views.process_validations_view, name="process_validations"),
+    path('process_validations/<int:job_id>/', views.process_validations_view, name='process_validation_detail'),
 ]
