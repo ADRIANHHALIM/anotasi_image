@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
+from django.db.models.functions import Cast
 
 class CustomUserManager(BaseUserManager):
     """Custom manager untuk model CustomUser agar mendukung login dengan email atau username."""
@@ -166,6 +167,9 @@ class JobImage(models.Model):
     )
     issue_description = models.TextField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # Add these fields for timing information
+    label_time = models.DurationField(null=True, blank=True)
+    review_time = models.DurationField(null=True, blank=True)
 
     def __str__(self):
         """
