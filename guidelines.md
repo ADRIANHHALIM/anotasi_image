@@ -31,6 +31,7 @@ The project has three main apps:
    anotasienv\Scripts\activate
    # On macOS/Linux:
    source anotasienv/bin/activate
+
    ```
 
 3. **Dependencies**: The project uses the following key dependencies:

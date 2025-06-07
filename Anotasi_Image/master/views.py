@@ -264,44 +264,56 @@ def performance_view(request):
 def process_validations_view(request, job_id=None):
     try:
         if job_id:
-            # Debug print
             print(f"Fetching job details for job_id: {job_id}")
             
-            job = JobProfile.objects.annotate(
-                total_images=Count('images')
-            ).select_related(
+            # Get job with annotations
+            job = JobProfile.objects.select_related(
                 'worker_annotator',
                 'worker_reviewer'
             ).get(id=job_id)
             
+            # Get images with status
             images = job.images.all().order_by('id')
+            status_counts = {
+                'unannotated': images.filter(status='unannotated').count(),
+                'in_review': images.filter(status='in_review').count(),
+                'in_rework': images.filter(status='in_rework').count(),
+                'Issue': images.filter(status='Issue').count(),
+                'finished': images.filter(status='finished').count(),
+            }
             
-            print(f"Found {images.count()} images for job {job.title}")  # Debug log
+            print(f"Found {images.count()} images for job {job.title}")
             
-            return render(request, 'master/process_validations.html', {
+            context = {
                 'job': job,
                 'images': images,
                 'show_details': True,
-                'current_date': timezone.now().strftime('%d %B %Y')
-            })
+                'current_date': timezone.now().strftime('%d %B %Y'),
+                'status_counts': status_counts
+            }
+
+            return render(request, 'master/process_validations.html', context)
         else:
+            # Get all jobs for list view
             jobs = JobProfile.objects.annotate(
-                total_images=Count('images'),
-                annotator_email=F('worker_annotator__email'),
-                reviewer_email=F('worker_reviewer__email')
+                total_images=Count('images')
             ).select_related(
                 'worker_annotator',
                 'worker_reviewer'
             ).order_by('-start_date')
             
-            return render(request, 'master/process_validations.html', {
+            print(f"Found {jobs.count()} jobs")
+            
+            context = {
                 'jobs': jobs,
                 'show_details': False,
                 'current_date': timezone.now().strftime('%d %B %Y')
-            })
+            }
+            
+            return render(request, 'master/process_validations.html', context)
 
     except Exception as e:
-        print(f"Error in process_validations_view: {str(e)}")  # Debug log
+        print(f"Error in process_validations_view: {str(e)}")
         return render(request, 'master/process_validations.html', {
             'error': str(e),
             'show_details': False
@@ -824,3 +836,23 @@ def issue_solving_view(request):
             'current_date': timezone.now().strftime('%d %B %Y'),
             'error': str(e)
         })
+
+@login_required
+@require_http_methods(["POST"])
+def finish_image(request):
+    try:
+        data = json.loads(request.body)
+        image_id = data.get('image_id')
+        image = JobImage.objects.get(id=image_id)
+        image.status = 'finished'
+        image.save()
+        
+        # Check if all images are finished and update job status
+        job = image.job
+        if not job.images.exclude(status='finished').exists():
+            job.status = 'completed'
+            job.save()
+        
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
