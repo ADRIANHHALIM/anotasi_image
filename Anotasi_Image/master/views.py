@@ -262,6 +262,11 @@ def performance_view(request):
 
 @login_required
 def process_validations_view(request, job_id=None):
+    """
+    Renders the process validations page for jobs and their images.
+    
+    If a job ID is provided, displays detailed information about the job, including all associated images and counts by image status. If no job ID is given, lists all jobs with their total image counts. Handles errors by rendering the page with error information.
+    """
     try:
         if job_id:
             print(f"Fetching job details for job_id: {job_id}")
@@ -800,7 +805,11 @@ def get_job_profile(request, job_id):
 
 @login_required
 def issue_solving_view(request):
-    """View for handling issue solving page"""
+    """
+    Renders the issue solving page with job progress and issue statistics.
+    
+    For each job, calculates the total number of images, finished images, progress percentage, issue count, and retrieves the first image URL. Displays all jobs with their respective statistics and the current date. On error, renders the page with an empty job list and error information.
+    """
     try:
         # Get all jobs with their image counts and issues
         jobs = JobProfile.objects.all().order_by('-start_date')
@@ -840,6 +849,11 @@ def issue_solving_view(request):
 @login_required
 @require_http_methods(["POST"])
 def finish_image(request):
+    """
+    Marks a job image as finished and updates the job status if all images are completed.
+    
+    Accepts a POST request with JSON data containing an image ID. Sets the specified image's status to 'finished'. If all images in the associated job are finished, updates the job's status to 'completed'. Returns a JSON response indicating success or error.
+    """
     try:
         data = json.loads(request.body)
         image_id = data.get('image_id')
