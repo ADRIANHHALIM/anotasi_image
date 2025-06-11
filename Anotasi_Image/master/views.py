@@ -173,13 +173,33 @@ def home_view(request):
     # Calculate assigned count (total - unannotated)
     assigned_count = total_images - unannotated_count
     
-    # Prepare real assignment stats
+    # Prepare real assignment stats with chart height calculations
+    def calculate_chart_height(count, max_count):
+        if count == 0:
+            return 0
+        # Calculate percentage, with minimum height of 20% for visibility in charts
+        percentage = (count / max_count) * 100  # Use full scale for Chart.js
+        return max(20, round(percentage))  # Minimum 20% height for non-zero values
+    
+    # Find max count for proportional scaling
+    max_count = max(assigned_count, in_review_count, in_rework_count, finished_count) if total_images > 0 else 1
+    # If all values are 0 or very small, use total_images as baseline
+    if max_count == 0:
+        max_count = total_images if total_images > 0 else 1
+    
     assignment_stats = {
         'total': total_images,
         'assign': assigned_count,
         'progress': in_review_count,
         'reviewing': in_rework_count,  # Use in_rework as "reviewing"
-        'finished': finished_count
+        'finished': finished_count,
+        # Add chart data for better visualization
+        'chart_data': {
+            'assign': {'count': assigned_count, 'height': calculate_chart_height(assigned_count, max_count)},
+            'progress': {'count': in_review_count, 'height': calculate_chart_height(in_review_count, max_count)},
+            'reviewing': {'count': in_rework_count, 'height': calculate_chart_height(in_rework_count, max_count)},
+            'finished': {'count': finished_count, 'height': calculate_chart_height(finished_count, max_count)}
+        }
     }
     
     context = {
@@ -335,6 +355,7 @@ def performance_view(request):
         if user.role == 'reviewer':
             project_count = JobProfile.objects.filter(worker_reviewer=user).count()
         member_data.append({
+            'id': user.id,
             'email': user.email,
             'phone_number': user.phone_number or '-',
             'role': user.get_role_display(),
@@ -1003,3 +1024,123 @@ def finish_image(request):
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def performance_individual_view(request, user_id):
+    """
+    Renders the individual performance page for a specific user.
+    """
+    # Get the user
+    user = get_object_or_404(CustomUser, id=user_id, role__in=["annotator", "reviewer"])
+    
+    # Calculate job statistics based on user role
+    if user.role == 'annotator':
+        user_jobs = JobProfile.objects.filter(worker_annotator=user)
+    else:  # reviewer
+        user_jobs = JobProfile.objects.filter(worker_reviewer=user)
+    
+    total_jobs = user_jobs.count()
+    
+    # Get all images assigned to this user's jobs
+    user_images = JobImage.objects.filter(job__in=user_jobs)
+    total_images = user_images.count()
+    
+    # Calculate job status statistics
+    job_status_counts = {
+        'assigned': user_jobs.filter(status='assigned').count(),
+        'in_progress': user_jobs.filter(status='in_progress').count(),
+        'in_review': user_jobs.filter(status='in_review').count(),
+        'completed': user_jobs.filter(status='completed').count(),
+    }
+    
+    # Calculate image status statistics
+    image_status_counts = {
+        'unannotated': user_images.filter(status='unannotated').count(),
+        'in_review': user_images.filter(status='in_review').count(),
+        'in_rework': user_images.filter(status='in_rework').count(),
+        'finished': user_images.filter(status='finished').count(),
+    }
+    
+    # Calculate height percentages for job chart
+    max_job_count = max(job_status_counts.values()) if job_status_counts.values() else 1
+    def calculate_job_height(count):
+        if count == 0:
+            return 0
+        percentage = (count / max_job_count) * 80
+        return max(15, round(percentage))
+    
+    job_chart_data = {
+        'assign': {
+            'count': job_status_counts['assigned'],
+            'height': calculate_job_height(job_status_counts['assigned'])
+        },
+        'progress': {
+            'count': job_status_counts['in_progress'],
+            'height': calculate_job_height(job_status_counts['in_progress'])
+        },
+        'reworking': {
+            'count': job_status_counts['in_review'],
+            'height': calculate_job_height(job_status_counts['in_review'])
+        },
+        'finished': {
+            'count': job_status_counts['completed'],
+            'height': calculate_job_height(job_status_counts['completed'])
+        }
+    }
+    
+    # Calculate height percentages for image chart
+    max_image_count = max(image_status_counts.values()) if image_status_counts.values() else 1
+    def calculate_image_height(count):
+        if count == 0:
+            return 0
+        percentage = (count / max_image_count) * 80
+        return max(15, round(percentage))
+    
+    image_chart_data = {
+        'unannotated': {
+            'count': image_status_counts['unannotated'],
+            'height': calculate_image_height(image_status_counts['unannotated'])
+        },
+        'progress': {
+            'count': image_status_counts['in_review'],
+            'height': calculate_image_height(image_status_counts['in_review'])
+        },
+        'annotated': {
+            'count': image_status_counts['in_rework'],
+            'height': calculate_image_height(image_status_counts['in_rework'])
+        },
+        'finished': {
+            'count': image_status_counts['finished'],
+            'height': calculate_image_height(image_status_counts['finished'])
+        }
+    }
+    
+    # Determine user status based on current job assignments
+    if user_jobs.filter(status='in_progress').exists():
+        user_status = "In Job"
+        status_class = "bg-green-500"
+    elif user_jobs.exists():
+        user_status = "Ready"
+        status_class = "bg-blue-500"
+    else:
+        user_status = "Not Ready"
+        status_class = "bg-gray-500"
+    
+    # Prepare context data
+    context = {
+        'user_profile': {
+            'name': f"{user.first_name} {user.last_name}".strip() or user.username,
+            'email': user.email,
+            'role': user.role,
+            'status': user_status,
+            'status_class': status_class,
+        },
+        'user_stats': {
+            'total_jobs': total_jobs,
+            'total_images': total_images,
+            'chart_data': job_chart_data,
+            'image_chart_data': image_chart_data,
+        }
+    }
+    
+    return render(request, "master/performance_individual.html", context)

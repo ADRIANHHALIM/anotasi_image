@@ -21,8 +21,8 @@
         <h2 class="text-5xl font-bold mb-8">Entire Assignment</h2>
         <div class="flex space-x-12 items-center">
             <div class="text-6xl font-bold text-[#4527A0]">{{ assignment_stats.total|floatformat:0 }}</div>
-            <div class="flex-1">
-                <canvas id="assignmentChart" height="200"></canvas>
+            <div class="flex-1 relative" style="height: 200px; min-height: 200px;">
+                <canvas id="assignmentChart" class="w-full h-full"></canvas>
             </div>
             <div class="flex flex-col justify-center text-xl space-y-4">
                 <div class="flex items-center">
@@ -183,32 +183,59 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('assignmentChart').getContext('2d');
+        
+        // Get real data values
+        const chartData = [
+            {{ assignment_stats.assign }}, 
+            {{ assignment_stats.progress }}, 
+            {{ assignment_stats.reviewing }}, 
+            {{ assignment_stats.finished }}
+        ];
+        
+        // Calculate max value for better scaling
+        const maxValue = Math.max(...chartData);
+        const suggestedMax = maxValue === 0 ? 10 : Math.ceil(maxValue * 1.2); // Add 20% padding
+        
         new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: ['Assign', 'Progress', 'Reviewing', 'Finished'],
                 datasets: [{
-                    data: [{{ assignment_stats.assign }}, {{ assignment_stats.progress }}, {{ assignment_stats.reviewing }}, {{ assignment_stats.finished }}],
+                    data: chartData,
                     backgroundColor: ['#4B5563', '#3B82F6', '#4F46E5', '#7C3AED'],
                     borderRadius: 4,
                     barThickness: 40
                 }]
             },
             options: {
+                responsive: true,
                 plugins: {
                     legend: {
                         display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' images';
+                            }
+                        }
                     }
                 },
                 scales: {
                     y: {
-                        display: false
+                        display: false,
+                        beginAtZero: true,
+                        suggestedMax: suggestedMax
                     },
                     x: {
                         display: false
                     }
                 },
-                maintainAspectRatio: false
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
             }
         });
     });
