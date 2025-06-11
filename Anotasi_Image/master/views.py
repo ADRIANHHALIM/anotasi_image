@@ -173,13 +173,33 @@ def home_view(request):
     # Calculate assigned count (total - unannotated)
     assigned_count = total_images - unannotated_count
     
-    # Prepare real assignment stats
+    # Prepare real assignment stats with chart height calculations
+    def calculate_chart_height(count, max_count):
+        if count == 0:
+            return 0
+        # Calculate percentage, with minimum height of 20% for visibility in charts
+        percentage = (count / max_count) * 100  # Use full scale for Chart.js
+        return max(20, round(percentage))  # Minimum 20% height for non-zero values
+    
+    # Find max count for proportional scaling
+    max_count = max(assigned_count, in_review_count, in_rework_count, finished_count) if total_images > 0 else 1
+    # If all values are 0 or very small, use total_images as baseline
+    if max_count == 0:
+        max_count = total_images if total_images > 0 else 1
+    
     assignment_stats = {
         'total': total_images,
         'assign': assigned_count,
         'progress': in_review_count,
         'reviewing': in_rework_count,  # Use in_rework as "reviewing"
-        'finished': finished_count
+        'finished': finished_count,
+        # Add chart data for better visualization
+        'chart_data': {
+            'assign': {'count': assigned_count, 'height': calculate_chart_height(assigned_count, max_count)},
+            'progress': {'count': in_review_count, 'height': calculate_chart_height(in_review_count, max_count)},
+            'reviewing': {'count': in_rework_count, 'height': calculate_chart_height(in_rework_count, max_count)},
+            'finished': {'count': finished_count, 'height': calculate_chart_height(finished_count, max_count)}
+        }
     }
     
     context = {
