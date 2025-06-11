@@ -71,7 +71,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         {% for member in members %}
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='{% url 'master:performance_individual' member.id %}'">
                             <td class="px-10 py-6 text-lg">
                                 <div class="font-medium text-gray-900">{{ member.email }}</div>
                                 <div class="text-base text-gray-500 mt-1">{{ member.phone_number }}</div>

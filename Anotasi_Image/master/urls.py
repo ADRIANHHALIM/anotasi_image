@@ -13,6 +13,7 @@ urlpatterns = [
     path("job_settings/", views.job_settings_view, name="job_settings"),
     path("issue_solving/", views.issue_solving_view, name="issue_solving"),
     path("performance/", views.performance_view, name="performance"),
+    path("performance/<int:user_id>/", views.performance_individual_view, name="performance_individual"),
 
     # Update Role
     path("update_role/", views.update_role, name="update_role"),
