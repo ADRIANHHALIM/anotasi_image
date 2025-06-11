@@ -212,9 +212,46 @@ def home_view(request):
 
 @login_required
 def assign_roles_view(request):
+    # Get new members (guests) with project count
     new_members = CustomUser.objects.filter(role='guest')
+    new_members_data = []
+    
+    for user in new_members:
+        # Calculate project count based on job assignments
+        annotator_jobs = JobProfile.objects.filter(worker_annotator=user).count()
+        reviewer_jobs = JobProfile.objects.filter(worker_reviewer=user).count()
+        total_projects = annotator_jobs + reviewer_jobs
+        
+        new_members_data.append({
+            'id': user.id,
+            'email': user.email,
+            'phone_number': user.phone_number or '',
+            'role': user.role,
+            'project_count': total_projects
+        })
+    
+    # Get existing members (non-guests) with project count
     members = CustomUser.objects.exclude(role='guest')
-    return render(request, "master/assign_roles.html", {'new_members': new_members, 'members': members})
+    members_data = []
+    
+    for user in members:
+        # Calculate project count based on job assignments
+        annotator_jobs = JobProfile.objects.filter(worker_annotator=user).count()
+        reviewer_jobs = JobProfile.objects.filter(worker_reviewer=user).count()
+        total_projects = annotator_jobs + reviewer_jobs
+        
+        members_data.append({
+            'id': user.id,
+            'email': user.email,
+            'phone_number': user.phone_number or '',
+            'role': user.role,
+            'project_count': total_projects
+        })
+    
+    return render(request, "master/assign_roles.html", {
+        'new_members': new_members_data, 
+        'members': members_data
+    })
 
 @login_required
 @require_http_methods(["POST"])
