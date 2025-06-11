@@ -116,12 +116,77 @@ def activate(request, uidb64, token):
 
 @login_required
 def home_view(request):
+    # Real data for Status Section - get users with job assignments
+    annotators_reviewers = CustomUser.objects.filter(role__in=['annotator', 'reviewer']).order_by('email')
+    
+    # Real status data - determine user status based on job assignments
+    status_list = []
+    for user in annotators_reviewers:
+        # Check if user has active job assignments
+        has_active_jobs = False
+        if user.role == 'annotator':
+            has_active_jobs = JobProfile.objects.filter(
+                worker_annotator=user, 
+                status__in=['in_progress']
+            ).exists()
+        elif user.role == 'reviewer':
+            has_active_jobs = JobProfile.objects.filter(
+                worker_reviewer=user, 
+                status__in=['in_progress']
+            ).exists()
+        
+        # Determine status based on job assignments
+        if has_active_jobs:
+            status = 'In Job'
+            status_class = 'text-blue-700 bg-blue-100'
+        else:
+            # Check if user has any jobs assigned but not active
+            has_any_jobs = False
+            if user.role == 'annotator':
+                has_any_jobs = JobProfile.objects.filter(worker_annotator=user).exists()
+            elif user.role == 'reviewer':
+                has_any_jobs = JobProfile.objects.filter(worker_reviewer=user).exists()
+            
+            if has_any_jobs:
+                status = 'Ready'
+                status_class = 'text-green-700 bg-green-100'
+            else:
+                status = 'Not Ready'
+                status_class = 'text-red-700 bg-red-100'
+        
+        status_list.append({
+            'name': f"{user.first_name} {user.last_name}".strip() or user.email,
+            'status': status,
+            'status_class': status_class
+        })
+    
+    # Real data for Assignment Stats Card
+    # Calculate the same statistics as in performance view
+    total_images = JobImage.objects.count()
+    
+    # Calculate status counts
+    unannotated_count = JobImage.objects.filter(status='unannotated').count()
+    in_review_count = JobImage.objects.filter(status='in_review').count()
+    in_rework_count = JobImage.objects.filter(status='in_rework').count()
+    finished_count = JobImage.objects.filter(status='finished').count()
+    
+    # Calculate assigned count (total - unannotated)
+    assigned_count = total_images - unannotated_count
+    
+    # Prepare real assignment stats
+    assignment_stats = {
+        'total': total_images,
+        'assign': assigned_count,
+        'progress': in_review_count,
+        'reviewing': in_rework_count,  # Use in_rework as "reviewing"
+        'finished': finished_count
+    }
+    
     context = {
         'users': CustomUser.objects.all(),
         'datasets': Dataset.objects.all().order_by('-date_created'),
-        'status_list': [
-            {'name': 'Andy Wirawan', 'status': 'Not Ready'},
-        ]
+        'status_list': status_list,
+        'assignment_stats': assignment_stats,
     }
     return render(request, 'master/home.html', context)
 
@@ -258,7 +323,89 @@ def performance_view(request):
     """
     Renders the performance page for authenticated users.
     """
-    return render(request, "master/performance.html")
+    # Ambil semua user dengan role annotator dan reviewer
+    members = CustomUser.objects.filter(role__in=["annotator", "reviewer"]).order_by('role', 'email')
+
+    # Hitung jumlah project (job) yang pernah diassign ke user (sebagai annotator/reviewer)
+    member_data = []
+    for user in members:
+        # Hitung jumlah job sebagai annotator
+        project_count = JobProfile.objects.filter(worker_annotator=user).count()
+        # Hitung jumlah job sebagai reviewer
+        if user.role == 'reviewer':
+            project_count = JobProfile.objects.filter(worker_reviewer=user).count()
+        member_data.append({
+            'email': user.email,
+            'phone_number': user.phone_number or '-',
+            'role': user.get_role_display(),
+            'project_count': project_count,
+            'group': '-',
+        })
+
+    # Calculate real statistics for Card & Chart section
+    # Get all job images and their status counts
+    total_images = JobImage.objects.count()
+    
+    # Calculate status counts
+    unannotated_count = JobImage.objects.filter(status='unannotated').count()
+    in_review_count = JobImage.objects.filter(status='in_review').count()
+    in_rework_count = JobImage.objects.filter(status='in_rework').count()
+    finished_count = JobImage.objects.filter(status='finished').count()
+    issue_count = JobImage.objects.filter(status='Issue').count()
+    
+    # Calculate assignment stats - images that are assigned (not unannotated)
+    assigned_count = total_images - unannotated_count
+    
+    # Calculate percentage completion
+    completion_percentage = round((finished_count / total_images * 100)) if total_images > 0 else 0
+    
+    # Prepare chart data (heights as percentages of max value for styling)
+    # Use total_images as max for better proportional representation
+    max_count = total_images if total_images > 0 else 1
+    
+    def calculate_height(count):
+        if count == 0:
+            return 0
+        # Calculate percentage, with minimum height of 15% for visibility
+        percentage = (count / max_count) * 80  # Use 80% of container height
+        return max(15, round(percentage))  # Minimum 15% height for non-zero values
+    
+    chart_data = {
+        'assign': {
+            'count': assigned_count,
+            'height': calculate_height(assigned_count)
+        },
+        'progress': {  # in_review 
+            'count': in_review_count,
+            'height': calculate_height(in_review_count)
+        },
+        'reworking': {  # in_rework
+            'count': in_rework_count,
+            'height': calculate_height(in_rework_count)
+        },
+        'finished': {
+            'count': finished_count,
+            'height': calculate_height(finished_count)
+        }
+    }
+    
+    # Prepare context data
+    context = {
+        'members': member_data,
+        'total_images': total_images,
+        'completion_percentage': completion_percentage,
+        'chart_data': chart_data,
+        'status_counts': {
+            'unannotated': unannotated_count,
+            'assigned': assigned_count,
+            'in_review': in_review_count,
+            'in_rework': in_rework_count,
+            'finished': finished_count,
+            'issues': issue_count,
+        }
+    }
+
+    return render(request, "master/performance.html", context)
 
 @login_required
 def process_validations_view(request, job_id=None):
