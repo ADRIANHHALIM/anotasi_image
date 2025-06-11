@@ -6,26 +6,12 @@
 <div class="fixed top-0 w-[450px] bg-white shadow-lg p-6 rounded-bl-lg" style="margin-top: 100px; right: 100;">
     <h2 class="text-4xl font-bold mb-6">Status</h2>
     <div class="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto text-xl">
+        {% for user_status in status_list %}
         <div class="flex items-center justify-between py-2">
-            <span>Andy Wirawan</span>
-            <span class="px-3 py-1 rounded-full text-red-700 bg-red-100">Not Ready</span>
+            <span>{{ user_status.name }}</span>
+            <span class="px-3 py-1 rounded-full {{ user_status.status_class }}">{{ user_status.status }}</span>
         </div>
-        <div class="flex items-center justify-between py-2">
-            <span>Wiyoko Suprapto</span>
-            <span class="px-3 py-1 rounded-full text-green-700 bg-green-100">Ready</span>
-        </div>
-        <div class="flex items-center justify-between py-2">
-            <span>Jeffry Sutanto</span>
-            <span class="px-3 py-1 rounded-full text-blue-700 bg-blue-100">In Job</span>
-        </div>
-        <div class="flex items-center justify-between py-2">
-            <span>Andrew Setiawan</span>
-            <span class="px-3 py-1 rounded-full text-blue-700 bg-blue-100">In Job</span>
-        </div>
-        <div class="flex items-center justify-between py-2">
-            <span>Rani Septiani</span>
-            <span class="px-3 py-1 rounded-full text-blue-700 bg-blue-100">In Job</span>
-        </div>
+        {% endfor %}
     </div>
 </div>
 
@@ -34,26 +20,26 @@
     <div class="bg-gray-100 p-10 rounded-lg mb-8">
         <h2 class="text-5xl font-bold mb-8">Entire Assignment</h2>
         <div class="flex space-x-12 items-center">
-            <div class="text-6xl font-bold text-[#4527A0]">16,765</div>
+            <div class="text-6xl font-bold text-[#4527A0]">{{ assignment_stats.total|floatformat:0 }}</div>
             <div class="flex-1">
                 <canvas id="assignmentChart" height="200"></canvas>
             </div>
             <div class="flex flex-col justify-center text-xl space-y-4">
                 <div class="flex items-center">
                     <div class="w-4 h-4 rounded-full bg-[#4B5563] mr-3"></div>
-                    <span>Assign</span>
+                    <span>Assign ({{ assignment_stats.assign }})</span>
                 </div>
                 <div class="flex items-center">
                     <div class="w-4 h-4 rounded-full bg-[#3B82F6] mr-3"></div>
-                    <span>Progress</span>
+                    <span>Progress ({{ assignment_stats.progress }})</span>
                 </div>
                 <div class="flex items-center">
                     <div class="w-4 h-4 rounded-full bg-[#4F46E5] mr-3"></div>
-                    <span>Reviewing</span>
+                    <span>Reviewing ({{ assignment_stats.reviewing }})</span>
                 </div>
                 <div class="flex items-center">
                     <div class="w-4 h-4 rounded-full bg-[#7C3AED] mr-3"></div>
-                    <span>Finished</span>
+                    <span>Finished ({{ assignment_stats.finished }})</span>
                 </div>
             </div>
         </div>
@@ -202,7 +188,7 @@
             data: {
                 labels: ['Assign', 'Progress', 'Reviewing', 'Finished'],
                 datasets: [{
-                    data: [300, 450, 200, 150],
+                    data: [{{ assignment_stats.assign }}, {{ assignment_stats.progress }}, {{ assignment_stats.reviewing }}, {{ assignment_stats.finished }}],
                     backgroundColor: ['#4B5563', '#3B82F6', '#4F46E5', '#7C3AED'],
                     borderRadius: 4,
                     barThickness: 40
