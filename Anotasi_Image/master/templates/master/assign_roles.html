@@ -1,86 +1,92 @@
 {% extends 'base_master.html' %}
 {% block content %}
     {% csrf_token %}
-    <div class="ml-64 p-6">
+    <div class="ml-64 p-4 pr-4">
         <!-- Content for Assign Role -->
-        <h1 class="text-3xl font-bold">Roles and Job</h1>
-        <div class="mt-4">
-            <div class="flex space-x-4">
-                <button id="rolesButton" class="py-2 px-4 bg-blue-500 text-white rounded-lg focus:outline-none" onclick="showRoles()">Roles</button>
-                <button id="membersButton" class="py-2 px-4 bg-gray-200 text-gray-700 rounded-lg focus:outline-none" onclick="showMembers()">Member</button>
+        <h1 class="text-2xl font-bold">Roles and Job</h1>
+        <div class="mt-6">
+            <div class="flex space-x-6">
+                <button id="rolesButton" class="py-3 px-6 bg-blue-500 text-white rounded-lg focus:outline-none text-lg font-medium" onclick="showRoles()">Roles</button>
+                <button id="membersButton" class="py-3 px-6 bg-gray-200 text-gray-700 rounded-lg focus:outline-none text-lg font-medium" onclick="showMembers()">Member</button>
             </div>
-            <div id="rolesSection" class="mt-4">
+            <div id="rolesSection" class="mt-6">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-semibold">New Member</h2>
-                    <button class="py-2 px-4 bg-[#4527A0] text-white rounded-lg focus:outline-none" onclick="saveChanges()">Save</button>
+                    <button class="py-3 px-6 bg-[#4527A0] text-white rounded-lg focus:outline-none text-lg font-medium" onclick="saveChanges()">Save</button>
                 </div>
-                <div class="mt-4 bg-white shadow-md rounded-lg overflow-hidden">
-                    <table class="table-auto min-w-full bg-white text-lg">
+                <div class="mt-6 bg-white shadow-lg rounded-lg overflow-hidden w-full">
+                    <table class="table-fixed w-full bg-white">
                         <thead class="bg-gray-200 text-gray-600">
                             <tr>
-                                <th class="py-4 px-6 text-left">Email / No.hp</th>
-                                <th class="py-4 px-6 text-left">Default Role</th>
-                                <th class="py-4 px-6 text-left">Project</th>
-                                <th class="py-4 px-6 text-left">Group</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-2/5">Email / No.hp</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Default Role</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Project</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Group</th>
                             </tr>
                         </thead>
                         <tbody class="text-gray-700">
                             {% for user in new_members %}
-                            <tr>
-                                <td class="py-4 px-6 border-b">{{ user.email }}<br>{{ user.phone_number }}</td>
-                                <td class="py-4 px-6 border-b">
-                                    <select class="bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0]" data-user-id="{{ user.id }}">
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-4 px-6 border-b w-2/5">
+                                    <div class="font-medium">{{ user.email }}</div>
+                                    <div class="text-gray-500 mt-1 text-sm">{{ user.phone_number }}</div>
+                                </td>
+                                <td class="py-4 px-6 border-b w-1/5">
+                                    <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full" data-user-id="{{ user.id }}">
                                         <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
                                         <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
                                         <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
                                         <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
                                     </select>
                                 </td>
-                                <td class="py-4 px-6 border-b">0 (All)</td>
-                                <td class="py-4 px-6 border-b">-</td>
+                                <td class="py-4 px-6 border-b w-1/5">{{ user.project_count }} <span class="text-gray-500">(All)</span></td>
+                                <td class="py-4 px-6 border-b w-1/5">-</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div id="membersSection" class="mt-4 hidden">
+            <div id="membersSection" class="mt-6 hidden">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-semibold">Members</h2>
                 </div>
-                <div class="mt-4">
-                    <div class="flex space-x-4">
-                        <input type="text" id="searchInput" class="py-2 px-4 border border-gray-300 rounded-md" placeholder="Search by email/No.hp" onkeyup="filterMembers()">
-                        <select id="roleFilter" class="py-2 px-4 border border-gray-300 rounded-md" onchange="filterMembers()">
+                <div class="mt-6">
+                    <div class="flex space-x-4 w-full">
+                        <input type="text" id="searchInput" class="py-3 px-4 border border-gray-300 rounded-lg flex-1" placeholder="Search by email/No.hp" onkeyup="filterMembers()">
+                        <select id="roleFilter" class="py-3 px-4 border border-gray-300 rounded-lg min-w-[200px]" onchange="filterMembers()">
                             <option value="">Default Role</option>
                             <option value="guest">Guest</option>
                             <option value="annotator">Annotator</option>
                             <option value="reviewer">Reviewer</option>
                             <option value="member">Member</option>
                         </select>
-                        <select id="groupFilter" class="py-2 px-4 border border-gray-300 rounded-md" onchange="filterMembers()">
+                        <select id="groupFilter" class="py-3 px-4 border border-gray-300 rounded-lg min-w-[150px]" onchange="filterMembers()">
                             <option value="">Group</option>
                             <!-- Add group options here -->
                         </select>
                     </div>
                 </div>
-                <div class="mt-4 bg-white shadow-md rounded-lg overflow-hidden">
-                    <table class="table-auto min-w-full bg-white text-lg">
+                <div class="mt-6 bg-white shadow-lg rounded-lg overflow-hidden w-full">
+                    <table class="table-fixed w-full bg-white">
                         <thead class="bg-gray-200 text-gray-600">
                             <tr>
-                                <th class="py-4 px-6 text-left">Email / No.hp</th>
-                                <th class="py-4 px-6 text-left">Default Role</th>
-                                <th class="py-4 px-6 text-left">Project</th>
-                                <th class="py-4 px-6 text-left">Group</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-2/5">Email / No.hp</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Default Role</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Project</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Group</th>
                             </tr>
                         </thead>
                         <tbody id="membersTable" class="text-gray-700">
                             {% for user in members %}
-                            <tr>
-                                <td class="py-4 px-6 border-b">{{ user.email }}<br>{{ user.phone_number }}</td>
-                                <td class="py-4 px-6 border-b">{{ user.role }}</td>
-                                <td class="py-4 px-6 border-b">0 (All)</td>
-                                <td class="py-4 px-6 border-b">-</td>
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-4 px-6 border-b w-2/5">
+                                    <div class="font-medium">{{ user.email }}</div>
+                                    <div class="text-gray-500 mt-1 text-sm">{{ user.phone_number }}</div>
+                                </td>
+                                <td class="py-4 px-6 border-b font-medium w-1/5">{{ user.role|capfirst }}</td>
+                                <td class="py-4 px-6 border-b w-1/5">{{ user.project_count }} <span class="text-gray-500">(All)</span></td>
+                                <td class="py-4 px-6 border-b w-1/5">-</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -91,10 +97,10 @@
     </div>
     
     <!-- Add this modal markup just before the script tag -->
-    <div id="updateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center">
-        <div class="bg-white p-8 rounded-lg shadow-xl">
-            <h3 class="text-xl mb-4" id="modalMessage"></h3>
-            <button onclick="closeModal()" class="bg-[#4527A0] text-white px-4 py-2 rounded">Close</button>
+    <div id="updateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <h3 class="text-xl mb-6 font-semibold text-center" id="modalMessage"></h3>
+            <button onclick="closeModal()" class="bg-[#4527A0] text-white px-6 py-3 rounded-lg w-full font-medium">Close</button>
         </div>
     </div>
 
