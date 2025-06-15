@@ -1180,3 +1180,266 @@ def performance_individual_view(request, user_id):
     }
     
     return render(request, "master/performance_individual.html", context)
+def project_list_view(request):
+    """View to list all projects with filtering and search"""
+    projects = Project.objects.all()
+    
+    # Filter by status
+    status_filter = request.GET.get('status')
+    if status_filter:
+        projects = projects.filter(status=status_filter)
+    
+    # Filter by priority
+    priority_filter = request.GET.get('priority')
+    if priority_filter:
+        projects = projects.filter(priority=priority_filter)
+    
+    # Search by name or description
+    search_query = request.GET.get('search')
+    if search_query:
+        projects = projects.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query)
+        )
+    
+    # Annotate with additional data
+    projects = projects.annotate(
+        total_jobs=Count('jobs'),
+        completed_jobs=Count('jobs', filter=Q(jobs__status='finish'))
+    )
+    
+    context = {
+        'projects': projects,
+        'status_choices': Project.STATUS_CHOICES,
+        'priority_choices': Project.PRIORITY_CHOICES,
+        'current_status': status_filter,
+        'current_priority': priority_filter,
+        'search_query': search_query,
+    }
+    
+    return render(request, "master/project_list.html", context)
+
+@login_required
+def project_create_view(request):
+    """View to create a new project"""
+    if request.method == 'POST':
+        try:
+            project = Project.objects.create(
+                name=request.POST['name'],
+                description=request.POST.get('description', ''),
+                owner=request.user,
+                status=request.POST.get('status', 'planning'),
+                priority=request.POST.get('priority', 'medium'),
+                start_date=request.POST.get('start_date') if request.POST.get('start_date') else None,
+                end_date=request.POST.get('end_date') if request.POST.get('end_date') else None,
+                deadline=request.POST.get('deadline') if request.POST.get('deadline') else None,
+                budget=request.POST.get('budget') if request.POST.get('budget') else None,
+                estimated_hours=request.POST.get('estimated_hours') if request.POST.get('estimated_hours') else None,
+            )
+            
+            # Add the owner as a project manager
+            ProjectMember.objects.create(
+                project=project,
+                user=request.user,
+                role='manager',
+                can_create_jobs=True,
+                can_assign_tasks=True,
+                can_view_reports=True,
+                can_manage_team=True,
+            )
+            
+            messages.success(request, f'Project "{project.name}" created successfully!')
+            return redirect('master:project_detail', project_id=project.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error creating project: {str(e)}')
+    
+    context = {
+        'status_choices': Project.STATUS_CHOICES,
+        'priority_choices': Project.PRIORITY_CHOICES,
+    }
+    
+    return render(request, "master/project_create.html", context)
+
+@login_required
+def project_detail_view(request, project_id):
+    """View to display project details with jobs and team members"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Get project jobs with statistics
+    jobs = project.jobs.all().annotate(
+        total_images=Count('images'),
+        completed_images=Count('images', filter=Q(images__status='finished'))
+    )
+    
+    # Get team members
+    team_members = project.memberships.filter(is_active=True).select_related('user')
+    
+    # Calculate project statistics
+    total_jobs = jobs.count()
+    completed_jobs = jobs.filter(status='finish').count()
+    total_images = sum(job.total_images for job in jobs)
+    completed_images = sum(job.completed_images for job in jobs)
+    
+    progress_percentage = project.get_progress_percentage()
+    
+    context = {
+        'project': project,
+        'jobs': jobs,
+        'team_members': team_members,
+        'total_jobs': total_jobs,
+        'completed_jobs': completed_jobs,
+        'total_images': total_images,
+        'completed_images': completed_images,
+        'progress_percentage': progress_percentage,
+    }
+    
+    return render(request, "master/project_detail.html", context)
+
+@login_required
+def project_edit_view(request, project_id):
+    """View to edit project details"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Check if user has permission to edit
+    membership = ProjectMember.objects.filter(
+        project=project,
+        user=request.user,
+        is_active=True
+    ).first()
+    
+    if not (project.owner == request.user or (membership and membership.can_manage_team)):
+        messages.error(request, 'You do not have permission to edit this project.')
+        return redirect('master:project_detail', project_id=project.id)
+    
+    if request.method == 'POST':
+        try:
+            project.name = request.POST['name']
+            project.description = request.POST.get('description', '')
+            project.status = request.POST.get('status', project.status)
+            project.priority = request.POST.get('priority', project.priority)
+            
+            if request.POST.get('start_date'):
+                project.start_date = request.POST['start_date']
+            if request.POST.get('end_date'):
+                project.end_date = request.POST['end_date']
+            if request.POST.get('deadline'):
+                project.deadline = request.POST['deadline']
+            if request.POST.get('budget'):
+                project.budget = request.POST['budget']
+            if request.POST.get('estimated_hours'):
+                project.estimated_hours = request.POST['estimated_hours']
+            
+            project.save()
+            messages.success(request, 'Project updated successfully!')
+            return redirect('master:project_detail', project_id=project.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error updating project: {str(e)}')
+    
+    context = {
+        'project': project,
+        'status_choices': Project.STATUS_CHOICES,
+        'priority_choices': Project.PRIORITY_CHOICES,
+    }
+    
+    return render(request, "master/project_edit.html", context)
+
+@login_required
+def project_members_view(request, project_id):
+    """View to manage project team members"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Check if user has permission to manage team
+    membership = ProjectMember.objects.filter(
+        project=project,
+        user=request.user,
+        is_active=True
+    ).first()
+    
+    if not (project.owner == request.user or (membership and membership.can_manage_team)):
+        messages.error(request, 'You do not have permission to manage team members.')
+        return redirect('master:project_detail', project_id=project.id)
+    
+    # Get current team members
+    team_members = project.memberships.all().select_related('user').order_by('-joined_date')
+    
+    context = {
+        'project': project,
+        'team_members': team_members,
+        'role_choices': ProjectMember.ROLE_CHOICES,
+    }
+    
+    return render(request, "master/project_members.html", context)
+
+@login_required
+def add_project_member_view(request, project_id):
+    """View to add a new team member to the project"""
+    project = get_object_or_404(Project, id=project_id)
+    
+    # Check if user has permission to manage team
+    membership = ProjectMember.objects.filter(
+        project=project,
+        user=request.user,
+        is_active=True
+    ).first()
+    
+    if not (project.owner == request.user or (membership and membership.can_manage_team)):
+        messages.error(request, 'You do not have permission to add team members.')
+        return redirect('master:project_detail', project_id=project.id)
+    
+    if request.method == 'POST':
+        try:
+            user_id = request.POST['user_id']
+            role = request.POST['role']
+            
+            user = get_object_or_404(CustomUser, id=user_id)
+            
+            # Check if user is already a member
+            existing_membership = ProjectMember.objects.filter(
+                project=project,
+                user=user
+            ).first()
+            
+            if existing_membership:
+                if existing_membership.is_active:
+                    messages.warning(request, f'{user.email} is already a member of this project.')
+                else:
+                    # Reactivate membership
+                    existing_membership.is_active = True
+                    existing_membership.role = role
+                    existing_membership.save()
+                    messages.success(request, f'{user.email} has been re-added to the project.')
+            else:
+                # Set permissions based on role
+                permissions = {
+                    'can_create_jobs': role in ['manager', 'lead_annotator', 'lead_reviewer'],
+                    'can_assign_tasks': role in ['manager', 'lead_annotator', 'lead_reviewer'],
+                    'can_view_reports': True,
+                    'can_manage_team': role == 'manager',
+                }
+                
+                ProjectMember.objects.create(
+                    project=project,
+                    user=user,
+                    role=role,
+                    **permissions
+                )
+                messages.success(request, f'{user.email} has been added to the project.')
+            
+            return redirect('master:project_members', project_id=project.id)
+            
+        except Exception as e:
+            messages.error(request, f'Error adding team member: {str(e)}')
+    
+    # Get available users (not current members)
+    current_member_ids = project.memberships.filter(is_active=True).values_list('user_id', flat=True)
+    available_users = CustomUser.objects.exclude(id__in=current_member_ids)
+    
+    context = {
+        'project': project,
+        'available_users': available_users,
+        'role_choices': ProjectMember.ROLE_CHOICES,
+    }
+    
+    return render(request, "master/add_project_member.html", context)
