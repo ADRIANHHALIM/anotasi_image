@@ -141,8 +141,14 @@
         <div class="flex-1 flex flex-col">
             <!-- Header -->
             <div class="border-b border-gray-200">
-                <div class="p-4">
+                <div class="p-4 flex justify-between items-center">
                     <h2 id="modalJobTitle" class="text-2xl font-bold">Loading...</h2>
+                    <button onclick="closeIssueModal()" 
+                            class="text-gray-500 hover:text-gray-700 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -285,7 +291,7 @@ function showImage(index) {
     }
 
     // Set image attributes
-    img.className = 'max-w-full max-h-full object-contain';
+    img.className = 'max-w-full max-h-[70vh] object-contain';
     img.alt = 'Main Image';
 
     // Set up onload handler
@@ -300,7 +306,7 @@ function showImage(index) {
         } catch (error) {
             console.error('Error appending image to container:', error);
             // Try an alternative approach if the first one fails
-            imageContainer.innerHTML = `<img id="mainImage" src="${image.url}" alt="Main Image" class="max-w-full max-h-full object-contain">`;
+            imageContainer.innerHTML = `<img id="mainImage" src="${image.url}" alt="Main Image" class="max-w-full max-h-[70vh] object-contain">`;
             console.log('Used innerHTML as fallback');
         }
 
@@ -451,5 +457,50 @@ function showError(message) {
         `;
     }
 }
+
+function closeIssueModal() {
+    const modal = document.getElementById('issueDetailModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        
+        // Reset modal state
+        currentImages = [];
+        currentImageIndex = 0;
+        
+        // Clear image container
+        const imageContainer = document.getElementById('imageContainer');
+        if (imageContainer) {
+            imageContainer.innerHTML = '';
+        }
+        
+        console.log('Issue modal closed');
+    }
+}
+
+// Setup DOM event listeners when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setupImageSliderControls();
+    
+    // Add click outside modal to close
+    const modal = document.getElementById('issueDetailModal');
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeIssueModal();
+            }
+        });
+    }
+    
+    // Add ESC key listener to close modal
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('issueDetailModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closeIssueModal();
+            }
+        }
+    });
+});
 </script>
 {% endblock %}
