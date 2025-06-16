@@ -145,6 +145,7 @@ def job_image_path(instance, filename):
 class JobImage(models.Model):
     STATUS_CHOICES = [
         ('unannotated', 'Unannotated'),
+        ('annotated', 'Annotated'),
         ('in_review', 'In Review'),
         ('in_rework', 'In Rework'),
         ('finished', 'Finished'),

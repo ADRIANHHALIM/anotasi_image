@@ -480,6 +480,7 @@ def process_validations_view(request, job_id=None):
             images = job.images.all().order_by('id')
             status_counts = {
                 'unannotated': images.filter(status='unannotated').count(),
+                'annotated': images.filter(status='annotated').count(),
                 'in_review': images.filter(status='in_review').count(),
                 'in_rework': images.filter(status='in_rework').count(),
                 'Issue': images.filter(status='Issue').count(),
@@ -1092,6 +1093,7 @@ def performance_individual_view(request, user_id):
     # Calculate image status statistics
     image_status_counts = {
         'unannotated': user_images.filter(status='unannotated').count(),
+        'annotated': user_images.filter(status='annotated').count(),
         'in_review': user_images.filter(status='in_review').count(),
         'in_rework': user_images.filter(status='in_rework').count(),
         'finished': user_images.filter(status='finished').count(),
@@ -1099,11 +1101,14 @@ def performance_individual_view(request, user_id):
     
     # Calculate height percentages for job chart
     max_job_count = max(job_status_counts.values()) if job_status_counts.values() else 1
+    
     def calculate_job_height(count):
         if count == 0:
             return 0
+        if max_job_count == 0:
+            return 0
         percentage = (count / max_job_count) * 80
-        return max(15, round(percentage))
+        return max(20, round(percentage))  # Minimum height increased to 20 for better visibility
     
     job_chart_data = {
         'assign': {
@@ -1125,23 +1130,36 @@ def performance_individual_view(request, user_id):
     }
     
     # Calculate height percentages for image chart
-    max_image_count = max(image_status_counts.values()) if image_status_counts.values() else 1
+    max_image_count = max([
+        image_status_counts['unannotated'],
+        image_status_counts['annotated'],
+        image_status_counts['in_review'],
+        image_status_counts['in_rework'],
+        image_status_counts['finished']
+    ]) if any(image_status_counts.values()) else 1
+    
     def calculate_image_height(count):
         if count == 0:
             return 0
-        percentage = (count / max_image_count) * 80
-        return max(15, round(percentage))
+        if max_image_count == 0:
+            return 0
+        percentage = (count / max_image_count) * 75  # Reduced from 80 to leave room for empty bars
+        return max(25, round(percentage))  # Minimum height increased to 25 for better visibility
     
     image_chart_data = {
         'unannotated': {
             'count': image_status_counts['unannotated'],
             'height': calculate_image_height(image_status_counts['unannotated'])
         },
+        'annotated': {
+            'count': image_status_counts['annotated'],
+            'height': calculate_image_height(image_status_counts['annotated'])
+        },
         'progress': {
             'count': image_status_counts['in_review'],
             'height': calculate_image_height(image_status_counts['in_review'])
         },
-        'annotated': {
+        'rework': {
             'count': image_status_counts['in_rework'],
             'height': calculate_image_height(image_status_counts['in_rework'])
         },

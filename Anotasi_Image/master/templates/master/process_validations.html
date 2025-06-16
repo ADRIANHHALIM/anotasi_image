@@ -202,10 +202,14 @@
             </div>
 
             <!-- Status Cards -->
-            <div class="border-b border-gray-200 p-4 grid grid-cols-5 gap-4">
+            <div class="border-b border-gray-200 p-4 grid grid-cols-6 gap-4">
                 <div class="bg-gray-50 p-4 rounded-lg text-center">
                     <div id="modalUnannotated" class="text-2xl font-bold">{{ status_counts.unannotated }}</div>
                     <div class="text-sm text-gray-600">Unannotated</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg text-center">
+                    <div id="modalAnnotated" class="text-2xl font-bold">{{ status_counts.annotated }}</div>
+                    <div class="text-sm text-gray-600">Annotated</div>
                 </div>
                 <div class="bg-blue-50 p-4 rounded-lg text-center">
                     <div id="modalInReview" class="text-2xl font-bold">{{ status_counts.in_review }}</div>
