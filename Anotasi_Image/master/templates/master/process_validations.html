@@ -59,11 +59,29 @@
                             </p>
                             <p class="flex justify-between">
                                 <span>Annotator:</span>
-                                <span>{{ job.annotator_email|default:'-' }}</span>
+                                <span>
+                                    {% if job.worker_annotator %}
+                                        {{ job.worker_annotator.first_name }} {{ job.worker_annotator.last_name }}
+                                        {% if not job.worker_annotator.first_name %}
+                                            {{ job.worker_annotator.email }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
                             </p>
                             <p class="flex justify-between">
                                 <span>Reviewer:</span>
-                                <span>{{ job.reviewer_email|default:'-' }}</span>
+                                <span>
+                                    {% if job.worker_reviewer %}
+                                        {{ job.worker_reviewer.first_name }} {{ job.worker_reviewer.last_name }}
+                                        {% if not job.worker_reviewer.first_name %}
+                                            {{ job.worker_reviewer.email }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
                             </p>
                         </div>
                     </div>
@@ -202,10 +220,14 @@
             </div>
 
             <!-- Status Cards -->
-            <div class="border-b border-gray-200 p-4 grid grid-cols-5 gap-4">
+            <div class="border-b border-gray-200 p-4 grid grid-cols-6 gap-4">
                 <div class="bg-gray-50 p-4 rounded-lg text-center">
                     <div id="modalUnannotated" class="text-2xl font-bold">{{ status_counts.unannotated }}</div>
                     <div class="text-sm text-gray-600">Unannotated</div>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg text-center">
+                    <div id="modalAnnotated" class="text-2xl font-bold">{{ status_counts.annotated }}</div>
+                    <div class="text-sm text-gray-600">Annotated</div>
                 </div>
                 <div class="bg-blue-50 p-4 rounded-lg text-center">
                     <div id="modalInReview" class="text-2xl font-bold">{{ status_counts.in_review }}</div>

@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 from django.db.models.functions import Cast
+import os
 
 class CustomUserManager(BaseUserManager):
     """Custom manager untuk model CustomUser agar mendukung login dengan email atau username."""
@@ -76,6 +77,7 @@ class JobProfile(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     image_count = models.IntegerField(default=0)
+    date_created = models.DateTimeField(auto_now_add=True)
     SEGMENTATION_CHOICES = [
         ('semantic', 'Semantic'),
         ('instance', 'Instance'),
@@ -90,11 +92,20 @@ class JobProfile(models.Model):
         ('in_progress', 'In Progress'),
         ('finish', 'Finished')
     ]
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('urgent', 'Urgent'),
+    ]
     segmentation_type = models.CharField(max_length=20, choices=SEGMENTATION_CHOICES)
     shape_type = models.CharField(max_length=20, choices=SHAPE_CHOICES)
     color = models.CharField(max_length=7)  # For hex color codes
     start_date = models.DateField()
     end_date = models.DateField()
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    estimated_duration = models.DurationField(null=True, blank=True)
+    project_id = models.BigIntegerField(null=True, blank=True)
     worker_annotator = models.ForeignKey(
         CustomUser,
         on_delete=models.SET_NULL,
@@ -145,6 +156,7 @@ def job_image_path(instance, filename):
 class JobImage(models.Model):
     STATUS_CHOICES = [
         ('unannotated', 'Unannotated'),
+        ('annotated', 'Annotated'),
         ('in_review', 'In Review'),
         ('in_rework', 'In Rework'),
         ('finished', 'Finished'),
@@ -152,7 +164,7 @@ class JobImage(models.Model):
     ]
     
     job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='job_images/')
+    image = models.ImageField(upload_to=job_image_path)
     annotator = models.ForeignKey(
         'CustomUser',
         on_delete=models.SET_NULL,
