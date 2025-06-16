@@ -285,7 +285,7 @@ function showImage(index) {
     }
 
     // Set image attributes
-    img.className = 'max-w-full max-h-[70vh] object-contain';
+    img.className = 'max-w-full max-h-full object-contain';
     img.alt = 'Main Image';
 
     // Set up onload handler
@@ -300,7 +300,7 @@ function showImage(index) {
         } catch (error) {
             console.error('Error appending image to container:', error);
             // Try an alternative approach if the first one fails
-            imageContainer.innerHTML = `<img id="mainImage" src="${image.url}" alt="Main Image" class="max-w-full max-h-[70vh] object-contain">`;
+            imageContainer.innerHTML = `<img id="mainImage" src="${image.url}" alt="Main Image" class="max-w-full max-h-full object-contain">`;
             console.log('Used innerHTML as fallback');
         }
 
