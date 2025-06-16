@@ -291,7 +291,7 @@ def job_settings_view(request):
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})
 
-    jobs = JobProfile.objects.all().order_by('-start_date')
+    jobs = JobProfile.objects.all().order_by('-date_created', '-id')
     return render(request, "master/job_settings.html", {'jobs': jobs})
 
 @login_required
@@ -615,7 +615,8 @@ def create_job_profile(request):
             shape_type=request.POST.get('shape'),
             color=request.POST.get('color'),
             start_date=request.POST.get('start_date'),
-            end_date=request.POST.get('end_date')
+            end_date=request.POST.get('end_date'),
+            priority=request.POST.get('priority', 'medium')  # Default to medium if not provided
         )
         return JsonResponse({
             'status': 'success',

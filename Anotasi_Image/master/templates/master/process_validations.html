@@ -59,11 +59,29 @@
                             </p>
                             <p class="flex justify-between">
                                 <span>Annotator:</span>
-                                <span>{{ job.annotator_email|default:'-' }}</span>
+                                <span>
+                                    {% if job.worker_annotator %}
+                                        {{ job.worker_annotator.first_name }} {{ job.worker_annotator.last_name }}
+                                        {% if not job.worker_annotator.first_name %}
+                                            {{ job.worker_annotator.email }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
                             </p>
                             <p class="flex justify-between">
                                 <span>Reviewer:</span>
-                                <span>{{ job.reviewer_email|default:'-' }}</span>
+                                <span>
+                                    {% if job.worker_reviewer %}
+                                        {{ job.worker_reviewer.first_name }} {{ job.worker_reviewer.last_name }}
+                                        {% if not job.worker_reviewer.first_name %}
+                                            {{ job.worker_reviewer.email }}
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </span>
                             </p>
                         </div>
                     </div>
