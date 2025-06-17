@@ -176,6 +176,9 @@ LOGIN_URL = 'master:login'
 LOGIN_REDIRECT_URL = 'master:home'
 LOGOUT_REDIRECT_URL = 'master:login'
 
+# Annotator-specific login URL
+ANNOTATOR_LOGIN_URL = 'annotator:signin'
+
 # Email Configuration (Gunakan email Gmail untuk testing)
 if DEBUG:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"  # Untuk debugging (email hanya muncul di terminal)
