@@ -1,0 +1,141 @@
+{% extends 'base_reviewer.html' %} 
+
+
+{% block sidebar %}
+<div class="ms-2 ps-0 pe-0 border-end border-dark d-flex flex-column" style="width: 200px;">
+    <div>
+        <a href="{% url 'reviewer:isu' %}" class="mt-2 w-100  border border-dark rounded text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
+            <img src="{{ nav_isu_base64 }}" alt="nav_isu" class="me-2">
+            Isu
+        </a>
+    </div>
+    <div>
+        <a href="" class="mt-2 pt-1 pb-1 w-100 text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
+            <img src="{{ nav_proses_base64 }}" alt="nav_proses" class="me-2">
+            Proses Review
+        </a>
+    </div>
+    <div class="" >
+        <a href="" class="mt-2 mb-2 pt-1 pb-1 w-100 text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
+            <img src="{{ nav_notif_base64 }}" alt="nav_notif" class="me-2">
+            Notifications
+        </a>
+    </div>
+    <div class="w-100 mt-auto">
+        <div class="d-flex align-items-center  pt-2 pb-2 ps-1 pe-2 " style="width: fit-content;">
+            <div class="d-flex justify-content-center align-items-center " style="width: 35px; height: 35px;">
+                <img src="{{ nav_username_base64 }}" alt="user" style="width: 100%; height: auto;">
+            </div>
+            <div class="flex-grow-1 ps-1">
+                <p class="mb-0 fw-bold">{{ username }}</p>
+                <div class="scroll-hidden">
+                    <p class="mb-0 text-muted" style="font-size: 12px; min-width: max-content;">{{ number_email }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content1 %}
+<div class="col ps-2 pe-1" style="background-color: #faeeee">
+  <div class="ms-3">
+    <div
+      class="btn border border-dark text-center"
+      style="background-color: #ffffff; width: 100%"
+    >
+      <p class="mb-0">Isu_Data Pekerjaan</p>
+    </div>
+    <div class="d-flex mt-2">
+      <div class="d-flex align-item-center bg-light border border-dark rounded">
+        <span class="btn border border-end-0 p-1 rounded-start">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M3 17.962v-1h9.558v1zm0-4.789v-1h4.462v1zm0-4.788v-1h4.462v1zM20.292 18l-3.888-3.83q-.543.405-1.178.627q-.636.222-1.303.222q-1.684 0-2.87-1.164q-1.188-1.164-1.188-2.845t1.188-2.845Q12.242 7 13.928 7t2.869 1.165T17.981 11q0 .667-.222 1.303q-.223.636-.648 1.159L21 17.292zm-6.369-3.98q1.274 0 2.166-.876q.892-.875.892-2.135t-.892-2.134T13.923 8t-2.166.875t-.892 2.135t.892 2.134t2.166.875"/>
+          </svg>
+        </span>
+        <input type="search" class="border border-start-0 rounded-end" placeholder="Search Data" style="width: 100%;">
+      </div>
+      <div class="ms-2"></div>
+      <div class="d-flex align-item-center btn-group dropend">
+        <button
+          type="button"
+          class="btn border border-dark rounded"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          style="background-color: #ffffff"
+        >
+          <span>
+            Status
+          </span>
+          <span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="23" height="17" viewBox="0 0 20 20">
+              <path fill="currentColor" d="M7 1L5.6 2.5L13 10l-7.4 7.5L7 19l9-9z"/>
+            </svg>
+          </span>
+        </button>
+        <ul class="dropdown-menu w-100" style="min-width: 100px">
+          <li><a class="dropdown-item" href="#">Done</a></li>
+          <li><a class="dropdown-item" href="#">Drop</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="mt-2">
+      <div class="border border-dark rounded">
+        <table class="table mb-0 rounded" style="background-color: #ffffff">
+          <thead>
+            <tr>
+              <th scope="col" class="text-center">ID Data</th>
+              <th scope="col" class="text-center">User</th>
+              <th scope="col" class="text-center">ISU</th>
+              <th scope="col" class="text-center">Proses</th>
+              <th scope="col" class="text-center">Tanggal</th>
+              <th scope="col" class="text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="height: 60px;">
+              <td scope="col">
+                <div class="d-flex align-items-center" style="height: 100%;">
+                  <span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+                    <path fill="currentColor" d="M20 17V7c0-2.168-3.663-4-8-4S4 4.832 4 7v10c0 2.168 3.663 4 8 4s8-1.832 8-4M12 5c3.691 0 5.931 1.507 6 1.994C17.931 7.493 15.691 9 12 9S6.069 7.493 6 7.006C6.069 6.507 8.309 5 12 5M6 9.607C7.479 10.454 9.637 11 12 11s4.521-.546 6-1.393v2.387c-.069.499-2.309 2.006-6 2.006s-5.931-1.507-6-2zM6 17v-2.393C7.479 15.454 9.637 16 12 16s4.521-.546 6-1.393v2.387c-.069.499-2.309 2.006-6 2.006s-5.931-1.507-6-2"/>
+                  </svg>
+                </span>
+                <span>Data_1</span>
+                </div>
+              </td>
+              <td scope="col" class="" style="height: 60px;">
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                  <span>Accounts@gmail.com</span>
+                </div>
+              </td>
+              <td scope="col" class="" style="height: 60px;">
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                  <span>4 Isu</span>
+                </div>
+              </td>
+              <td scope="col" class="" style="height: 60px;">
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                  <a href="{% url 'reviewer:isu_image' %}">Riview</a>
+                </div>
+              </td>
+              <td scope="col" class="" style="height: 60px;">
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                  <span>16/03/2025</span>
+                </div>
+              </td>
+              <td scope="col" class="" style="height: 60px;">
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                  <a href="">Drop</a>
+                  <span>/</span>
+                  <a href="">Done</a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
