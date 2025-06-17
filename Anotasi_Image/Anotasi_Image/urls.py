@@ -25,7 +25,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     
     # Annotator
-    path('annotator/', include('annotator.urls')),
+    path('annotator/', include(('annotator.urls', 'annotator'), namespace='annotator')),
     
     # Master
     path('master/',include(('master.urls','master'),namespace='master')),

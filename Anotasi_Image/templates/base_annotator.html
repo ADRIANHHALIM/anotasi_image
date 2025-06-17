@@ -22,7 +22,7 @@
         <nav class="px-2 pt-4">
             <ul>
                 <li>
-                    <a href="{% url 'annotate' %}" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-100 text-gray-900 text-base">
+                    <a href="{% url 'annotator:annotate' %}" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-100 text-gray-900 text-base">
                         <span class="material-icons align-middle">crop_square</span>
                         Annotate
                     </a>
@@ -31,7 +31,7 @@
         </nav>
         <!-- Sidebar Bottom: Notifications & User -->
         <div class="px-2 pb-3">
-            <button class="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md bg-white mb-5 hover:bg-gray-50 text-base">
+            <button onclick="window.location.href='{% url 'annotator:notifications' %}'" class="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md bg-white mb-5 hover:bg-gray-50 text-base">
                 <span class="material-icons">notifications</span>
                 Notifications
             </button>
