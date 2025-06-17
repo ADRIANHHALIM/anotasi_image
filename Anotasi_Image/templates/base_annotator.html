@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TrisaktiAnnotate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white font-sans">
+    <!-- Topbar Full Width -->
+    <div class="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center px-6 z-20">
+        <!-- Logo and Brand -->
+        <div class="flex items-center gap-3">
+            <img src="{% static 'images/trisakti.png' %}" alt="Trisakti Logo" class="h-8 w-8">
+            <span class="text-lg font-bold text-gray-900">TrisaktiAnnotate</span>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="fixed top-16 left-0 bottom-0 w-44 bg-white border-r border-gray-200 flex flex-col justify-between z-10">
+        <!-- Sidebar Menu -->
+        <nav class="px-2 pt-4">
+            <ul>
+                <li>
+                    <a href="{% url 'annotate' %}" class="flex items-center gap-2 px-2 py-2 rounded hover:bg-gray-100 text-gray-900 text-base">
+                        <span class="material-icons align-middle">crop_square</span>
+                        Annotate
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- Sidebar Bottom: Notifications & User -->
+        <div class="px-2 pb-3">
+            <button class="w-full flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-md bg-white mb-5 hover:bg-gray-50 text-base">
+                <span class="material-icons">notifications</span>
+                Notifications
+            </button>
+            <div class="flex items-center gap-2">
+                <span class="material-icons text-2xl">account_circle</span>
+                <div>
+                    <div class="font-semibold text-sm">ADRIANHHALIM</div>
+                    <div class="text-xs text-gray-500">email or mobile phone</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="pt-16 pl-44 min-h-screen bg-white">
+        <div class="p-7 min-h-[calc(100vh-64px)]">
+            {% block content %}
+            <!-- Annotate page content goes here -->
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- Optional: Material Icons CDN for icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</body>
+</html>
