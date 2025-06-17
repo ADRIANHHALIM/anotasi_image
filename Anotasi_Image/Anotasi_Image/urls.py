@@ -32,7 +32,5 @@ urlpatterns = [
     
     # Reviewer
     path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
-    
-    path('accounts/', include('allauth.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

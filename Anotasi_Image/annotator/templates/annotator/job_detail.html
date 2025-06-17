@@ -1,0 +1,217 @@
+{% extends 'base_annotator.html' %}
+{% load static %}
+
+{% block content %}
+<div class="flex-1 p-6 bg-gray-50">
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">Job: {{ job.title }}</h1>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="mb-6">
+        <nav class="flex space-x-8" aria-label="Tabs">
+            <a href="?tab=data" class="{% if current_tab == 'data' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Data Image
+            </a>
+            <a href="?tab=issues" class="{% if current_tab == 'issues' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Issues
+            </a>
+            <a href="?tab=overview" class="{% if current_tab == 'overview' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                Overview
+            </a>
+        </nav>
+    </div>
+    
+    <div class="flex gap-6">
+        <!-- Sidebar -->
+        <div class="w-64 bg-white rounded-lg shadow-sm p-4">
+            {% if current_tab == 'data' %}
+            <h3 class="text-sm font-medium text-gray-900 mb-4">Status Filter</h3>
+            
+            <div class="space-y-2">
+                <a href="?tab=data&status=unannotated" class="flex justify-between items-center p-2 {% if current_status == 'unannotated' or not current_status %}bg-orange-50 border border-orange-200{% else %}bg-gray-50 hover:bg-gray-100{% endif %} rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">Unannotated</span>
+                    <span class="text-sm font-medium {% if current_status == 'unannotated' or not current_status %}text-orange-600{% else %}text-gray-500{% endif %}">{{ status_counts.unannotated }}</span>
+                </a>
+                
+                <a href="?tab=data&status=in_progress" class="flex justify-between items-center p-2 {% if current_status == 'in_progress' %}bg-blue-50 border border-blue-200{% else %}bg-gray-50 hover:bg-gray-100{% endif %} rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">In Progress</span>
+                    <span class="text-sm font-medium {% if current_status == 'in_progress' %}text-blue-600{% else %}text-gray-500{% endif %}">{{ status_counts.in_progress }}</span>
+                </a>
+                
+                <a href="?tab=data&status=in_review" class="flex justify-between items-center p-2 {% if current_status == 'in_review' %}bg-yellow-50 border border-yellow-200{% else %}bg-gray-50 hover:bg-gray-100{% endif %} rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">In Review</span>
+                    <span class="text-sm font-medium {% if current_status == 'in_review' %}text-yellow-600{% else %}text-gray-500{% endif %}">{{ status_counts.in_review }}</span>
+                </a>
+                
+                <a href="?tab=data&status=in_rework" class="flex justify-between items-center p-2 {% if current_status == 'in_rework' %}bg-red-50 border border-red-200{% else %}bg-gray-50 hover:bg-gray-100{% endif %} rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">In Rework</span>
+                    <span class="text-sm font-medium {% if current_status == 'in_rework' %}text-red-600{% else %}text-gray-500{% endif %}">{{ status_counts.in_rework }}</span>
+                </a>
+                
+                <a href="?tab=data&status=annotated" class="flex justify-between items-center p-2 {% if current_status == 'annotated' %}bg-green-50 border border-green-200{% else %}bg-gray-50 hover:bg-gray-100{% endif %} rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">Annotated</span>
+                    <span class="text-sm font-medium {% if current_status == 'annotated' %}text-green-600{% else %}text-gray-500{% endif %}">{{ status_counts.annotated }}</span>
+                </a>
+                
+                <a href="?tab=data&status=finished" class="flex justify-between items-center p-2 {% if current_status == 'finished' %}bg-purple-50 border border-purple-200{% else %}bg-gray-50 hover:bg-gray-100{% endif %} rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">Finished</span>
+                    <span class="text-sm font-medium {% if current_status == 'finished' %}text-purple-600{% else %}text-gray-500{% endif %}">{{ status_counts.finished }}</span>
+                </a>
+                
+                <a href="?tab=data" class="flex justify-between items-center p-2 {% if not current_status %}bg-gray-100 border border-gray-300{% else %}bg-gray-50 hover:bg-gray-100{% endif %} rounded cursor-pointer">
+                    <span class="text-sm text-gray-700">All Status</span>
+                    <span class="text-sm font-medium text-gray-500">{{ all_images.count }}</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Main Content -->
+        <div class="flex-1">
+            {% if current_tab == 'data' %}
+            <!-- Data Image Tab -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Images ID</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Workflow Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Label time</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review time</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for image in images %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ image.id }}.jpg</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if image.status == 'unannotated' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                        Unannotated
+                                    </span>
+                                {% elif image.status == 'in_progress' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        In Progress
+                                    </span>
+                                {% elif image.status == 'in_review' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        In Review
+                                    </span>
+                                {% elif image.status == 'in_rework' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        In Rework
+                                    </span>
+                                {% elif image.status == 'annotated' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Annotated
+                                    </span>
+                                {% elif image.status == 'finished' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                        Finished
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if image.label_time %}
+                                    {{ image.label_time }}s
+                                {% else %}
+                                    0s
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {% if image.review_time %}
+                                    {{ image.review_time }}s
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="px-6 py-12 text-center">
+                                <div class="text-gray-500">
+                                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    <p class="text-sm">No images found for this job</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% elif current_tab == 'issues' %}
+            <!-- Issues Tab -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="text-center py-12">
+                    <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.081 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+                    </svg>
+                    <p class="text-sm text-gray-500">No issues reported for this job</p>
+                </div>
+            </div>
+            
+            {% elif current_tab == 'overview' %}
+            <!-- Overview Tab -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Job Information</h3>
+                        <dl class="space-y-3">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Title</dt>
+                                <dd class="text-sm text-gray-900">{{ job.title }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Description</dt>
+                                <dd class="text-sm text-gray-900">{{ job.description|default:"No description" }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Segmentation Type</dt>
+                                <dd class="text-sm text-gray-900">{{ job.get_segmentation_type_display }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Shape Type</dt>
+                                <dd class="text-sm text-gray-900">{{ job.get_shape_type_display }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Priority</dt>
+                                <dd class="text-sm text-gray-900">{{ job.get_priority_display }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Timeline</h3>
+                        <dl class="space-y-3">
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Start Date</dt>
+                                <dd class="text-sm text-gray-900">{{ job.start_date }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">End Date</dt>
+                                <dd class="text-sm text-gray-900">{{ job.end_date }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Created</dt>
+                                <dd class="text-sm text-gray-900">{{ job.date_created }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-sm font-medium text-gray-500">Estimated Duration</dt>
+                                <dd class="text-sm text-gray-900">{{ job.estimated_duration|default:"Not set" }}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
