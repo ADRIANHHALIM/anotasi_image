@@ -2,18 +2,148 @@
 {% load static %}
 
 {% block content %}
+{% csrf_token %}
 <div class="p-6">
     <h1 class="text-3xl font-bold mb-6">Notifications</h1>
     
-    <!-- Placeholder content for notifications page -->
-    <div class="bg-gray-50 p-8 rounded-lg text-center">
-        <div class="text-gray-600">
-            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM10.586 3L7 6.586A2 2 0 005.586 8H2v6h3.586A2 2 0 007 15.414L10.586 19H16V3h-5.414z"/>
-            </svg>
-            <h2 class="text-xl font-semibold mb-2">Notification Center</h2>
-            <p>No notifications at this time.</p>
-        </div>
+    <!-- Notifications Table -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Task name</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">By</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for notification in notifications %}
+                <tr class="hover:bg-gray-50 {% if notification.status == 'unread' %}bg-blue-50{% endif %} cursor-pointer" 
+                    onclick="handleNotificationClick({{ notification.id }}, {% if notification.job %}{{ notification.job.id }}{% else %}null{% endif %})">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {{ notification.get_task_id }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {{ notification.title }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ notification.get_time_display }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {% if notification.sender %}
+                            {{ notification.sender.username }}
+                        {% else %}
+                            Admin
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        {% if notification.status == 'accepted' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <div class="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+                                Accepted
+                            </span>
+                        {% elif notification.status == 'rejected' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                <div class="w-2 h-2 bg-red-400 rounded-full mr-1"></div>
+                                Rejected
+                            </span>
+                        {% elif notification.status == 'read' %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <div class="w-2 h-2 bg-blue-400 rounded-full mr-1"></div>
+                                Read
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full mr-1"></div>
+                                {{ notification.status|title }}
+                            </span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center">
+                        <div class="text-gray-500">
+                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM10.586 3L7 6.586A2 2 0 005.586 8H2v6h3.586A2 2 0 007 15.414L10.586 19H16V3h-5.414z"/>
+                            </svg>
+                            <h2 class="text-xl font-semibold mb-2">No Notifications</h2>
+                            <p>No notifications at this time.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
+
+<script>
+function handleNotificationClick(notificationId, jobId) {
+    console.log('Notification clicked:', notificationId, 'Job ID:', jobId);
+    
+    if (!jobId) {
+        alert('No job associated with this notification');
+        return;
+    }
+    
+    // Show loading state
+    const row = event.currentTarget;
+    row.style.opacity = '0.6';
+    row.style.pointerEvents = 'none';
+    
+    // Update notification status to 'accepted' via AJAX
+    // Use absolute URL construction
+    const acceptUrl = window.location.origin + `/annotator/accept-notification/${notificationId}/`;
+    console.log('Trying URL:', acceptUrl);
+    
+    fetch(acceptUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            status: 'accepted'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Redirect to job detail page
+            window.location.href = `/annotator/job/${jobId}/`;
+        } else {
+            alert('Failed to update notification status');
+            // Restore row state
+            row.style.opacity = '1';
+            row.style.pointerEvents = 'auto';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred');
+        // Restore row state
+        row.style.opacity = '1';
+        row.style.pointerEvents = 'auto';
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 {% endblock %}

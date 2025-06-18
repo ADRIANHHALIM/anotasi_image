@@ -196,3 +196,148 @@ class JobImage(models.Model):
         if self.image:
             return self.image.url
         return None
+
+class Issue(models.Model):
+    """
+    Model untuk issue/masalah yang ditemukan oleh master atau reviewer 
+    pada hasil anotasi dari annotator
+    """
+    ISSUE_STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('eskalasi', 'Eskalasi'),
+        ('reworking', 'Reworking'),
+        ('closed', 'Closed'),
+    ]
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+    
+    # Basic Information
+    title = models.CharField(max_length=200, help_text="Brief title of the issue")
+    description = models.TextField(help_text="Detailed description of the issue")
+    status = models.CharField(max_length=20, choices=ISSUE_STATUS_CHOICES, default='open')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    
+    # Relationships
+    job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='issues')
+    image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='issues', null=True, blank=True)
+    assigned_to = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='assigned_issues', 
+                                   help_text="Annotator yang harus menangani issue ini")
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_issues',
+                                  help_text="Master/Reviewer yang membuat issue ini")
+    
+    # Additional Information
+    annotation_id = models.CharField(max_length=100, null=True, blank=True, 
+                                   help_text="ID spesifik annotation yang bermasalah")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'priority']),
+            models.Index(fields=['job', 'assigned_to']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Issue #{self.id}: {self.title} - {self.status}"
+    
+    def save(self, *args, **kwargs):
+        # Auto set resolved_at when status changes to closed
+        if self.status == 'closed' and not self.resolved_at:
+            self.resolved_at = timezone.now()
+        elif self.status != 'closed':
+            self.resolved_at = None
+        super().save(*args, **kwargs)
+
+
+class IssueComment(models.Model):
+    """
+    Model untuk komentar/diskusi pada issue
+    """
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='comments')
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"Comment by {self.created_by.username} on Issue #{self.issue.id}"
+
+
+class IssueAttachment(models.Model):
+    """
+    Model untuk file attachment pada issue (screenshot, annotated image, etc.)
+    """
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='issue_attachments/')
+    filename = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"Attachment: {self.filename} for Issue #{self.issue.id}"
+
+class Notification(models.Model):
+    """
+    Model untuk notifikasi kepada annotator
+    """
+    NOTIFICATION_TYPES = [
+        ('job_assigned', 'Job Assigned'),
+        ('job_updated', 'Job Updated'),
+        ('issue_created', 'Issue Created'),
+        ('issue_updated', 'Issue Updated'),
+        ('job_deadline', 'Job Deadline'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('unread', 'Unread'),
+        ('read', 'Read'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    recipient = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='notifications')
+    sender = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True)
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, null=True, blank=True)
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, null=True, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unread')
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Notification for {self.recipient.username}: {self.title}"
+    
+    def mark_as_read(self):
+        """Mark notification as read"""
+        if self.status == 'unread':
+            self.status = 'read'
+            self.read_at = timezone.now()
+            self.save()
+    
+    def get_task_id(self):
+        """Generate task ID similar to screenshot"""
+        if self.job:
+            # Create task ID like: 123456712345544523234
+            return f"{self.job.id}{self.id}{self.created_at.strftime('%Y%m%d%H%M%S')}"
+        return f"{self.id}{self.created_at.strftime('%Y%m%d%H%M%S')}"
+    
+    def get_time_display(self):
+        """Get human readable time like '30 minutes ago'"""
+        from django.utils.timesince import timesince
+        return f"{timesince(self.created_at)} ago"

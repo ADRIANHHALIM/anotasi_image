@@ -4,10 +4,12 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse
 from functools import wraps
 from master.models import JobProfile, JobImage
 from django.utils import timezone
 from django.db.models import Count, Q
+import json
 
 # Create your views here.
 
@@ -93,10 +95,27 @@ def notifications_view(request):
     """
     View for the notifications page
     """
+    from master.models import Notification
+    
+    # Debug: Get current user explicitly
+    current_user = request.user
+    print(f"DEBUG: Current user = {current_user.username} (ID: {current_user.id})")
+    
+    # Get all notifications for current user, ordered by newest first
+    notifications = Notification.objects.filter(
+        recipient=current_user
+    ).select_related('sender', 'job', 'issue').order_by('-created_at')
+    
+    print(f"DEBUG: Query result count = {notifications.count()}")
+    
+    # Also try direct ID query
+    notifications_by_id = Notification.objects.filter(recipient_id=current_user.id)
+    print(f"DEBUG: Direct ID query count = {notifications_by_id.count()}")
+    
     context = {
         'current_page': 'notifications',
         'user': request.user,
-        'notifications': [],  # TODO: Implement notification system
+        'notifications': notifications,
     }
     return render(request, 'annotator/notifications.html', context)
 
@@ -114,6 +133,7 @@ def job_detail_view(request, job_id):
     # Get current tab and status filter
     current_tab = request.GET.get('tab', 'data')
     current_status = request.GET.get('status', '')
+    issue_filter = request.GET.get('issue_status', 'all')
     
     # Filter images based on status if provided
     if current_status and current_status in ['unannotated', 'in_progress', 'in_review', 'in_rework', 'annotated', 'finished']:
@@ -131,6 +151,33 @@ def job_detail_view(request, job_id):
         'finished': all_images.filter(status='finished').count(),
     }
     
+    # Handle Issues data - using real Issue model
+    from master.models import Issue
+    
+    # Get all issues for this job assigned to current user
+    # Issues are only created by Master and Reviewer, not auto-generated
+    all_issues = Issue.objects.filter(job=job, assigned_to=request.user).select_related('created_by', 'image')
+    
+    # Filter issues based on status
+    if issue_filter == 'open':
+        issues = all_issues.filter(status='open')
+    elif issue_filter == 'eskalasi':
+        issues = all_issues.filter(status='eskalasi')
+    elif issue_filter == 'reworking':
+        issues = all_issues.filter(status='reworking')
+    elif issue_filter == 'closed':
+        issues = all_issues.filter(status='closed')
+    else:
+        issues = all_issues
+    
+    # Calculate issue counts
+    issue_counts = {
+        'open': all_issues.filter(status='open').count(),
+        'eskalasi': all_issues.filter(status='eskalasi').count(),
+        'reworking': all_issues.filter(status='reworking').count(),
+        'closed': all_issues.filter(status='closed').count(),
+    }
+
     context = {
         'current_page': 'annotate',
         'user': request.user,
@@ -140,6 +187,9 @@ def job_detail_view(request, job_id):
         'status_counts': status_counts,
         'current_tab': current_tab,
         'current_status': current_status,
+        'issues': issues,
+        'issue_counts': issue_counts,
+        'issue_filter': issue_filter,
     }
     return render(request, 'annotator/job_detail.html', context)
 
@@ -150,3 +200,45 @@ def signout_view(request):
     logout(request)
     messages.success(request, 'You have been signed out successfully.')
     return redirect('annotator:signin')
+
+def accept_notification(request, notification_id):
+    """
+    Accept notification and update status to 'accepted'
+    """
+    if request.method != 'POST':
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Method not allowed'
+        }, status=405)
+        
+    try:
+        from master.models import Notification
+        
+        # Temporarily disable auth check for testing
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Authentication required'
+            }, status=401)
+        
+        notification = get_object_or_404(
+            Notification, 
+            id=notification_id, 
+            recipient=request.user
+        )
+        
+        # Update notification status to accepted
+        notification.status = 'accepted'
+        notification.read_at = timezone.now()
+        notification.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Notification accepted successfully'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400)

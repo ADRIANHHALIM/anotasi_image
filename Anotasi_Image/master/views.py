@@ -16,8 +16,23 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 import json
 from .tokens import account_activation_token
-from .models import CustomUser, Dataset, JobProfile, JobImage
+from .models import CustomUser, Dataset, JobProfile, JobImage, Notification
 from .forms import SignUpForm
+
+def create_job_notification(job, recipient, sender):
+    """
+    Helper function to create notification when job is assigned
+    """
+    notification = Notification.objects.create(
+        recipient=recipient,
+        sender=sender,
+        notification_type='job_assigned',
+        title=f"Annotate project: {job.title}",
+        message=f"You have been assigned a new annotation job: {job.title}. Please start working on it as soon as possible.",
+        job=job,
+        status='unread'
+    )
+    return notification
 import os
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings  # Add this at the top with other imports
@@ -476,7 +491,7 @@ def process_validations_view(request, job_id=None):
                 'worker_reviewer'
             ).get(id=job_id)
             
-            # Get images with status
+            # Get images with status, ordered by ID (ascending)
             images = job.images.all().order_by('id')
             status_counts = {
                 'unannotated': images.filter(status='unannotated').count(),
@@ -499,13 +514,13 @@ def process_validations_view(request, job_id=None):
 
             return render(request, 'master/process_validations.html', context)
         else:
-            # Get all jobs for list view
+            # Get all jobs for list view, ordered by newest first
             jobs = JobProfile.objects.annotate(
                 total_images=Count('images')
             ).select_related(
                 'worker_annotator',
                 'worker_reviewer'
-            ).order_by('-start_date')
+            ).order_by('-date_created')
             
             print(f"Found {jobs.count()} jobs")
             
@@ -820,6 +835,8 @@ def assign_worker(request):
 
         if role == 'annotator':
             job.worker_annotator = worker
+            # Create notification for annotator
+            create_job_notification(job, worker, request.user)
         elif role == 'reviewer':
             job.worker_reviewer = worker
 
@@ -858,6 +875,12 @@ def assign_workers(request):
         job.worker_annotator = annotator
         job.worker_reviewer = reviewer
         job.status = 'in_progress'
+        
+        # Create notifications for both annotator and reviewer
+        create_job_notification(job, annotator, request.user)
+        # Optionally create notification for reviewer too
+        # create_job_notification(job, reviewer, request.user)
+        
         job.save()
 
         return JsonResponse({
@@ -1008,8 +1031,8 @@ def get_job_profile(request, job_id):
 def issue_solving_view(request):
     """View for handling issue solving page"""
     try:
-        # Get all jobs with their image counts and issues
-        jobs = JobProfile.objects.all().order_by('-start_date')
+        # Get all jobs with their image counts and issues, ordered by newest first
+        jobs = JobProfile.objects.all().order_by('-date_created')
 
         # Add additional data for each job
         for job in jobs:
