@@ -5,7 +5,7 @@
     <div class="" >
         <div class="mt-5 d-flex rounded align-items-center" style="width: 100%; height: 36px; background-color: rgba(7,38,144,0.2);">
           <span class="ps-2">In Review</span>
-          <span class="ms-auto pe-2">300</span>
+          <span class="ms-auto pe-2">{{ total_images }}</span>
         </div>
     </div>
     <div class="w-100 mt-auto">
@@ -31,7 +31,7 @@
   </div>
   <div>
     <p class="ms-3" style="font-size: 15px; font-weight: bolder">
-      In Review (300 Image)
+      In Review ({{ total_images }} Image)
     </p>
   </div>
   <div class="border border-dark border-bottom-0 rounded overflow-hidden">
@@ -45,14 +45,16 @@
         </tr>
       </thead>
       <tbody>
+        {% for item in data_job %}
         <tr>
-          <td class="text-center">0.jpg</td>
+          <td class="text-center">{{ item.id_gambar.nama_file}}</td>
           <td class="text-center">
             <p class="btn btn-warning mb-0">Unannotated</p>
           </td>
           <td class="text-center">0s</td>
           <td class="text-center">-</td>
         </tr>
+        {% endfor %}
       </tbody>
     </table>
   </div>

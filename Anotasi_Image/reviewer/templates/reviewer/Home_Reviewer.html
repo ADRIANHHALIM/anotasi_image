@@ -30,15 +30,13 @@
       <tbody>
         {% for t in tasks %}
         <tr>
-          <td>{{ t.job.id_profile_job.id_profile_job }}</td>
+          <td>{{ t.profile.id_profile_job }}</td>
           <td>{{ t.profile.nama_profile_job }}</td>
           <td>-</td>
           <td>{{ t.time_remaining }}</td>
           <td>{{ t.profile.id_pengguna }}</td>
           <td>
-            <a
-              href="{% url 'reviewer:task_review' %}"
-              class="text-decoration-none"
+            <a href="{% url 'reviewer:task_review' t.profile.id_profile_job %}" class="text-decoration-none"
               >Review</a
             >
           </td>

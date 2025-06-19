@@ -66,9 +66,10 @@ def home_reviewer(request):
         return redirect('reviewer:login')
     username = request.session.get('username')
     number_email = request.session.get('contact')
+    user_id = request.session.get('user_id')  
 
-    list_ProfileJob = ProfileJob.objects.all()
-    list_JobItem    = JobItem.objects.all()
+    list_ProfileJob = ProfileJob.objects.filter(id_pengguna=user_id)
+    list_JobItem    = JobItem.objects.filter()
 
     tasks = []
     now = timezone.localtime()   # sekarang di timezone aplikasi
@@ -111,17 +112,23 @@ def home_reviewer(request):
     # Kirim data Base64 ke template
     return render(request, "reviewer/home_reviewer.html", context)
 
-def task_review(request):
+def task_review(request, id):
     if 'user_id' not in request.session:
         return redirect('reviewer:login')
     username = request.session.get('username')
     number_email = request.session.get('contact')
+    pofile_id = id
+    request.session['profile_id'] = id
+    data_job = JobItem.objects.filter(id_profile_job=id).select_related('id_gambar')
+    total_images = data_job.count()
     context={
+        'pofile_id':pofile_id,
+        'total_images':total_images,
+        'data_job':data_job,
         'username':username,
         'number_email': number_email,
         **get_base64_images(),
     }
-
     return render(request, 'reviewer/task_review.html',context)
 
 def isu(request):
@@ -235,7 +242,9 @@ def isu_anotasi(request):
         return redirect('reviewer:login')
     username = request.session.get('username')
     number_email = request.session.get('contact')
+    profile_id = request.session.get('profile_id')
     context= {
+        'profile_id':profile_id,
         'username':username,
         'number_email':number_email,
         **get_base64_images(),
