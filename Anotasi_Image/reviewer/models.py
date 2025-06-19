@@ -55,10 +55,17 @@ class JobItem(models.Model):
 
     def __str__(self):
         return f"JobItem {self.id_job_item} - Status: {self.status_pekerjaan}"
-    
+
+class TipeSegmentasi(models.Model):
+    id_tipe_segmentasi = models.IntegerField(primary_key=True)
+    nama_tipe_segmentasi = models.CharField(max_length=50)
+
+    def __str__(self):
+        return self.nama_tipe_segmentasi
+
 class Segmentasi(models.Model):
     id_segmentasi = models.BigAutoField(primary_key=True)
-    id_tipe_segmentasi = models.IntegerField()
+    id_tipe_segmentasi = models.ForeignKey(TipeSegmentasi, on_delete=models.CASCADE, db_column='id_tipe_segmentasi')
     label_segmentasi = models.CharField(max_length=20)
     warna_segmentasi = models.CharField(max_length=10)
     koordinat = models.IntegerField()

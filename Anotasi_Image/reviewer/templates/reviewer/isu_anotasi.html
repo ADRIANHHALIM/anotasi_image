@@ -3,7 +3,7 @@
 {% endblock %}
 
 {% block content-header %}
-<div class="d-flex align-items-center">
+<div class="d-flex align-items-center"> 
   <div>
     <a href="{% url 'reviewer:task_review' profile_id %}" class="">
       <span style="color: white;">
@@ -15,7 +15,7 @@
   </div>
   <div>
     <div class="d-flex">
-      <span class="text-white">dataset_kendaraan</span>
+      <span class="text-white">{{ nama_profile_job }}</span>
       <span class="ps-1 pe-1 text-white">></span>
       <div class="d-flex">
         <span style="color: white;">
@@ -27,7 +27,7 @@
       </div>
     </div>
     <div class="d-flex">
-      <span class="text-white">0.jpg</span>
+      <span class="text-white">{{ filename }}</span>
     </div>
   </div>
   <div class="d-flex align-items-end ms-5 pb-1 h-100">
@@ -61,17 +61,21 @@
       <div class="d-flex justify-content-senter align-items-center" style="font-size: 1.2rem;" >
         <div class="btn" id="prevBtn">
           <span style="color: white;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 7l-5 5m0 0l5 5"/>
+            <a href="{% if image_index > 1 %}{% url 'reviewer:isu_anotasi' image_index|add:'-2' %}{% else %}#{% endif %}" id="prevBtn" class="text-secondary text-decoration-none"> 
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="#ffffff" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 7l-5 5m0 0l5 5"/>
             </svg>
+            </a>
           </span>
         </div>
-        <div class="ms-3 me-3 text-center text-white" id="pageInfo" style="width: 60px;">1 / 10</div>
+        <div class="ms-3 me-3 text-center text-white" id="pageInfo" style="width: 60px;">{{ image_index }} / {{ total_images }}</div>
         <div class=" btn justify-content-senter align-items-center" id="nextBtn" style="height: 40px;">
           <span style="color: white;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 17l5-5m0 0l-5-5"/>
+            <a href="{% if image_index < total_images %}{% url 'reviewer:isu_anotasi' image_index %}{% else %}#{% endif %}" id="nextBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="#ffffff" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 17l5-5m0 0l-5-5"/>
             </svg>
+            </a>
           </span>
         </div>
       </div>
@@ -136,26 +140,12 @@
       </div>
 
       <div style="height: 10px"></div>
+      {% for segmentasi in segmentasi_list %}
       <div class="d-flex align-items-center border" style="width: 100%">
-        <div class="ps-2">mobil</div>
-        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">1</div>
+        <div class="ps-2">{{ segmentasi.label_segmentasi }}</div>
+        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">{{ forloop.counter }}</div>
       </div>
-      <div class="d-flex align-items-center border" style="width: 100%">
-        <div class="ps-2">motor</div>
-        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">2</div>
-      </div>
-      <div class="d-flex align-items-center border" style="width: 100%">
-        <div class="ps-2">truk</div>
-        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">3</div>
-      </div>
-      <div class="d-flex align-items-center border" style="width: 100%">
-        <div class="ps-2">bus</div>
-        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">4</div>
-      </div>
-      <div class="d-flex align-items-center border" style="width: 100%">
-        <div class="ps-2">kereta</div>
-        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">5</div>
-      </div>
+      {% endfor %}
     </div>
     <div style="height: 50px"></div>
     <div class="">
@@ -850,8 +840,8 @@
       <div class="bg-secondary w-100">
         <div class="">
           <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">
-            <img id="zoomImage" src="..\static\reviewer\image\anotasi\1.jpg" alt="Gambar Zoom"
-                style="display: block; transform-origin: top left; width: 1155px; height: 710px;">
+            <img id="zoomImage" src="/media/gambar/anotasi/{{ filename }}" alt="Gambar"
+                style="display: block; transform-origin: top left; width: {{ lebar_gambar }}px ; height: {{ tinggi_gambar }}px;">
             <svg id="svgSemantic" width="1155" height="710"
                 style="position: absolute; top: 0; left: 0; pointer-events: none;">
               <polygon points="628.88,622.28 821.96,625.81 817.26,516.32 773.69,458.62 661.84,458.62 617.10,493.95"
@@ -1089,7 +1079,7 @@ function applyZoom() {
     svg.style.transformOrigin = "top left";
   });
 }
-
+/*
   //Pagination
   let currentPage = 1;
   const totalPages = 10;
@@ -1119,5 +1109,6 @@ function applyZoom() {
   });
 
   updatePagination(); // Initial update
+  */
 </script>
 {% endblock %}

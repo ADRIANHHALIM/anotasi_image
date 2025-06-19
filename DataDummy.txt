@@ -16,14 +16,14 @@ INSERT INTO reviewer_gambar (
     id_pembuat, tanggal_buat
 )
 VALUES 
-(1, 10, 100, '1.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP),
-(1, 10, 100, '2.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP),
-(2, 10, 100, '3.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP),
-(2, 10, 100, '4.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP),
-(1, 10, 100, '5.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP),
-(1, 10, 100, '6.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP),
-(2, 10, 100, '7.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP),
-(2, 10, 100, '8.jpg', 2048, '2025-06-05', 'jpg', 20240601, 1234, 1920, 1080, 5678, 3, CURRENT_TIMESTAMP);
+(1, 10, 100, '1.jpg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 1155, 710, 5678, 3, CURRENT_TIMESTAMP),
+(1, 10, 100, '2.jpeg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 1600, 1143, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '3.jpg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 1167, 571, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '4.jpg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 830, 622, 5678 3, CURRENT_TIMESTAMP),
+(1, 10, 100, '5.jpg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 640, 427, 5678, 3, CURRENT_TIMESTAMP),
+(1, 10, 100, '6.jpg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 1263, 831, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '7.jpg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 640, 424, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '8.jpg', 2048, '2025-06-05', 'jpg', 2024-06-01, 1234, 600, 400, 5678, 3, CURRENT_TIMESTAMP);
 
 ## INSERT TABLE PROFILE JOB
 INSERT INTO reviewer_profilejob (id_pengguna, nama_profile_job, deskripsi, start_date, end_date, isu)
@@ -62,6 +62,12 @@ VALUES
 	(2, 'annotator'),
 	(3, 'reviewer');
 
+## INSERT TABLE TIPE SEGMENTASI
+INSERT INTO reviewer_tipesegmentasi (id_tipe_segmentasi, nama_tipe_segmentasi) VALUES
+(1, 'semantic'),
+(2, 'instance'),
+(3, 'panoptic');
+
 ## INSERT TABLE SEGMENTASI 
 INSERT INTO reviewer_segmentasi (
     id_tipe_segmentasi, label_segmentasi, warna_segmentasi, koordinat, id_job_item
@@ -75,13 +81,13 @@ INSERT INTO reviewer_segmentasi (
 -- Gedung (Semantic)
 (1, 'Jalanan', '#0058FF', 0, 1),
 -- Mobil (Instance)
-(2, 'Mobil', '#FF0000', 0, 5),
+(2, 'Mobil', '#FF0000', 0, 2),
 -- Motor (Instance)
-(2, 'Motor', '#994C00', 0, 5),
+(2, 'Motor', '#994C00', 0, 2),
 -- Pohon Kelapa (Panoptic)
-(3, 'Pohon Kelapa', '#99FF99', 0, 4),
+(2, 'Pohon Kelapa', '#99FF99', 0, 7),
 -- Bunga Matahari (Panoptic)
-(3, 'Bunga Matahari', '#FF99FF', 0, 4);
+(2, 'Bunga Matahari', '#FF99FF', 0, 8);
 
 
 ## INSERT TABLE ANOTASI

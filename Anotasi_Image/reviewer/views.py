@@ -69,6 +69,7 @@ def home_reviewer(request):
     user_id = request.session.get('user_id')  
 
     list_ProfileJob = ProfileJob.objects.filter(id_pengguna=user_id)
+    
     list_JobItem    = JobItem.objects.filter()
 
     tasks = []
@@ -117,12 +118,12 @@ def task_review(request, id):
         return redirect('reviewer:login')
     username = request.session.get('username')
     number_email = request.session.get('contact')
-    pofile_id = id
+    profile_id = id
     request.session['profile_id'] = id
     data_job = JobItem.objects.filter(id_profile_job=id).select_related('id_gambar')
     total_images = data_job.count()
     context={
-        'pofile_id':pofile_id,
+        'profile_id':profile_id,
         'total_images':total_images,
         'data_job':data_job,
         'username':username,
@@ -236,20 +237,48 @@ def sign_up(request):
             **get_base64_images()
         }
         return render(request, 'reviewer/sign_up.html', context)
-
-def isu_anotasi(request):
+    
+def isu_anotasi(request, index):
     if 'user_id' not in request.session:
         return redirect('reviewer:login')
-    username = request.session.get('username')
-    number_email = request.session.get('contact')
+    # Ambil profile_id dari session
     profile_id = request.session.get('profile_id')
-    context= {
-        'profile_id':profile_id,
-        'username':username,
-        'number_email':number_email,
+    # Ambil JobItem berdasarkan profile_id
+    job_items = JobItem.objects.select_related('id_gambar').filter(
+        id_profile_job=profile_id
+    ).order_by('id_job_item')
+    if index < 0 or index >= job_items.count():
+        return redirect('reviewer:isu_anotasi')  # fallback
+    job_item = job_items[index]
+    gambar = job_item.id_gambar
+    # Ambil ProfileJob berdasarkan id_profile_job
+    profile = ProfileJob.objects.filter(id_profile_job=profile_id).first()
+    if profile:
+        nama_profile_job = profile.nama_profile_job
+        nama_profile_job = nama_profile_job.split(":")[-1].strip()
+    # Ambil segmentasi dan anotasi yang terkait dengan gambar
+    segmentasi_list = Segmentasi.objects.filter(id_job_item=job_item)
+    anotasi_list = Anotasi.objects.filter(id_gambar=gambar)
+    lebar_gambar = gambar.lebar
+    tinggi_gambar = gambar.tinggi
+
+    context = {
+        'username': request.session.get('username'),
+        'number_email': request.session.get('contact'),
+        'profile_id': profile_id,
+        'nama_profile_job': nama_profile_job,  # Tambahkan nama_profile_job ke dalam konteks
+        'filename': gambar.nama_file,
+        'gambar_id': gambar.id_gambar,
+        'image_index': index + 1,
+        'total_images': job_items.count(),
+        'segmentasi_list': segmentasi_list,
+        'anotasi_list': anotasi_list,
+        'lebar_gambar':lebar_gambar,
+        'tinggi_gambar':tinggi_gambar,
         **get_base64_images(),
     }
     return render(request, 'reviewer/isu_anotasi.html', context)
+
 
 def isu_image(request):
     if 'user_id' not in request.session:
