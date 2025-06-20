@@ -259,6 +259,38 @@ def isu_anotasi(request, index):
     # Ambil segmentasi dan anotasi yang terkait dengan gambar
     segmentasi_list = Segmentasi.objects.filter(id_job_item=job_item)
     anotasi_list = Anotasi.objects.filter(id_gambar=gambar)
+
+    anotasi_semantic = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
+        id_gambar=gambar,
+        id_segmentasi__id_tipe_segmentasi=1  # Tipe Semantic
+    )
+    polygon_semantic_list = []
+    for anotasi in anotasi_semantic:
+        if anotasi.id_segmentasi.id_tipe_segmentasi_id == 1:
+            titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
+            polygon_semantic_list.append({
+                'warna': anotasi.id_segmentasi.warna_segmentasi,
+                'label': anotasi.id_segmentasi.label_segmentasi,
+                'points': " ".join([f"{x},{y}" for x, y in titik_list]),
+            })
+    anotasi_instance = Anotasi.objects.select_related('id_segmentasi').filter(id_gambar=gambar).filter(
+        id_gambar=gambar,
+        id_segmentasi__id_tipe_segmentasi=2  # Hanya Instance
+    )
+    anotasi_panoptic = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
+        id_gambar=gambar,
+        id_segmentasi__id_tipe_segmentasi=3  # Tipe Panoptic
+    )
+    polygon_panoptic_list = []
+    for anotasi in anotasi_panoptic:
+        if anotasi.id_segmentasi.id_tipe_segmentasi_id == 3:
+            titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
+            polygon_panoptic_list.append({
+                'warna': anotasi.id_segmentasi.warna_segmentasi,
+                'label': anotasi.id_segmentasi.label_segmentasi,
+                'points': " ".join([f"{x},{y}" for x, y in titik_list]),
+            })
+    
     lebar_gambar = gambar.lebar
     tinggi_gambar = gambar.tinggi
 
@@ -266,15 +298,21 @@ def isu_anotasi(request, index):
         'username': request.session.get('username'),
         'number_email': request.session.get('contact'),
         'profile_id': profile_id,
-        'nama_profile_job': nama_profile_job,  # Tambahkan nama_profile_job ke dalam konteks
+        'nama_profile_job': nama_profile_job,
         'filename': gambar.nama_file,
         'gambar_id': gambar.id_gambar,
         'image_index': index + 1,
         'total_images': job_items.count(),
         'segmentasi_list': segmentasi_list,
         'anotasi_list': anotasi_list,
-        'lebar_gambar':lebar_gambar,
-        'tinggi_gambar':tinggi_gambar,
+        'anotasi_box': anotasi_instance,
+        'lebar_gambar': lebar_gambar,
+        'tinggi_gambar': tinggi_gambar,
+        'polygon_semantic_list': polygon_semantic_list,
+        'polygon_panoptic_list': polygon_panoptic_list,
+        'total_semantic':anotasi_semantic.count(),
+        'total_instance':anotasi_instance.count(),
+        'total_panoptic':anotasi_panoptic.count(),
         **get_base64_images(),
     }
     return render(request, 'reviewer/isu_anotasi.html', context)

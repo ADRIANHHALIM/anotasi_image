@@ -159,7 +159,7 @@
                 <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
               </span>
             </span>
-            <p id="labelsemantic" class="p-0 m-0">Semantic (4)</p>
+            <p id="labelsemantic" class="p-0 m-0">Semantic ({{ total_semantic }})</p>
             <span id="eyesemantic" class="ms-auto">
               <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
               <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
@@ -326,7 +326,7 @@
                 <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
               </span>
             </span>
-            <p id="labelinstance" class="p-0 m-0">Instance (5)</p>
+            <p id="labelinstance" class="p-0 m-0">Instance ({{ total_instance }})</p>
             <span id="eyeinstance" class="ms-auto">
               <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
               <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
@@ -581,7 +581,7 @@
                 <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
               </span>
             </span>
-            <p id="labelpanoptic" class="p-0 m-0">Panoptic (7)</p>
+            <p id="labelpanoptic" class="p-0 m-0">Panoptic ({{ total_panoptic }})</p>
             <span id="eyepanoptic" class="ms-auto">
               <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
               <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
@@ -842,32 +842,31 @@
           <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">
             <img id="zoomImage" src="/media/gambar/anotasi/{{ filename }}" alt="Gambar"
                 style="display: block; transform-origin: top left; width: {{ lebar_gambar }}px ; height: {{ tinggi_gambar }}px;">
-            <svg id="svgSemantic" width="1155" height="710"
+            <svg id="svgSemantic" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
                 style="position: absolute; top: 0; left: 0; pointer-events: none;">
-              <polygon points="628.88,622.28 821.96,625.81 817.26,516.32 773.69,458.62 661.84,458.62 617.10,493.95"
-                fill="rgba(255,0,0,0.4)" stroke="red" stroke-width="2" />
-              <polygon points="471.75,518.89 513.91,515.86 525.68,511.30 524.92,489.65 516.19,476.74 482.39,477.88 468.71,487.75 468.71,500.28"
-                fill="rgba(255,0,0,0.4)" stroke="red" stroke-width="2" />
-              <!-- orang -->
-              <polygon points="368.92,471.22 356.55,474.24 353.53,479.07 356.24,492.36 355.34,516.21 347.49,527.98 353.83,532.21 339.94,569.04 362.28,570.85 364.09,546.70 376.17,561.79 377.07,569.34 395.19,561.49 375.56,530.70 378.89,507.75 373.45,487.53"
-                fill="rgba(255,255,0,0.4)" stroke="yellow" stroke-width="2" />
-              <polygon points="139.21,483.88 138.00,490.22 126.23,512.56 136.50,520.71 137.10,539.43 148.27,539.13 147.97,521.92 159.14,499.58 150.38,489.32 147.67,481.47"
-                fill="rgba(255,255,0,0.4)" stroke="yellow" stroke-width="2" />
-              <polygon points="32.34,495.66 21.78,500.49 20.27,522.22 20.87,521.92 18.76,540.33 29.63,549.39 39.59,546.67 37.48,537.62 44.72,518.30 49.85,524.94 56.19,519.81 51.97,507.73 45.93,495.66 42.00,487.50 34.76,489.62"
-                fill="rgba(255,255,0,0.4)" stroke="yellow" stroke-width="2" />
-              <!-- gedung -->
-              <polygon points="464.04,177.23 651.25,168.99 681.86,231.39 705.41,236.10 706.58,416.24 464.04,428.01"
-                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
-              <polygon points="726.60,11.22 1097.47,13.58 1108.07,356.19 987.97,351.48 919.69,305.57 801.95,318.52 737.19,337.36"
-                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
-              <polygon points="451.09,367.97 451.09,46.55 401.64,19.47 265.07,44.19 255.65,209.02 83.75,210.20 59.03,396.22"
-                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
-              <!-- Jalanan -->
-              <polygon points="597.09,495.12 574.72,508.07 541.75,506.90 509.96,522.20 461.69,518.67 393.40,524.56 394.58,577.54 326.29,577.54 331.00,531.62 103.77,541.04 19.00,602.26 24.89,690.57 1135.15,699.99 1122.19,635.23 938.52,586.96 918.51,555.17 950.30,537.51 986.80,537.51 962.07,526.91 846.69,528.09 843.16,565.77 846.69,641.12 707.76,639.94 638.30,637.58 599.44,611.68 608.86,542.22 614.75,512.78"
-                fill="rgba(0,209,255,0.3)" stroke="#00D1FF" stroke-width="2" />
+                {% for poly in polygon_semantic_list %}
+                  <polygon 
+                    points="{{ poly.points }}"
+                    fill="{{ poly.warna }}"
+                    fill-opacity="0.4"
+                    stroke="{{ poly.warna }}"
+                    stroke-width="2">
+                    <title>{{ poly.label }}</title>
+                  </polygon>
+                {% endfor %}
               </svg>
-            <svg id="svgInstance" width="1155" height="710"
+            <svg id="svgInstance" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
                     style="position: absolute; top: 0; left: 0; pointer-events: none;">
+              {% for anotasi in anotasi_box %}
+              <rect 
+                x="{{ anotasi.koordinat_x }}" 
+                y="{{ anotasi.koordinat_y }}" 
+                width="{{ anotasi.lebar }}" 
+                height="{{ anotasi.tinggi }}" 
+                fill="none" 
+                stroke="{{ anotasi.id_segmentasi.warna_segmentasi }}" 
+                stroke-width="2"/>
+              {% endfor %}
               <!-- Box Mobil 1 -->
               <rect x="624" y="460" width="207" height="167" fill="none" stroke="red" stroke-width="2"/>
               <!-- Box Mobil 2 -->
@@ -879,7 +878,7 @@
               <!-- Box Orang 3 -->
               <rect x="20" y="488" width="34" height="65" fill="none" stroke="yellow" stroke-width="2"/>
             </svg>
-            <svg id="svgPanoptic" width="1155" height="710"
+            <svg id="svgPanoptic" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
                     style="position: absolute; top: 0; left: 0; pointer-events: none;">
               <polygon points="628.88,622.28 821.96,625.81 817.26,516.32 773.69,458.62 661.84,458.62 617.10,493.95"
                 fill="rgba(17,141,255,0.3)" stroke="#118DFF" stroke-width="2" />
