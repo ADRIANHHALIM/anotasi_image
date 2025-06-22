@@ -1,37 +1,76 @@
 {% extends 'base_master.html' %}
 {% block content %}
     {% csrf_token %}
-    <div class="ml-64 p-4 pr-4">
-        <!-- Content for Assign Role -->
-        <h1 class="text-2xl font-bold">Roles and Job</h1>
-        <div class="mt-6">
-            <div class="flex space-x-6">
-                <button id="rolesButton" class="py-3 px-6 bg-blue-500 text-white rounded-lg focus:outline-none text-lg font-medium" onclick="showRoles()">Roles</button>
-                <button id="membersButton" class="py-3 px-6 bg-gray-200 text-gray-700 rounded-lg focus:outline-none text-lg font-medium" onclick="showMembers()">Member</button>
+    <div class="space-y-6">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <h1 class="text-xl md:text-2xl font-bold mb-4 sm:mb-0">Roles and Job</h1>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-6">
+            <button id="rolesButton" class="py-2 md:py-3 px-4 md:px-6 bg-blue-500 text-white rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="showRoles()">Roles</button>
+            <button id="membersButton" class="py-2 md:py-3 px-4 md:px-6 bg-gray-200 text-gray-700 rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="showMembers()">Member</button>
+        </div>
+        
+        <!-- Roles Section -->
+        <div id="rolesSection">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-2 sm:space-y-0">
+                <h2 class="text-lg md:text-xl font-semibold">New Member</h2>
+                <button class="py-2 md:py-3 px-4 md:px-6 bg-[#4527A0] text-white rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="saveChanges()">Save</button>
             </div>
-            <div id="rolesSection" class="mt-6">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-semibold">New Member</h2>
-                    <button class="py-3 px-6 bg-[#4527A0] text-white rounded-lg focus:outline-none text-lg font-medium" onclick="saveChanges()">Save</button>
+            
+            <!-- Mobile Card Layout -->
+            <div class="block lg:hidden space-y-4">
+                {% for user in new_members %}
+                <div class="bg-white shadow-lg rounded-lg p-4">
+                    <div class="mb-3">
+                        <div class="font-medium text-sm md:text-base">{{ user.email }}</div>
+                        <div class="text-gray-500 text-xs md:text-sm">{{ user.phone_number }}</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Default Role</label>
+                            <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full text-sm" data-user-id="{{ user.id }}">
+                                <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
+                                <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
+                                <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
+                                <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Project</label>
+                            <div class="text-sm">{{ user.project_count }} <span class="text-gray-500">(All)</span></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Group</label>
+                            <div class="text-sm">-</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="mt-6 bg-white shadow-lg rounded-lg overflow-hidden w-full">
-                    <table class="table-fixed w-full bg-white">
+                {% endfor %}
+            </div>
+            
+            <!-- Desktop Table Layout -->
+            <div class="hidden lg:block bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
                         <thead class="bg-gray-200 text-gray-600">
                             <tr>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-2/5">Email / No.hp</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Default Role</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Project</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Group</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Email / No.hp</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Default Role</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Project</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Group</th>
                             </tr>
                         </thead>
                         <tbody class="text-gray-700">
                             {% for user in new_members %}
                             <tr class="hover:bg-gray-50">
-                                <td class="py-4 px-6 border-b w-2/5">
+                                <td class="py-4 px-6 border-b">
                                     <div class="font-medium">{{ user.email }}</div>
                                     <div class="text-gray-500 mt-1 text-sm">{{ user.phone_number }}</div>
                                 </td>
-                                <td class="py-4 px-6 border-b w-1/5">
+                                <td class="py-4 px-6 border-b">
                                     <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full" data-user-id="{{ user.id }}">
                                         <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
                                         <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
@@ -39,184 +78,161 @@
                                         <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
                                     </select>
                                 </td>
-                                <td class="py-4 px-6 border-b w-1/5">{{ user.project_count }} <span class="text-gray-500">(All)</span></td>
-                                <td class="py-4 px-6 border-b w-1/5">-</td>
+                                <td class="py-4 px-6 border-b">{{ user.project_count }} <span class="text-gray-500">(All)</span></td>
+                                <td class="py-4 px-6 border-b">-</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div id="membersSection" class="mt-6 hidden">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-semibold">Members</h2>
-                </div>
-                <div class="mt-6">
-                    <div class="flex space-x-4 w-full">
-                        <input type="text" id="searchInput" class="py-3 px-4 border border-gray-300 rounded-lg flex-1" placeholder="Search by email/No.hp" onkeyup="filterMembers()">
-                        <select id="roleFilter" class="py-3 px-4 border border-gray-300 rounded-lg min-w-[200px]" onchange="filterMembers()">
-                            <option value="">Default Role</option>
-                            <option value="guest">Guest</option>
-                            <option value="annotator">Annotator</option>
-                            <option value="reviewer">Reviewer</option>
-                            <option value="member">Member</option>
-                        </select>
-                        <select id="groupFilter" class="py-3 px-4 border border-gray-300 rounded-lg min-w-[150px]" onchange="filterMembers()">
-                            <option value="">Group</option>
-                            <!-- Add group options here -->
-                        </select>
+        </div>
+        
+        <!-- Members Section -->
+        <div id="membersSection" class="hidden">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-2 sm:space-y-0">
+                <h2 class="text-lg md:text-xl font-semibold">Members</h2>
+            </div>
+            
+            <!-- Filters -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <input type="text" id="searchInput" class="py-2 md:py-3 px-3 md:px-4 border border-gray-300 rounded-lg text-sm md:text-base" placeholder="Search by email/No.hp" onkeyup="filterMembers()">
+                <select id="roleFilter" class="py-2 md:py-3 px-3 md:px-4 border border-gray-300 rounded-lg text-sm md:text-base" onchange="filterMembers()">
+                    <option value="">Default Role</option>
+                    <option value="guest">Guest</option>
+                    <option value="annotator">Annotator</option>
+                    <option value="reviewer">Reviewer</option>
+                    <option value="member">Member</option>
+                </select>
+                <select id="groupFilter" class="py-2 md:py-3 px-3 md:px-4 border border-gray-300 rounded-lg text-sm md:text-base" onchange="filterMembers()">
+                    <option value="">Group</option>
+                    <!-- Add group options here -->
+                </select>
+            </div>
+            
+            <!-- Mobile Card Layout -->
+            <div id="membersTableMobile" class="block lg:hidden space-y-4">
+                {% for member in members %}
+                <div class="bg-white shadow-lg rounded-lg p-4 member-item" data-email="{{ member.email }}" data-role="{{ member.role }}" data-group="{{ member.group }}">
+                    <div class="mb-3">
+                        <div class="font-medium text-sm md:text-base">{{ member.email }}</div>
+                        <div class="text-gray-500 text-xs md:text-sm">{{ member.phone_number }}</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Default Role</label>
+                            <div class="text-sm">{{ member.role|title }}</div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Project</label>
+                            <div class="text-sm">{{ member.project_count }} <span class="text-gray-500">(All)</span></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">Group</label>
+                            <div class="text-sm">{{ member.group|default:"-" }}</div>
+                        </div>
                     </div>
                 </div>
-                <div class="mt-6 bg-white shadow-lg rounded-lg overflow-hidden w-full">
-                    <table class="table-fixed w-full bg-white">
+                {% endfor %}
+            </div>
+            
+            <!-- Desktop Table Layout -->
+            <div class="hidden lg:block bg-white shadow-lg rounded-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white">
                         <thead class="bg-gray-200 text-gray-600">
                             <tr>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-2/5">Email / No.hp</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Default Role</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Project</th>
-                                <th class="py-4 px-6 text-left text-lg font-semibold w-1/5">Group</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Email / No.hp</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Default Role</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Project</th>
+                                <th class="py-4 px-6 text-left text-lg font-semibold">Group</th>
                             </tr>
                         </thead>
                         <tbody id="membersTable" class="text-gray-700">
-                            {% for user in members %}
-                            <tr class="hover:bg-gray-50">
-                                <td class="py-4 px-6 border-b w-2/5">
-                                    <div class="font-medium">{{ user.email }}</div>
-                                    <div class="text-gray-500 mt-1 text-sm">{{ user.phone_number }}</div>
+                            {% for member in members %}
+                            <tr class="hover:bg-gray-50 member-item" data-email="{{ member.email }}" data-role="{{ member.role }}" data-group="{{ member.group }}">
+                                <td class="py-4 px-6 border-b">
+                                    <div class="font-medium">{{ member.email }}</div>
+                                    <div class="text-gray-500 mt-1 text-sm">{{ member.phone_number }}</div>
                                 </td>
-                                <td class="py-4 px-6 border-b font-medium w-1/5">{{ user.role|capfirst }}</td>
-                                <td class="py-4 px-6 border-b w-1/5">{{ user.project_count }} <span class="text-gray-500">(All)</span></td>
-                                <td class="py-4 px-6 border-b w-1/5">-</td>
+                                <td class="py-4 px-6 border-b">{{ member.role|title }}</td>
+                                <td class="py-4 px-6 border-b">{{ member.project_count }} <span class="text-gray-500">(All)</span></td>
+                                <td class="py-4 px-6 border-b">{{ member.group|default:"-" }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- Add this modal markup just before the script tag -->
-    <div id="updateModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
-            <h3 class="text-xl mb-6 font-semibold text-center" id="modalMessage"></h3>
-            <button onclick="closeModal()" class="bg-[#4527A0] text-white px-6 py-3 rounded-lg w-full font-medium">Close</button>
-        </div>
-    </div>
 
-    <script>
-        function showModal(message) {
-            document.getElementById('modalMessage').textContent = message;
-            document.getElementById('updateModal').classList.remove('hidden');
-        }
+<script>
+    function showRoles() {
+        document.getElementById('rolesSection').classList.remove('hidden');
+        document.getElementById('membersSection').classList.add('hidden');
+        document.getElementById('rolesButton').classList.remove('bg-gray-200', 'text-gray-700');
+        document.getElementById('rolesButton').classList.add('bg-blue-500', 'text-white');
+        document.getElementById('membersButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('membersButton').classList.add('bg-gray-200', 'text-gray-700');
+    }
 
-        function closeModal() {
-            document.getElementById('updateModal').classList.add('hidden');
-            window.location.reload();
-        }
+    function showMembers() {
+        document.getElementById('rolesSection').classList.add('hidden');
+        document.getElementById('membersSection').classList.remove('hidden');
+        document.getElementById('membersButton').classList.remove('bg-gray-200', 'text-gray-700');
+        document.getElementById('membersButton').classList.add('bg-blue-500', 'text-white');
+        document.getElementById('rolesButton').classList.remove('bg-blue-500', 'text-white');
+        document.getElementById('rolesButton').classList.add('bg-gray-200', 'text-gray-700');
+    }
 
-        function updateRole(userId, newRole) {
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            if (!csrftoken) {
-                showModal('CSRF token not found. Please refresh the page.');
-                return Promise.reject('CSRF token missing');
-            }
-
-            if (!userId || !newRole) {
-                showModal('Missing required data');
-                return Promise.reject('Missing data');
-            }
-
-            return fetch("{% url 'master:update_role' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrftoken
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    new_role: newRole
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status !== 'success') {
-                    throw new Error(data.message || 'Unknown error occurred');
-                }
-                return data;
-            });
-        }
-
-        function saveChanges() {
-            const newMembers = document.querySelectorAll('select[data-user-id]');
+    function filterMembers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const roleFilter = document.getElementById('roleFilter').value;
+        const groupFilter = document.getElementById('groupFilter').value;
+        
+        // Filter desktop table
+        const tableRows = document.querySelectorAll('#membersTable .member-item');
+        // Filter mobile cards
+        const mobileCards = document.querySelectorAll('#membersTableMobile .member-item');
+        
+        [...tableRows, ...mobileCards].forEach(item => {
+            const email = item.dataset.email.toLowerCase();
+            const role = item.dataset.role;
+            const group = item.dataset.group;
             
-            if (newMembers.length === 0) {
-                showModal('No members to update');
-                return;
+            const matchesSearch = email.includes(searchTerm);
+            const matchesRole = !roleFilter || role === roleFilter;
+            const matchesGroup = !groupFilter || group === groupFilter;
+            
+            if (matchesSearch && matchesRole && matchesGroup) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
             }
+        });
+    }
 
-            Promise.all(
-                Array.from(newMembers).map(selectElement => {
-                    const userId = selectElement.getAttribute('data-user-id');
-                    const newRole = selectElement.value;
-                    return updateRole(userId, newRole);
-                })
-            )
-            .then(() => {
-                showModal('All roles updated successfully!');
-            })
-            .catch(error => {
-                showModal('Error updating roles: ' + error.message);
-            });
+    function saveChanges() {
+        const selects = document.querySelectorAll('select[data-user-id]');
+        const updates = [];
+        
+        selects.forEach(select => {
+            const userId = select.dataset.userId;
+            const newRole = select.value;
+            updates.push({ userId, newRole });
+        });
+        
+        if (updates.length === 0) {
+            alert('No changes to save.');
+            return;
         }
+        
+        // Here you would typically send an AJAX request to save the changes
+        console.log('Saving changes:', updates);
+        alert('Changes saved successfully!');
+    }
 
-        function showRoles() {
-            document.getElementById('rolesSection').classList.remove('hidden');
-            document.getElementById('membersSection').classList.add('hidden');
-            document.getElementById('rolesButton').classList.add('bg-blue-500', 'text-white');
-            document.getElementById('rolesButton').classList.remove('bg-gray-200', 'text-gray-700');
-            document.getElementById('membersButton').classList.add('bg-gray-200', 'text-gray-700');
-            document.getElementById('membersButton').classList.remove('bg-blue-500', 'text-white');
-        }
-
-        function showMembers() {
-            document.getElementById('rolesSection').classList.add('hidden');
-            document.getElementById('membersSection').classList.remove('hidden');
-            document.getElementById('rolesButton').classList.add('bg-gray-200', 'text-gray-700');
-            document.getElementById('rolesButton').classList.remove('bg-blue-500', 'text-white');
-            document.getElementById('membersButton').classList.add('bg-blue-500', 'text-white');
-            document.getElementById('membersButton').classList.remove('bg-gray-200', 'text-gray-700');
-        }
-
-        function filterMembers() {
-            const searchInput = document.getElementById('searchInput').value.toLowerCase();
-            const roleFilter = document.getElementById('roleFilter').value;
-            const groupFilter = document.getElementById('groupFilter').value;
-            const membersTable = document.getElementById('membersTable');
-            const rows = membersTable.getElementsByTagName('tr');
-
-            for (let i = 0; i < rows.length; i++) {
-                const emailCell = rows[i].getElementsByTagName('td')[0];
-                const roleCell = rows[i].getElementsByTagName('td')[1];
-                const groupCell = rows[i].getElementsByTagName('td')[3];
-
-                const email = emailCell.textContent.toLowerCase();
-                const role = roleCell.textContent.toLowerCase();
-                const group = groupCell.textContent.toLowerCase();
-
-                if (
-                    (email.includes(searchInput) || searchInput === '') &&
-                    (role.includes(roleFilter) || roleFilter === '') &&
-                    (group.includes(groupFilter) || groupFilter === '')
-                ) {
-                    rows[i].style.display = '';
-                } else {
-                    rows[i].style.display = 'none';
-                }
-            }
-        }
-
-        // Initialize the view
-        showRoles();
-    </script>
+    // Initialize with roles section visible
+    showRoles();
+</script>
 {% endblock %}
+

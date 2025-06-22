@@ -1,32 +1,77 @@
 {% extends 'base_master.html' %}
 {% block content %}
-<div class="ml-64 p-6 pr-6">
-    <div class="flex flex-col gap-6 w-full">
-        <!-- Header -->
-        <div>
-            <h1 class="text-3xl font-bold mb-2">Performance</h1>
-        </div>
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Performance</h1>
+    </div>
 
-        <!-- Card & Chart -->
-        <div class="bg-gray-100 rounded-xl p-20 flex flex-row gap-24 items-center justify-between w-full min-h-[280px]">
+    <!-- Performance Card & Chart -->
+    <div class="bg-gray-100 rounded-xl p-4 md:p-8 lg:p-20">
+        <!-- Mobile/Tablet Layout (Stacked) -->
+        <div class="lg:hidden space-y-6">
+            <div class="text-center">
+                <span class="text-lg md:text-xl text-gray-600 block">Entire Assignment</span>
+                <span class="text-4xl md:text-5xl font-bold block">{{ total_images|floatformat:0 }}</span>
+            </div>
+            
+            <!-- Chart for mobile -->
+            <div class="flex items-end justify-center gap-4 md:gap-6 h-32 md:h-40">
+                <div class="flex flex-col items-center">
+                    <div class="w-8 md:w-12 bg-blue-400 rounded-sm" 
+                         style="height: {% if chart_data.assign.height > 0 %}{{ chart_data.assign.height }}%{% else %}8px{% endif %};"
+                         title="Assign: {{ chart_data.assign.count }}"></div>
+                    <span class="text-xs md:text-sm mt-2 text-center">Assign</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="w-8 md:w-12 bg-blue-900 rounded-sm" 
+                         style="height: {% if chart_data.progress.height > 0 %}{{ chart_data.progress.height }}%{% else %}8px{% endif %};"
+                         title="Progress: {{ chart_data.progress.count }}"></div>
+                    <span class="text-xs md:text-sm mt-2 text-center">Progress</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="w-8 md:w-12 bg-blue-500 rounded-sm" 
+                         style="height: {% if chart_data.reworking.height > 0 %}{{ chart_data.reworking.height }}%{% else %}8px{% endif %};"
+                         title="Reworking: {{ chart_data.reworking.count }}"></div>
+                    <span class="text-xs md:text-sm mt-2 text-center">Rework</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="w-8 md:w-12 bg-purple-600 rounded-sm" 
+                         style="height: {% if chart_data.finished.height > 0 %}{{ chart_data.finished.height }}%{% else %}8px{% endif %};"
+                         title="Finished: {{ chart_data.finished.count }}"></div>
+                    <span class="text-xs md:text-sm mt-2 text-center">Finished</span>
+                </div>
+            </div>
+            
+            <!-- Legend for mobile -->
+            <div class="grid grid-cols-2 gap-2 text-sm md:text-base">
+                <span class="text-blue-400">• Assign ({{ chart_data.assign.count }})</span>
+                <span class="text-blue-900">• Progress ({{ chart_data.progress.count }})</span>
+                <span class="text-blue-500">• Reworking ({{ chart_data.reworking.count }})</span>
+                <span class="text-purple-600">• Finished ({{ chart_data.finished.count }})</span>
+            </div>
+            
+            <div class="text-center">
+                <span class="text-red-500 text-2xl md:text-3xl font-bold">{{ completion_percentage }}%</span>
+            </div>
+        </div>
+        
+        <!-- Desktop Layout (Horizontal) -->
+        <div class="hidden lg:flex lg:gap-24 lg:items-center lg:justify-between lg:min-h-[280px]">
             <div class="flex flex-col gap-4 flex-shrink-0">
                 <span class="text-2xl text-gray-600">Entire Assignment</span>
                 <span class="text-6xl font-bold">{{ total_images|floatformat:0 }}</span>
             </div>
             <div class="flex items-end gap-10 h-52 flex-shrink-0">
-                <!-- Assign Bar -->
                 <div class="w-24 bg-blue-400 rounded-sm" 
                      style="height: {% if chart_data.assign.height > 0 %}{{ chart_data.assign.height }}%{% else %}8px{% endif %};"
                      title="Assign: {{ chart_data.assign.count }}"></div>
-                <!-- Progress Bar -->
                 <div class="w-24 bg-blue-900 rounded-sm" 
                      style="height: {% if chart_data.progress.height > 0 %}{{ chart_data.progress.height }}%{% else %}8px{% endif %};"
                      title="Progress: {{ chart_data.progress.count }}"></div>
-                <!-- Reworking Bar -->
                 <div class="w-24 bg-blue-500 rounded-sm" 
                      style="height: {% if chart_data.reworking.height > 0 %}{{ chart_data.reworking.height }}%{% else %}8px{% endif %};"
                      title="Reworking: {{ chart_data.reworking.count }}"></div>
-                <!-- Finished Bar -->
                 <div class="w-24 bg-purple-600 rounded-sm" 
                      style="height: {% if chart_data.finished.height > 0 %}{{ chart_data.finished.height }}%{% else %}8px{% endif %};"
                      title="Finished: {{ chart_data.finished.count }}"></div>
@@ -39,79 +84,107 @@
                 <span class="text-red-500 text-4xl font-bold mt-4">{{ completion_percentage }} %</span>
             </div>
         </div>
-
-        <!-- Search & Filter -->
-        <div class="flex gap-6 items-center mb-4 w-full">
-            <div class="relative flex-1 max-w-2xl">
-                <input id="searchInput" type="text" placeholder="Search by email/No.hp"
-                    class="py-4 px-6 border-2 border-blue-300 rounded-md w-full text-lg" onkeyup="filterMembers()">
-            </div>
-            <select id="roleFilter"
-                class="py-4 px-6 border-2 border-blue-300 rounded-md text-lg w-64" onchange="filterMembers()">
-                <option value="">Default Role</option>
-                <option value="annotator">Annotator</option>
-                <option value="reviewer">Reviewer</option>
-            </select>
-        </div>
-
-        <!-- Members Table -->
-        <div class="bg-gray-100 rounded-xl p-8 w-full">
-            <div class="font-semibold text-2xl mb-6 flex items-center">
-                Members
-            </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left bg-white rounded-lg table-fixed">
-                    <thead class="bg-gray-50">
-                        <tr class="text-gray-700 border-b">
-                            <th class="px-10 py-5 text-lg font-medium w-2/5">Email / No.hp</th>
-                            <th class="px-10 py-5 text-lg font-medium w-1/5">Default Role</th>
-                            <th class="px-10 py-5 text-lg font-medium w-1/5">Project</th>
-                            <th class="px-10 py-5 text-lg font-medium w-1/5">Group</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        {% for member in members %}
-                        <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location.href='{% url 'master:performance_individual' member.id %}'">
-                            <td class="px-10 py-6 text-lg">
-                                <div class="font-medium text-gray-900">{{ member.email }}</div>
-                                <div class="text-base text-gray-500 mt-1">{{ member.phone_number }}</div>
-                            </td>
-                            <td class="px-10 py-6 text-lg text-gray-900">
-                                {{ member.role|capfirst }}
-                            </td>
-                            <td class="px-10 py-6 text-lg text-gray-900">
-                                {{ member.project_count }} <span class="text-base text-gray-500">(All)</span>
-                            </td>
-                            <td class="px-10 py-6 text-lg text-gray-900">-</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
     </div>
-</div>
 
-<!-- Filter Script -->
+    <!-- Search & Filter -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="relative">
+            <input id="searchInput" type="text" placeholder="Search by email/No.hp"
+                class="py-3 md:py-4 px-4 md:px-6 border-2 border-blue-300 rounded-md w-full text-sm md:text-lg" onkeyup="filterMembers()">
+        </div>
+        <select id="roleFilter"
+            class="py-3 md:py-4 px-4 md:px-6 border-2 border-blue-300 rounded-md text-sm md:text-lg" onchange="filterMembers()">
+            <option value="">Default Role</option>
+            <option value="annotator">Annotator</option>
+            <option value="reviewer">Reviewer</option>
+        </select>
+    </div>
+
+    <!-- Members Table -->
+    <div class="bg-gray-100 rounded-xl p-4 md:p-6 lg:p-8">
+        <div class="font-semibold text-lg md:text-xl lg:text-2xl mb-4 md:mb-6">
+            Members
+        </div>
+        
+        <!-- Mobile Card Layout -->
+        <div class="block lg:hidden space-y-4">
+            {% for member in members %}
+            <div class="bg-white rounded-lg p-4 member-item cursor-pointer hover:bg-gray-50" 
+                 data-email="{{ member.email }}" data-role="{{ member.role }}"
+                 onclick="window.location.href='{% url 'master:performance_individual' member.id %}'">
+                <div class="mb-3">
+                    <div class="font-medium text-sm md:text-base">{{ member.email }}</div>
+                    <div class="text-gray-500 text-xs md:text-sm">{{ member.phone_number }}</div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Default Role</label>
+                        <div class="text-sm">{{ member.role|capfirst }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Project</label>
+                        <div class="text-sm">{{ member.project_count }}</div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Group</label>
+                        <div class="text-sm">{{ member.group|default:"-" }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Desktop Table Layout -->
+        <div class="hidden lg:block overflow-x-auto">
+            <table class="w-full text-left bg-white rounded-lg">
+                <thead class="bg-gray-50">
+                    <tr class="text-gray-700 border-b">
+                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Email / No.hp</th>
+                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Default Role</th>
+                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Project</th>
+                        <th class="px-6 lg:px-10 py-4 lg:py-5 text-base lg:text-lg font-medium">Group</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for member in members %}
+                    <tr class="hover:bg-gray-50 cursor-pointer member-item" 
+                        data-email="{{ member.email }}" data-role="{{ member.role }}"
+                        onclick="window.location.href='{% url 'master:performance_individual' member.id %}'">
+                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg">
+                            <div class="font-medium text-gray-900">{{ member.email }}</div>
+                            <div class="text-xs lg:text-base text-gray-500 mt-1">{{ member.phone_number }}</div>
+                        </td>
+                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg text-gray-900">
+                            {{ member.role|capfirst }}
+                        </td>
+                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg text-gray-900">
+                            {{ member.project_count }}
+                        </td>
+                        <td class="px-6 lg:px-10 py-4 lg:py-6 text-sm lg:text-lg text-gray-900">
+                            {{ member.group|default:"-" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
 <script>
     function filterMembers() {
         const search = document.getElementById('searchInput').value.toLowerCase();
         const role = document.getElementById('roleFilter').value.toLowerCase();
-        const rows = document.querySelectorAll('tbody tr');
         
-        rows.forEach(row => {
-            const emailDiv = row.querySelector('td div.font-medium');
-            const phoneDiv = row.querySelector('td div.text-xs');
-            const roleCell = row.children[1];
-            
-            const email = emailDiv ? emailDiv.textContent.toLowerCase() : '';
-            const phone = phoneDiv ? phoneDiv.textContent.toLowerCase() : '';
-            const userRole = roleCell ? roleCell.textContent.trim().toLowerCase() : '';
+        // Filter desktop table rows
+        const tableRows = document.querySelectorAll('tbody .member-item');
+        // Filter mobile cards
+        const mobileCards = document.querySelectorAll('.block.lg\\:hidden .member-item');
+        
+        [...tableRows, ...mobileCards].forEach(item => {
+            const email = item.dataset.email.toLowerCase();
+            const userRole = item.dataset.role.toLowerCase();
             
             let show = true;
             
             // Search filter
-            if (search && !(email.includes(search) || phone.includes(search))) {
+            if (search && !email.includes(search)) {
                 show = false;
             }
             
@@ -120,7 +193,7 @@
                 show = false;
             }
             
-            row.style.display = show ? '' : 'none';
+            item.style.display = show ? '' : 'none';
         });
     }
 </script>

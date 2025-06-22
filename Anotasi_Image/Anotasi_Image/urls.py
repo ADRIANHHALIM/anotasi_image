@@ -25,12 +25,12 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     
     # Annotator
-    path('annotator/',include(('annotator.urls','annotator'),namespace='annotator')),
+    path('annotator/', include('annotator.urls', namespace='annotator')),
     
     # Master
-    path('master/',include(('master.urls','master'),namespace='master')),
+    path('master/', include('master.urls', namespace='master')),
     
     # Reviewer
-    path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
+    path('reviewer/', include('reviewer.urls', namespace='reviewer')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

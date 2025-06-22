@@ -2,32 +2,32 @@
 {% load static %}
 
 {% block content %}
-<div class="w-full ml-64 p-6">
-    <!-- Grey background header section -->
-    <div class="w-full bg-gray-100 p-6">
-        <h1 class="text-3xl font-bold">Validation</h1>
+<div class="space-y-6">
+    <!-- Header Section -->
+    <div class="bg-gray-100 p-4 md:p-6 rounded-lg">
+        <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Validation</h1>
         {% if show_details %}
-            <p class="text-lg mt-2">{{ job.title }}</p>
-            <p class="text-sm text-gray-600">({{ job.total_images }} images)</p>
+            <p class="text-base md:text-lg mt-2">{{ job.title }}</p>
+            <p class="text-xs md:text-sm text-gray-600">({{ job.total_images }} images)</p>
         {% endif %}
     </div>
 
     <!-- Profile List Section -->
-    <div class="mb-4">
-        <h2 class="text-xl font-semibold">Profile List</h2>
-        <p class="text-gray-500 text-sm">{{ current_date }}</p>
+    <div>
+        <h2 class="text-lg md:text-xl font-semibold mb-2">Profile List</h2>
+        <p class="text-gray-500 text-sm md:text-base">{{ current_date }}</p>
     </div>
 
     {% if not show_details %}
         <!-- Job Profile List -->
-        <div class="mt-6 grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {% for job in jobs %}
-            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer" 
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" 
                  onclick="showValidationDetail({{ job.id }})"
                  data-job-id="{{ job.id }}">
-                <div class="flex items-start space-x-4">
+                <div class="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
                     <!-- Image Preview -->
-                    <div class="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+                    <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                         {% if job.get_first_image_url %}
                             <img src="{{ job.get_first_image_url }}" 
                                  alt="{{ job.title }}" 
@@ -36,20 +36,19 @@
                     </div>
 
                     <!-- Job Details -->
-                    <div class="flex-1">
-                        <h4 class="text-lg font-semibold">{{ job.title }}</h4>
-                        <div class="space-y-2 text-gray-500">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-base md:text-lg font-semibold mb-3 truncate">{{ job.title }}</h4>
+                        <div class="space-y-2 text-sm md:text-base text-gray-500">
                             <p class="flex justify-between">
                                 <span>Total Images:</span>
-                                <span>{{ job.total_images }}</span>
+                                <span class="font-medium">{{ job.total_images }}</span>
                             </p>
                             <p class="flex justify-between">
                                 <span>Date:</span>
-                                <span>{{ job.start_date|date:"d M" }} - {{ job.end_date|date:"d M Y" }}</span>
+                                <span class="font-medium">{{ job.start_date|date:"d M" }} - {{ job.end_date|date:"d M Y" }}</span>
                             </p>
-                            <p class="flex justify-between">
                                 <span>Status:</span>
-                                <span class="px-2 py-1 rounded-full text-sm 
+                                <span class="px-2 py-1 rounded-full text-xs md:text-sm font-medium
                                     {% if job.status == 'not_started' %}bg-gray-100 text-gray-700
                                     {% elif job.status == 'in_progress' %}bg-blue-100 text-blue-700
                                     {% elif job.status == 'completed' %}bg-green-100 text-green-700
@@ -59,7 +58,7 @@
                             </p>
                             <p class="flex justify-between">
                                 <span>Annotator:</span>
-                                <span>
+                                <span class="font-medium truncate">
                                     {% if job.worker_annotator %}
                                         {{ job.worker_annotator.first_name }} {{ job.worker_annotator.last_name }}
                                         {% if not job.worker_annotator.first_name %}
@@ -72,7 +71,7 @@
                             </p>
                             <p class="flex justify-between">
                                 <span>Reviewer:</span>
-                                <span>
+                                <span class="font-medium truncate">
                                     {% if job.worker_reviewer %}
                                         {{ job.worker_reviewer.first_name }} {{ job.worker_reviewer.last_name }}
                                         {% if not job.worker_reviewer.first_name %}
@@ -88,15 +87,50 @@
                 </div>
             </div>
             {% empty %}
-            <div class="col-span-2 text-center py-8 bg-gray-50 rounded-lg">
+            <div class="col-span-full text-center py-8 bg-gray-50 rounded-lg">
                 <p class="text-gray-500">No profiles available</p>
             </div>
             {% endfor %}
         </div>
     {% else %}
         <!-- Image Details Table -->
-        <div class="mt-6">
-            <table class="min-w-full bg-white">
+        <div class="overflow-hidden">
+            <!-- Mobile Card Layout -->
+            <div class="block lg:hidden space-y-4">
+                {% for image in images %}
+                <div class="bg-white p-4 rounded-lg shadow-md">
+                    <div class="flex items-start space-x-3 mb-3">
+                        <img src="{{ image.url }}" alt="{{ image.name }}" class="w-16 h-16 object-cover rounded">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-sm font-medium truncate">{{ image.name }}</h4>
+                            <p class="text-xs text-gray-500">{{ image.format }}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <span class="text-gray-500">Status:</span>
+                            <span class="block font-medium">{{ image.status }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Annotator:</span>
+                            <span class="block font-medium">{{ image.annotator|default:"-" }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Reviewer:</span>
+                            <span class="block font-medium">{{ image.reviewer|default:"-" }}</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500">Actions:</span>
+                            <button class="block text-blue-600 hover:text-blue-800 text-xs">View</button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Desktop Table Layout -->
+            <div class="hidden lg:block">
+                <table class="min-w-full bg-white">
                 <thead>
                     <tr class="bg-gray-50 border-b">
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Images ID</th>
