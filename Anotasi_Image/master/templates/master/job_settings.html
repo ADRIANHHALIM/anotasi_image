@@ -2,13 +2,13 @@
 {% load static %}
 
 {% block content %}
-<div class="w-full ml-64 p-6">
-    <h1 class="text-4xl font-bold mb-6">Job settings</h1>
+<div class="space-y-6">
+    <h1 class="text-xl md:text-2xl lg:text-4xl font-bold">Job settings</h1>
 
     <!-- Tab Navigation -->
     <div class="mb-6">
         <div class="border-b border-gray-200">
-            <nav class="-mb-px flex space-x-8">
+            <nav class="-mb-px flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-8">
                 <button class="tab-btn py-4 px-1 border-b-2 border-transparent font-semibold"
                         data-tab="jobProfile">
                     Job Profile
@@ -23,33 +23,33 @@
 
     <!-- Job Profile Content -->
     <div id="jobProfileContent" class="tab-content active">
-        <div class="mb-4 flex justify-between items-center">
-            <h3 class="text-xl font-semibold">List Profile</h3>
-            <button id="addProfileBtn" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+        <div class="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+            <h3 class="text-lg md:text-xl font-semibold">List Profile</h3>
+            <button id="addProfileBtn" class="bg-blue-500 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-blue-600 text-sm md:text-base">
                 Add Profile
             </button>
         </div>
 
         <!-- Job Profile List -->
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {% for job in jobs %}
-            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer job-card" 
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-md cursor-pointer job-card hover:shadow-lg transition-shadow" 
                 onclick="showJobDetail({{ job.id }}, '{{ job.title }}', '{{ job.description }}', '{{ job.hotkey }}', '{{ job.worker_annotator|default:'-' }}', '{{ job.worker_reviewer|default:'-' }}', '{{ job.segmentation_list|join:',' }}')" 
                 data-job-id="{{ job.id }}">
-                <div class="flex items-start space-x-4">
-                    <div class="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0">
+                    <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                         {% if job.get_first_image_url %}
                             <img src="{{ job.get_first_image_url }}" alt="{{ job.title }}" 
                                  class="w-full h-full object-cover">
                         {% endif %}
                     </div>
-                    <div class="flex-1">
-                        <h4 class="text-lg font-semibold">{{ job.title }}</h4>
-                        <div class="space-y-2 text-gray-500">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-base md:text-lg font-semibold truncate">{{ job.title }}</h4>
+                        <div class="space-y-1 md:space-y-2 text-sm md:text-base text-gray-500">
                             <p class="flex justify-between"><span>Image:</span> <span>{{ job.image_count }}</span></p>
-                            <p class="flex justify-between"><span>Date:</span> <span>{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
+                            <p class="flex justify-between"><span>Date:</span> <span class="text-right">{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
                             <p class="flex justify-between"><span>Status:</span>
-                                <span class="px-2 py-1 rounded-full text-sm
+                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
                                     {% if job.status == 'not_assign' %}bg-red-100 text-red-700
                                     {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
                                     {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
@@ -57,7 +57,7 @@
                                 </span>
                             </p>
                             <p class="flex justify-between"><span>Priority:</span> 
-                                <span class="px-2 py-1 rounded-full text-sm
+                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
                                     {% if job.priority == 'urgent' %}bg-red-100 text-red-700
                                     {% elif job.priority == 'high' %}bg-orange-100 text-orange-700
                                     {% elif job.priority == 'medium' %}bg-yellow-100 text-yellow-700
@@ -65,14 +65,14 @@
                                     {{ job.priority|title }}
                                 </span>
                             </p>
-                            <div class="worker-info space-y-2 text-gray-500">
+                            <div class="worker-info space-y-1 md:space-y-2 text-gray-500">
                                 <p class="flex justify-between">
                                     <span>Annotator:</span>
-                                    <span>{{ job.worker_annotator.email|default:'-' }}</span>
+                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_annotator.email|default:'-' }}</span>
                                 </p>
                                 <p class="flex justify-between">
                                     <span>Reviewer:</span>
-                                    <span>{{ job.worker_reviewer.email|default:'-' }}</span>
+                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_reviewer.email|default:'-' }}</span>
                                 </p>
                             </div>
                         </div>
@@ -85,25 +85,25 @@
 
     <!-- Job Assign Content -->
     <div id="jobAssignContent" class="tab-content hidden">
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {% for job in jobs %}
-            <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer job-card"
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-md cursor-pointer job-card hover:shadow-lg transition-shadow"
                 onclick="showJobAssignDetail({{ job.id }}); event.stopPropagation();"
                 data-job-id="{{ job.id }}">
-                <div class="flex items-start space-x-4">
-                    <div class="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden">
+                <div class="flex flex-col sm:flex-row sm:items-start sm:space-x-4 space-y-3 sm:space-y-0">
+                    <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                         {% if job.get_first_image_url %}
                             <img src="{{ job.get_first_image_url }}" alt="{{ job.title }}" 
                                  class="w-full h-full object-cover">
                         {% endif %}
                     </div>
-                    <div class="flex-1">
-                        <h4 class="text-lg font-semibold">{{ job.title }}</h4>
-                        <div class="space-y-2 text-gray-500">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-base md:text-lg font-semibold truncate">{{ job.title }}</h4>
+                        <div class="space-y-1 md:space-y-2 text-sm md:text-base text-gray-500">
                             <p class="flex justify-between"><span>Image:</span> <span>{{ job.image_count }}</span></p>
-                            <p class="flex justify-between"><span>Date:</span> <span>{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
+                            <p class="flex justify-between"><span>Date:</span> <span class="text-right">{{ job.start_date|date:"d M Y" }} - {{ job.end_date|date:"d M Y" }}</span></p>
                             <p class="flex justify-between"><span>Status:</span>
-                                <span class="px-2 py-1 rounded-full text-sm
+                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
                                     {% if job.status == 'not_assign' %}bg-red-100 text-red-700
                                     {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
                                     {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
@@ -111,7 +111,7 @@
                                 </span>
                             </p>
                             <p class="flex justify-between"><span>Priority:</span> 
-                                <span class="px-2 py-1 rounded-full text-sm
+                                <span class="px-2 py-1 rounded-full text-xs md:text-sm
                                     {% if job.priority == 'urgent' %}bg-red-100 text-red-700
                                     {% elif job.priority == 'high' %}bg-orange-100 text-orange-700
                                     {% elif job.priority == 'medium' %}bg-yellow-100 text-yellow-700
@@ -119,14 +119,14 @@
                                     {{ job.priority|title }}
                                 </span>
                             </p>
-                            <div class="worker-info space-y-2 text-gray-500">
+                            <div class="worker-info space-y-1 md:space-y-2 text-gray-500">
                                 <p class="flex justify-between">
                                     <span>Annotator:</span>
-                                    <span>{{ job.worker_annotator.email|default:'-' }}</span>
+                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_annotator.email|default:'-' }}</span>
                                 </p>
                                 <p class="flex justify-between">
                                     <span>Reviewer:</span>
-                                    <span>{{ job.worker_reviewer.email|default:'-' }}</span>
+                                    <span class="text-right truncate max-w-32 md:max-w-none">{{ job.worker_reviewer.email|default:'-' }}</span>
                                 </p>
                             </div>
                         </div>
@@ -140,13 +140,13 @@
 
 <!-- Modals -->
 <!-- Worker Selection Modal -->
-<div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg w-2/3 max-h-[80vh] overflow-y-auto relative">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Choose Worker</h2>
+<div id="workerSelectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg w-full max-w-4xl max-h-[80vh] overflow-y-auto relative">
+        <div class="p-4 md:p-6">
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h2 class="text-lg md:text-2xl font-bold">Choose Worker</h2>
                 <button type="button" 
-                        class="text-gray-500 hover:text-gray-700"
+                        class="text-gray-500 hover:text-gray-700 p-2"
                         onclick="closeWorkerSelection()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -155,14 +155,14 @@
             </div>
 
             <!-- Search and Filter -->
-            <div class="flex gap-4 mb-6">
-                <div class="flex-1">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 md:mb-6">
+                <div class="md:col-span-2">
                     <input type="text"
                            id="workerSearch"
                            placeholder="Search by email/No.hp"
-                           class="w-full p-2 border rounded-lg">
+                           class="w-full p-2 border rounded-lg text-sm md:text-base">
                 </div>
-                <select id="roleFilter" class="p-2 border rounded-lg w-40" disabled>
+                <select id="roleFilter" class="p-2 border rounded-lg text-sm md:text-base" disabled>
                     <option value="annotator">Annotator</option>
                     <option value="reviewer">Reviewer</option>
                 </select>
@@ -176,14 +176,14 @@
             </div>
 
             <!-- Footer -->
-            <div class="flex justify-end mt-6">
+            <div class="flex flex-col sm:flex-row justify-end mt-4 md:mt-6 space-y-2 sm:space-y-0 sm:space-x-2">
                 <button type="button"
-                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg mr-2"
+                        class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm md:text-base"
                         onclick="closeWorkerSelection()">
                     Cancel
                 </button>
                 <button id="nextBtn"
-                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm md:text-base"
                         disabled>
                     Next
                 </button>
