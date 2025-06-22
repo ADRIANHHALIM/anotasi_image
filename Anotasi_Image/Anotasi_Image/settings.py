@@ -5,6 +5,7 @@ from dotenv import load_dotenv  # Gunakan dotenv untuk membaca file .env
 # Load environment variables dari file .env
 load_dotenv()
 
+
 # BASE_DIR untuk merujuk ke direktori proyek utama
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -91,11 +92,11 @@ WSGI_APPLICATION = 'Anotasi_Image.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'anotasi_image_db',
-        'USER': 'adrianhalim',  # Your macOS username
-        'PASSWORD': '',  # Empty for local development
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
