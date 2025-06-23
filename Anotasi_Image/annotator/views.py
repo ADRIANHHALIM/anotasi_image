@@ -201,7 +201,7 @@ def signout_view(request):
     messages.success(request, 'You have been signed out successfully.')
     return redirect('annotator:signin')
 
-def accept_notification(request, notification_id):
+def accept_notification_view(request, notification_id):
     """
     Accept notification and update status to 'accepted'
     """
@@ -214,7 +214,7 @@ def accept_notification(request, notification_id):
     try:
         from master.models import Notification
         
-        # Temporarily disable auth check for testing
+        # Check authentication
         if not request.user.is_authenticated:
             return JsonResponse({
                 'status': 'error',
