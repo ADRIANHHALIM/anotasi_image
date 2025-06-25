@@ -170,20 +170,10 @@
 </div>
 
 <!-- Issue Detail Modal -->
-<div id="issueDetailModal" 
-     class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50"
-     style="display: none;">
-    <div class="bg-white rounded-lg w-full h-screen flex">
-        <!-- Close button - Move outside the flex container -->
-        <button onclick="closeModal()" 
-                class="absolute top-2 right-16 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 z-50">
-            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-
+<div id="issueDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg w-full max-w-7xl h-full max-h-screen flex flex-col lg:flex-row overflow-hidden">
         <!-- Left Panel - Classes -->
-        <div class="w-64 bg-gray-50 p-4 border-r border-gray-200">
+        <div class="w-full lg:w-64 bg-gray-50 p-4 border-b lg:border-b-0 lg:border-r border-gray-300 overflow-y-auto">
             <div class="mb-6">
                 <h3 class="font-semibold mb-2">Annotations</h3>
                 <div class="border-b-2 border-red-500 w-16 mb-4"></div>
@@ -248,13 +238,19 @@
         <div class="flex-1 flex flex-col">
             <!-- Header -->
             <div class="border-b border-gray-200">
-                <div class="p-4">
+                <div class="p-4 flex justify-between items-center">
                     <h2 id="modalJobTitle" class="text-2xl font-bold">Loading...</h2>
+                    <button onclick="closeModal()" 
+                            class="text-gray-500 hover:text-gray-700 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
             <!-- Status Cards -->
-            <div class="border-b border-gray-200 p-4 grid grid-cols-6 gap-4">
+            <div class="border-b border-gray-200 p-4 grid grid-cols-3 md:grid-cols-6 gap-4">
                 <div class="bg-gray-50 p-4 rounded-lg text-center">
                     <div id="modalUnannotated" class="text-2xl font-bold">{{ status_counts.unannotated }}</div>
                     <div class="text-sm text-gray-600">Unannotated</div>
@@ -398,8 +394,11 @@ function openModal(imageUrl, imageId, status, labelTime, reviewTime) {
     updateModalContent();
 
     // Show the modal
-    modal.style.display = 'flex';
     modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
 }
 
 function updateModalContent() {
@@ -437,7 +436,7 @@ document.getElementById('prevImage').addEventListener('click', prevImage);
 
 // Add keyboard navigation
 document.addEventListener('keydown', function(e) {
-    if (document.getElementById('issueDetailModal').style.display === 'flex') {
+    if (!document.getElementById('issueDetailModal').classList.contains('hidden')) {
         if (e.key === 'ArrowRight') nextImage();
         if (e.key === 'ArrowLeft') prevImage();
         if (e.key === 'Escape') closeModal();
@@ -446,8 +445,11 @@ document.addEventListener('keydown', function(e) {
 
 function closeModal() {
     const modal = document.getElementById('issueDetailModal');
-    modal.style.display = 'none';
     modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    
+    // Restore body scroll
+    document.body.style.overflow = 'auto';
 }
 
 // Add click outside to close
@@ -504,9 +506,7 @@ function finishImage() {
             }
 
             // Close the modal
-            const modal = document.getElementById('issueDetailModal');
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            closeModal();
         }
     });
 }
