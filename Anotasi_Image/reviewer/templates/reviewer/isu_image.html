@@ -1,0 +1,372 @@
+{% extends 'base_reviewer.html' %}
+
+
+{% block content-header %}
+<div class="d-flex align-items-center">
+  <div>
+    <a href="{% url 'reviewer:isu' %}" class="">
+      <span style="color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24">
+          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12l6 6m-6-6l6-6"/>
+        </svg>
+      </span>
+    </a>
+  </div>
+  <div>
+    <div class="d-flex">
+      <span class="text-white">dataset_kendaraan</span>
+      <span class="ps-1 pe-1 text-white">></span>
+      <div class="d-flex">
+        <span style="color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 100 100">
+            <path fill="currentColor" d="M82.488 68.439V31.561a10.41 10.41 0 0 0 5.424-9.143c0-5.753-4.664-10.417-10.417-10.417a10.4 10.4 0 0 0-8.577 4.512H31.083a10.4 10.4 0 0 0-8.577-4.512c-5.753 0-10.417 4.664-10.417 10.417c0 3.944 2.192 7.375 5.424 9.143v36.877a10.41 10.41 0 0 0-5.424 9.143c0 5.753 4.664 10.417 10.417 10.417c4.371 0 8.107-2.695 9.653-6.512h35.682c1.546 3.816 5.282 6.512 9.653 6.512c5.753 0 10.417-4.664 10.417-10.417c0-3.943-2.192-7.373-5.423-9.142m-55-.007V31.568a10.46 10.46 0 0 0 4.61-5.081h35.806a10.46 10.46 0 0 0 4.61 5.081v36.864a10.46 10.46 0 0 0-3.473 3.081h-38.08a10.45 10.45 0 0 0-3.473-3.081"/>
+          </svg>
+        </span>
+        <span class="text-white">Labeling</span>
+      </div>
+    </div>
+    <div class="d-flex">
+      <span class="text-white">0.jpg</span>
+    </div>
+  </div>
+  <div class="d-flex align-items-end ms-5 pb-1 h-100">
+    <div>
+      <span id="zoomIn" style="color: white; cursor: pointer;">
+        <!-- Zoom In -->
+         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 32 32">
+          <path fill="currentColor" d="M18 12h-4V8h-2v4H8v2h4v4h2v-4h4z"/><path fill="currentColor" d="M21.448 20A10.86 10.86 0 0 0 24 13a11 11 0 1 0-11 11a10.86 10.86 0 0 0 7-2.552L27.586 29L29 27.586ZM13 22a9 9 0 1 1 9-9a9.01 9.01 0 0 1-9 9"/>
+        </svg>
+      </span>
+    </div>
+    <div class="ms-3">
+      <span id="zoomOut" style="color: white; cursor: pointer;">
+        <!-- Zoom Out -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 32 32">
+          <path fill="currentColor" d="M8 12h10v2H8z"/><path fill="currentColor" d="M21.448 20A10.86 10.86 0 0 0 24 13a11 11 0 1 0-11 11a10.86 10.86 0 0 0 7-2.552L27.586 29L29 27.586ZM13 22a9 9 0 1 1 9-9a9.01 9.01 0 0 1-9 9"/>
+        </svg>
+      </span>
+    </div>
+    <div class="ms-1">
+      <span id="zoomFit" style="color: white; cursor: pointer;">
+        <!-- Zoom Fit -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 32 32">
+          <path fill="currentColor" d="M21.448 20A10.86 10.86 0 0 0 24 13a11 11 0 1 0-11 11a10.86 10.86 0 0 0 7-2.552L27.586 29L29 27.586ZM13 22a9 9 0 1 1 9-9a9.01 9.01 0 0 1-9 9"/><path fill="currentColor" d="M10 12H8v-2a2 2 0 0 1 2-2h2v2h-2zm8 0h-2v-2h-2V8h2a2 2 0 0 1 2 2zm-6 6h-2a2 2 0 0 1-2-2v-2h2v2h2zm4 0h-2v-2h2v-2h2v2a2 2 0 0 1-2 2"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+  <div class="d-flex w-100 justify-content-center">
+    <div class="rounded" style="background-color:rgba(87,180,206,0.1);">
+      <div class="d-flex justify-content-senter align-items-center" style="font-size: 1.2rem;" >
+        <div class="btn" id="prevBtn">
+          <span style="color: white;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 7l-5 5m0 0l5 5"/>
+            </svg>
+          </span>
+        </div>
+        <div class="ms-3 me-3 text-center text-white" id="pageInfo" style="width: 60px;">1 / 10</div>
+        <div class=" btn justify-content-senter align-items-center" id="nextBtn" style="height: 40px;">
+          <span style="color: white;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 17l5-5m0 0l-5-5"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ms-auto">
+    <button class="btn btn-primary text-white p-0 me-2" style="width: 100px; height: 30px;">Finish</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block reviewer %}
+<a href="#" class="ps-0 pe-0 pt-0 btn" style="background-color: #0f84d0; width: 65px; height: 45px; color: white;">
+    <div>
+        <img src="{{ nav_reviewer_base64 }}" alt="nav_reviewer" style="width: 18px; height: 14px; filter: invert(1);">
+        <p style="font-size: 11px;">Annotate</p>
+    </div>
+</a>
+{% endblock %}
+
+{% block sidebar %}
+<div class="p-0 border-end" style="width: 200px; gap: 20px">
+    <div class="border-end">
+      <p class="mt-2 ps-2">Annotations</p>
+      <p class="text-center border-bottom" style="text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 4px;">CLASSES</p>
+      <div>
+        <div class="">
+          <div class="d-flex ms-2 me-2 align-item-center">
+            <span class=" btn border border-end-0 p-1 rounded-start">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
+                <path fill="#787878" fill-rule="evenodd" d="m16.325 14.899l5.38 5.38a1.008 1.008 0 0 1-1.427 1.426l-5.38-5.38a8 8 0 1 1 1.426-1.426M10 16a6 6 0 1 0 0-12a6 6 0 0 0 0 12"/>
+              </svg>
+            </span>
+            <input type="search" class="border border-start-0 rounded-end" placeholder="Search Class" style="width: 100%;">
+          </div>
+        </div>
+      </div>
+
+      <div style="height: 10px"></div>
+      <div class="d-flex align-items-center border" style="width: 100%">
+        <div class="ps-2">mobil</div>
+        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">1</div>
+      </div>
+      <div class="d-flex align-items-center border" style="width: 100%">
+        <div class="ps-2">motor</div>
+        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">2</div>
+      </div>
+      <div class="d-flex align-items-center border" style="width: 100%">
+        <div class="ps-2">truk</div>
+        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">3</div>
+      </div>
+      <div class="d-flex align-items-center border" style="width: 100%">
+        <div class="ps-2">bus</div>
+        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">4</div>
+      </div>
+      <div class="d-flex align-items-center border" style="width: 100%">
+        <div class="ps-2">kereta</div>
+        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">5</div>
+      </div>
+    </div>
+    <div style="height: 50px"></div>
+    <div class="">
+      <p class="text-center border border-end-0 pt-2" style="text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 4px;">SEGMENTATION TYPE</p>
+      <div class="">
+        <div class="">
+          <div class="d-flex align-items-center p-0 collapse-toggle" data-target="#kontensemantic" data-label="#labelsemantic" data-icon="#iconsemantic" data-eye="#eyesemantic" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#kontensemantic" aria-expanded="false">
+            <span class="m-0 me-2" >
+              <span id="iconsemantic">
+                <span class="icon-show" style="display: inline;">{% include "icons/arrow-down.html" %}</span>
+                <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
+              </span>
+            </span>
+            <p id="labelsemantic" class="p-0 m-0">Semantic (0)</p>
+            <span id="eyesemantic" class="ms-auto">
+              <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
+              <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
+            </span>
+          </div>
+          <div class="collapse" id="kontensemantic">
+          </div>
+        </div>
+        <div class="">
+          <div class="d-flex align-items-center p-0 collapse-toggle" data-target="#konteninstance" data-label="#labelinstance" data-icon="#iconinstance" data-eye="#eyeinstance" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#konteninstance" aria-expanded="false">
+            <span class="m-0 me-2" >
+              <span id="iconinstance">
+                <span class="icon-show" style="display: inline;">{% include "icons/arrow-down.html" %}</span>
+                <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
+              </span>
+            </span>
+            <p id="labelinstance" class="p-0 m-0">Instance (0)</p>
+            <span id="eyeinstance" class="ms-auto">
+              <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
+              <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
+            </span>
+          </div>
+          <div class="collapse" id="konteninstance">
+          </div>
+        </div>
+        <div class="">
+          <div class="d-flex align-items-center p-0 collapse-toggle" data-target="#kontenpanoptic" data-label="#labelpanoptic" data-icon="#iconpanoptic" data-eye="#eyepanoptic" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#kontenpanoptic" aria-expanded="false">
+            <span class="m-0 me-2" >
+              <span id="iconpanoptic">
+                <span class="icon-show" style="display: inline;">{% include "icons/arrow-down.html" %}</span>
+                <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
+              </span>
+            </span>
+            <p id="labelpanoptic" class="p-0 m-0">Panoptic (0)</p>
+            <span id="eyepanoptic" class="ms-auto">
+              <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
+              <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
+            </span>
+          </div>
+          <div class="collapse" id="kontenpanoptic">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block content1 %}
+<div class="flex-grow-1">
+    <div>
+      <div class="d-flex gap-1 flex-wrap" style="white-space: nowrap;">
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">10</div>
+            <div class="small text-muted">Unannotated</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">In Review</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">In Rework</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">Finished</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">Issues</div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-secondary w-100">
+        <div class="">
+          <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc;">
+            <img id="zoomImage" class="m-3" src="..\static\reviewer\image\anotasi\2.jpg" alt="Gambar Zoom" style="display: block; transform-origin: top left;">
+          </div>
+          <!-- <div class="zoom-container">
+            <img id="zoomImage" src="..\static\reviewer\image\market_street.jpg" alt="Image" class="img-fluid">
+          </div> -->
+        </div>
+      </div>
+    </div>
+    
+  </div>
+{% endblock %}
+
+
+{% block scriptjs %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll('.collapse-toggle').forEach(toggleGroup => {
+    const collapseId = toggleGroup.getAttribute('data-target');
+    const labelSelector = toggleGroup.getAttribute('data-label');
+    const iconSelector = toggleGroup.getAttribute('data-icon');
+    const eyeSelector = toggleGroup.getAttribute('data-eye');
+
+    const collapseEl = document.querySelector(collapseId);
+    const labelEl = document.querySelector(labelSelector);
+    const iconContainer = document.querySelector(iconSelector);
+    const eyeContainer = document.querySelector(eyeSelector);
+
+    const iconShow = iconContainer.querySelector('.icon-show');
+    const iconHide = iconContainer.querySelector('.icon-hide');
+    const eyeShow = eyeContainer.querySelector('.eye-show');
+    const eyeHide = eyeContainer.querySelector('.eye-hide');
+
+    if (collapseEl.classList.contains('show')) {
+      // Collapse dalam kondisi tampil
+      labelEl.classList.remove('text-muted');
+      labelEl.classList.add('text-dark');
+      iconShow.style.display = 'inline';
+      iconHide.style.display = 'none';
+      eyeShow.style.display = 'inline';
+      eyeHide.style.display = 'none';
+    } else {
+      // Collapse tersembunyi
+      labelEl.classList.remove('text-dark');
+      labelEl.classList.add('text-muted');
+      iconShow.style.display = 'none';
+      iconHide.style.display = 'inline';
+      eyeShow.style.display = 'none';
+      eyeHide.style.display = 'inline';
+    }
+
+    collapseEl.addEventListener('show.bs.collapse', () => {
+      console.log('Collapse opened:', collapseId);
+      labelEl.classList.remove('text-muted');
+      labelEl.classList.add('text-dark');
+      iconShow.style.display = 'inline';
+      iconHide.style.display = 'none';
+      eyeShow.style.display = 'inline';
+      eyeHide.style.display = 'none';
+    });
+
+    collapseEl.addEventListener('hide.bs.collapse', () => {
+      console.log('Collapse closed:', collapseId);
+      labelEl.classList.remove('text-dark');
+      labelEl.classList.add('text-muted');
+      iconShow.style.display = 'none';
+      iconHide.style.display = 'inline';
+      eyeShow.style.display = 'none';
+      eyeHide.style.display = 'inline';
+    });
+  });
+});
+  //Zoom 
+const zoomInButton = document.getElementById("zoomIn");
+const zoomOutButton = document.getElementById("zoomOut");
+const zoomFitButton = document.getElementById("zoomFit");
+const zoomImage = document.getElementById("zoomImage");
+const zoomWrapper = document.getElementById("zoomWrapper");
+
+let scale = 1;
+
+// Zoom In
+zoomInButton.addEventListener("click", () => {
+  scale += 0.1;
+  applyZoom();
+});
+
+// Zoom Out
+zoomOutButton.addEventListener("click", () => {
+  scale -= 0.1;
+  if (scale < 0.1) scale = 0.1;
+  applyZoom();
+});
+
+// Zoom Fit by height
+zoomFitButton.addEventListener("click", () => {
+  const containerHeight = zoomWrapper.clientHeight;
+  const imageHeight = zoomImage.naturalHeight;
+
+  if (imageHeight > 0) {
+    scale = containerHeight / imageHeight;
+    applyZoom();
+  }
+});
+
+// Terapkan transformasi
+function applyZoom() {
+  zoomImage.style.transform = `scale(${scale})`;
+}
+
+  //Pagination
+  let currentPage = 1;
+  const totalPages = 10;
+
+  const pageInfo = document.getElementById('pageInfo');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  function updatePagination() {
+    pageInfo.textContent = `${currentPage} / ${totalPages}`;
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+  }
+
+  prevBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+    }
+  });
+
+  updatePagination(); // Initial update
+</script>
+
+{% endblock %}

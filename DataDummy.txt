@@ -1,0 +1,222 @@
+## Struktur Data
+```
+Pengguna
+ ├──> Gambar
+ ├──> ProfileJob ──> JobItem ──> Segmentasi ──> Anotasi ──> IsuAnotasi
+ │                                   └───────> IsuImage
+ └──> Member ──> MemberRole
+                └────> TipeRole
+```
+## INSERT TABLE MEMBER 
+INSERT INTO `reviewer_member` (`tanggal_registrasi`, `id_member`, `email_member`, `no_hp_member`, `afiliasi`, `peran`, `id_pengguna`) VALUES
+	(CURRENT_TIMESTAMP, 1, '064002200018@std.trisakti.ac.id', 0, '-', '3', 1),
+	(CURRENT_TIMESTAMP, 2, '064002200017@std.trisakti.ac.id', 0, '-', '3', 2),
+	(CURRENT_TIMESTAMP, 3, '064002200013@std.trisakti.ac.id', 0, '-', '2', 3);
+
+## INSERT TABLE MEMBER ROLE
+INSERT INTO `reviewer_memberrole` (`id_member_role`, `is_active`, `id_member`, `id_tipe_role`) VALUES
+	(1, 1, 1, 3),
+	(2, 1, 2, 3),
+	(3, 1, 3, 2);
+
+
+## INSERT TABLE GAMBAR
+INSERT INTO reviewer_gambar (
+    id_pengguna, id_direktori, id_dataset, nama_file,
+    ukuran_file, tanggal_dibuat, format_file, tanggal_pengambilan,
+    model_kamera, lebar, tinggi, lokasi_pengambilan,
+    id_pembuat, tanggal_buat
+)
+VALUES 
+(1, 10, 100, '1.jpg', 972, '2025-06-05', 'jpg', 2024-06-01, 1234, 1155, 710, 5678, 3, CURRENT_TIMESTAMP),
+(1, 10, 100, '2.jpeg', 136, '2025-06-05', 'jpeg', 2024-06-01, 1234, 1600, 1143, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '3.jpg', 364, '2025-06-05', 'jpg', 2024-06-01, 1234, 1167, 571, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '4.jpg', 89, '2025-06-05', 'jpg', 2024-06-01, 1234, 830, 622, 5678 3, CURRENT_TIMESTAMP),
+(1, 10, 100, '5.jpg', 72, '2025-06-05', 'jpg', 2024-06-01, 1234, 640, 427, 5678, 3, CURRENT_TIMESTAMP),
+(1, 10, 100, '6.jpg', 192, '2025-06-05', 'jpg', 2024-06-01, 1234, 1263, 831, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '7.jpg', 128, '2025-06-05', 'jpg', 2024-06-01, 1234, 640, 424, 5678, 3, CURRENT_TIMESTAMP),
+(2, 10, 100, '8.jpg', 44, '2025-06-05', 'jpg', 2024-06-01, 1234, 600, 400, 5678, 3, CURRENT_TIMESTAMP);
+
+## INSERT TABLE PROFILE JOB
+INSERT INTO reviewer_profilejob (id_pengguna, nama_profile_job, deskripsi, start_date, end_date, isu)
+VALUES 
+(1, 'Annotate project: dataset_kendaraan', 'Segmentasi kendaraan', CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 50 DAY), 'Tidak ada'),
+(2, 'Annotate project: dataset_buah', 'Segmentasi buah-buahan', CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 70 DAY), 'Perbedaan label'),
+(2, 'Annotate project: dataset_hewan', 'Segmentasi hewan liar', CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 100 DAY), 'Resolusi gambar rendah'),
+(1, 'Annotate project: dataset_tanaman', 'Segmentasi tanaman dan tumbuhan', CURRENT_DATE, DATE_ADD(CURRENT_DATE, INTERVAL 150 DAY), 'Kurang data latih');
+ 
+## INSERT TABLE JOB ITEM 
+INSERT INTO reviewer_jobitem (
+    id_profile_job, id_gambar, id_job_assignment_annotator,
+    id_job_assignment_reviewer, status_pekerjaan
+)
+VALUES
+-- JobItem untuk profile job 1 (dataset_kendaraan)
+(1, 1, 3, 1, 'P'),
+(1, 5, 3, 1, 'P'),
+-- JobItem untuk profile job 2 (dataset_buah)
+(2, 2, 3, 2, 'P'),
+(2, 6, 3, 2, 'P'),
+-- JobItem untuk profile job 3 (dataset_hewan)
+(3, 3, 3, 2, 'P'),
+(3, 7, 3, 2, 'P'),
+-- JobItem untuk profile job 4 (dataset_tanaman)
+(4, 4, 3, 1, 'P'),
+(4, 8, 3, 1, 'P');
+
+## INSERT TABLE TIPE ROLE 
+INSERT INTO reviewer_tiperole (
+	id_tipe_role, nama_tipe_role
+)
+VALUES
+	(0, 'guest'),
+	(1, 'master'),
+	(2, 'annotator'),
+	(3, 'reviewer');
+
+## INSERT TABLE TIPE SEGMENTASI
+INSERT INTO reviewer_tipesegmentasi (id_tipe_segmentasi, nama_tipe_segmentasi) VALUES
+(1, 'semantic'),
+(2, 'instance'),
+(3, 'panoptic');
+
+## INSERT TABLE SEGMENTASI 
+INSERT INTO reviewer_segmentasi (
+    id_tipe_segmentasi, label_segmentasi, warna_segmentasi, koordinat, id_job_item
+) VALUES
+-- Mobil (Instance)
+(2, 'Mobil', '#FF0000', 0, 1),
+-- Manusia (Instance)
+(2, 'Manusia', '#FFFF00', 0, 1),
+-- Gedung (Semantic)
+(1, 'Gedung', '#0047FF', 0, 1),
+-- Gedung (Semantic)
+(1, 'Jalanan', '#0058FF', 0, 1),
+-- Mobil (Instance)
+(2, 'Mobil', '#FF0000', 0, 2),
+-- Motor (Instance)
+(2, 'Motor', '#994C00', 0, 2),
+-- Pohon Kelapa (Panoptic)
+(2, 'Pohon Kelapa', '#99FF99', 0, 7),
+-- Bunga Matahari (Panoptic)
+(2, 'Bunga Matahari', '#FF99FF', 0, 8);
+
+
+## INSERT TABLE ANOTASI
+### Anotasi Kendaraan
+#### Anotasi id_gambar 1
+##### Instance
+INSERT INTO reviewer_anotasi (
+    id_segmentasi, id_gambar, koordinat_x, koordinat_y, lebar, tinggi
+) VALUES
+    (1, 1, 624, 460, 207, 167),  -- Mobil 1
+    (1, 1, 470, 479, 56, 43),    -- Mobil 2
+    (2, 1, 342, 473, 50, 99),    -- Manusia 1
+    (2, 1, 131, 481, 28, 59),    -- Manusia 2
+    (2, 1, 20, 488, 34, 65);     -- Manusia 3
+
+##### Semantic
+INSERT INTO reviewer_anotasi (
+    id_segmentasi, id_gambar, koordinat_x, koordinat_y, lebar, tinggi
+) VALUES
+    -- Gedung 1
+    (3, 1, 464, 168, 243, 260),
+    (3, 1, 726, 11, 382, 346),
+    (3, 1, 59, 19, 392, 378),
+    -- Jalanan
+    (4, 1, 19, 495, 1116, 196);
+
+##### Polygon tool gedung dan Jalanan
+INSERT INTO reviewer_polygontool (id_anotasi, koordinat_xn, koordinat_yn) VALUES
+    (6, 464, 177),
+    (6, 651, 168),
+    (6, 681, 231),
+    (6, 705, 236),
+    (6, 706, 416),
+    (6, 464, 428);
+INSERT INTO reviewer_polygontool (id_anotasi, koordinat_xn, koordinat_yn) VALUES
+    (7, 726, 11),
+    (7, 1097, 13),
+    (7, 1108, 356),
+    (7, 987, 351),
+    (7, 919, 305),
+    (7, 801, 318),
+    (7, 737, 337);
+INSERT INTO reviewer_polygontool (id_anotasi, koordinat_xn, koordinat_yn) VALUES
+    (8, 451, 367),
+    (8, 451, 46),
+    (8, 401, 19),
+    (8, 265, 44),
+    (8, 255, 209),
+    (8, 83, 210),
+    (8, 59, 396);
+INSERT INTO reviewer_polygontool (id_anotasi, koordinat_xn, koordinat_yn) VALUES
+    (9, 597, 495),
+    (9, 574, 508),
+    (9, 541, 506),
+    (9, 509, 522),
+    (9, 461, 518),
+    (9, 393, 524),
+    (9, 394, 577),
+    (9, 326, 577),
+    (9, 331, 531),
+    (9, 103, 541),
+    (9, 19, 602),
+    (9, 24, 690),
+    (9, 1135, 699),
+    (9, 1122, 635),
+    (9, 938, 586),
+    (9, 918, 555),
+    (9, 950, 537),
+    (9, 986, 537),
+    (9, 962, 526),
+    (9, 846, 528),
+    (9, 843, 565),
+    (9, 846, 641),
+    (9, 707, 639),
+    (9, 638, 637),
+    (9, 599, 611),
+    (9, 608, 542),
+    (9, 614, 512);
+
+#### Anotasi id_gambar 5
+INSERT INTO reviewer_anotasi (
+    id_segmentasi, id_gambar, koordinat_x, koordinat_y, lebar, tinggi
+) VALUES
+    -- Mobil (id_segmentasi = 4)
+    (5, 5, 368, 242, 86, 92),
+    (5, 5, 425, 185, 56, 55),
+    (5, 5, 388, 141, 34, 31),
+    (5, 5, 339, 144, 28, 25),
+    (5, 5, 229, 116, 22, 19),
+
+    -- Motor (id_segmentasi = 5)
+    (6, 5, 493, 227, 31, 58),
+    (6, 5, 185, 282, 37, 76),
+    (6, 5, 73, 328, 38, 81),
+    (6, 5, 104, 298, 36, 74),
+    (6, 5, 21, 294, 36, 81),
+    (6, 5, 97, 240, 28, 56),
+    (6, 5, 162, 217, 27, 45),
+    (6, 5, 257, 204, 26, 41),
+    (6, 5, 230, 177, 20, 29);
+
+## Anotasi Tanaman
+### Anotasi id_gambar 4
+INSERT INTO reviewer_anotasi (
+    id_segmentasi, id_gambar, koordinat_x, koordinat_y, lebar, tinggi
+)
+VALUES
+(7, 4, 24, 122, 375, 500),
+(7, 4, 323, 44, 276, 578),
+(7, 4, 550, 105, 280, 516);
+### Anotasi Id_gambar 8
+INSERT INTO reviewer_anotasi (
+    id_segmentasi, id_gambar, koordinat_x, koordinat_y, lebar, tinggi
+) VALUES
+    (8, 8, 220, 101, 176, 166),
+    (8, 8, 400, 60, 129, 134),
+    (8, 8, 106, 171, 92, 88),
+    (8, 8, 0, 181, 74, 138),
+    (8, 8, 51, 128, 74, 71);
+

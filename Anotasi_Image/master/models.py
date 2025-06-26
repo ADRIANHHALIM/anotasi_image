@@ -4,6 +4,25 @@ from django.utils import timezone
 from django.db.models.functions import Cast
 import os
 
+<<<<<<< HEAD
+class User(models.Model):
+    ROLE_CHOICES = [
+        ('annotator', 'Annotator'),
+        ('master', 'Master'),
+        ('reviewer', 'Reviewer'),
+    ]
+
+    username = models.CharField(max_length=150, unique=True)
+    email = models.EmailField(max_length=254, unique=True)
+    first_name = models.CharField(max_length=50, blank=True, null=True)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='annotator')
+    date_joined = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.username} ({self.get_role_display()})"
+=======
 class CustomUserManager(BaseUserManager):
     """Custom manager untuk model CustomUser agar mendukung login dengan email atau username."""
 
@@ -341,3 +360,4 @@ class Notification(models.Model):
         """Get human readable time like '30 minutes ago'"""
         from django.utils.timesince import timesince
         return f"{timesince(self.created_at)} ago"
+>>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff
