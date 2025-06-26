@@ -1,0 +1,204 @@
+{% extends 'base_master.html' %}
+{% block content %}
+<div class="ml-64 p-4 pr-4">
+    <div class="flex flex-col gap-8 w-full">
+        <!-- Header dengan Tombol Kembali -->
+        <div class="flex items-center gap-4">
+            <button onclick="history.back()" class="text-gray-500 hover:text-gray-700">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <h1 class="text-3xl font-bold">Performance</h1>
+        </div>
+
+        <!-- Bagian Profil -->
+        <div class="bg-white rounded-xl p-12 shadow-lg w-full">
+            <h2 class="text-2xl font-bold mb-8">Profile</h2>
+            <div class="flex gap-16">
+                <!-- Gambar Profil -->
+                <div class="w-52 h-52 bg-gray-300 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <svg class="w-28 h-28 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                
+                <!-- Detail Profil -->
+                <div class="flex-1 space-y-5 text-xl">
+                    <div class="flex">
+                        <span class="w-36 text-gray-600">Name</span>
+                        <span class="mx-8">:</span>
+                        <span class="font-medium">{{ user_profile.name }}</span>
+                    </div>
+                    <div class="flex">
+                        <span class="w-36 text-gray-600">Username</span>
+                        <span class="mx-8">:</span>
+                        <span class="font-medium">{{ user_profile.email }}</span>
+                    </div>
+                    <div class="flex">
+                        <span class="w-36 text-gray-600">Role</span>
+                        <span class="mx-8">:</span>
+                        <span class="font-medium">{{ user_profile.role|capfirst }}</span>
+                    </div>
+                    <div class="flex">
+                        <span class="w-36 text-gray-600">Status</span>
+                        <span class="mx-8">:</span>
+                        <span class="px-5 py-2 rounded text-white text-base {{ user_profile.status_class }}">
+                            {{ user_profile.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kartu Statistik -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 w-full">
+            <!-- Kartu Kiri - Statistik Job -->
+            <div class="bg-gray-100 rounded-xl p-12 w-full min-h-[550px]">
+                <div class="text-center mb-10">
+                    <h3 class="text-2xl font-semibold text-gray-700">{{ user_profile.email }}</h3>
+                    <p class="text-lg text-gray-500 mt-2">{{ user_stats.total_jobs }} job{{ user_stats.total_jobs|pluralize }}</p>
+                </div>
+                
+                <!-- Kontainer Chart -->
+                <div class="flex items-end justify-center gap-10 h-80 mb-10">
+                    <!-- Bar Assign -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-28 bg-purple-500 rounded-sm" 
+                             style="height: {% if user_stats.chart_data.assign.height > 0 %}{{ user_stats.chart_data.assign.height }}%{% else %}8px{% endif %};"
+                             title="Assign: {{ user_stats.chart_data.assign.count }}"></div>
+                        <span class="text-base mt-5 text-gray-600 font-medium">Assign</span>
+                    </div>
+                    <!-- Bar Progress -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-28 bg-green-500 rounded-sm" 
+                             style="height: {% if user_stats.chart_data.progress.height > 0 %}{{ user_stats.chart_data.progress.height }}%{% else %}8px{% endif %};"
+                             title="Progress: {{ user_stats.chart_data.progress.count }}"></div>
+                        <span class="text-base mt-5 text-gray-600 font-medium">Progress</span>
+                    </div>
+                    <!-- Bar Reworking -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-28 bg-red-500 rounded-sm" 
+                             style="height: {% if user_stats.chart_data.reworking.height > 0 %}{{ user_stats.chart_data.reworking.height }}%{% else %}8px{% endif %};"
+                             title="Reworking: {{ user_stats.chart_data.reworking.count }}"></div>
+                        <span class="text-base mt-5 text-gray-600 font-medium">Reworking</span>
+                    </div>
+                    <!-- Bar Finished -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-28 bg-purple-600 rounded-sm" 
+                             style="height: {% if user_stats.chart_data.finished.height > 0 %}{{ user_stats.chart_data.finished.height }}%{% else %}8px{% endif %};"
+                             title="Finished: {{ user_stats.chart_data.finished.count }}"></div>
+                        <span class="text-base mt-5 text-gray-600 font-medium">Finished</span>
+                    </div>
+                </div>
+
+                <!-- Legenda -->
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-purple-500 rounded-full mr-3"></div>
+                        <span class="text-base">Assign</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
+                        <span class="text-base">Progress</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
+                        <span class="text-base">Reworking</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 bg-purple-600 rounded-full mr-3"></div>
+                        <span class="text-base">Finished</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kartu Kanan - Statistik Gambar -->
+            <div class="bg-gray-100 rounded-xl p-12 w-full min-h-[550px]">
+                <div class="text-center mb-10">
+                    <h3 class="text-2xl font-semibold text-gray-700">{{ user_profile.email }}</h3>
+                    <p class="text-lg text-gray-500 mt-2">{{ user_stats.total_images }} image{{ user_stats.total_images|pluralize }}</p>
+                </div>
+                
+                <!-- Chart Container -->
+                <div class="flex items-end justify-center gap-8 h-80 mb-10">
+                    <!-- Unannotated Bar -->
+                    <div class="flex flex-col items-center">
+                        {% with height=user_stats.image_chart_data.unannotated.height count=user_stats.image_chart_data.unannotated.count %}
+                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-purple-300 border-dashed{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #c084fc;{% else %}background-color: rgba(192, 132, 252, 0.1);{% endif %}"
+                             title="Unannotated: {{ count }}"></div>
+                        {% endwith %}
+                        <span class="text-sm mt-3 text-gray-600 font-medium">Unann</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.unannotated.count }}</span>
+                    </div>
+                    <!-- Annotated Bar -->
+                    <div class="flex flex-col items-center">
+                        {% with height=user_stats.image_chart_data.annotated.height count=user_stats.image_chart_data.annotated.count %}
+                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-blue-300 border-dashed{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #3b82f6;{% else %}background-color: rgba(59, 130, 246, 0.1);{% endif %}"
+                             title="Annotated: {{ count }}"></div>
+                        {% endwith %}
+                        <span class="text-sm mt-3 text-gray-600 font-medium">Annot</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.annotated.count }}</span>
+                    </div>
+                    <!-- Progress Bar (In Review) -->
+                    <div class="flex flex-col items-center">
+                        {% with height=user_stats.image_chart_data.progress.height count=user_stats.image_chart_data.progress.count %}
+                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-green-300 border-dashed{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #059669;{% else %}background-color: rgba(5, 150, 105, 0.1);{% endif %}"
+                             title="In Review: {{ count }}"></div>
+                        {% endwith %}
+                        <span class="text-sm mt-3 text-gray-600 font-medium">Review</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.progress.count }}</span>
+                    </div>
+                    <!-- In Rework Bar -->
+                    <div class="flex flex-col items-center">
+                        {% with height=user_stats.image_chart_data.rework.height count=user_stats.image_chart_data.rework.count %}
+                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-yellow-300 border-dashed{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #eab308;{% else %}background-color: rgba(234, 179, 8, 0.1);{% endif %}"
+                             title="In Rework: {{ count }}"></div>
+                        {% endwith %}
+                        <span class="text-sm mt-3 text-gray-600 font-medium">Rework</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.rework.count }}</span>
+                    </div>
+                    <!-- Finished Bar -->
+                    <div class="flex flex-col items-center">
+                        {% with height=user_stats.image_chart_data.finished.height count=user_stats.image_chart_data.finished.count %}
+                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-purple-300 border-dashed{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #7c3aed;{% else %}background-color: rgba(124, 58, 237, 0.1);{% endif %}"
+                             title="Finished: {{ count }}"></div>
+                        {% endwith %}
+                        <span class="text-sm mt-3 text-gray-600 font-medium">Finish</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.finished.count }}</span>
+                    </div>
+                </div>
+
+                <!-- Legend -->
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #c084fc;"></div>
+                        <span class="text-base">Unannotated</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #3b82f6;"></div>
+                        <span class="text-base">Annotated</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #059669;"></div>
+                        <span class="text-base">In Review</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #eab308;"></div>
+                        <span class="text-base">In Rework</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #7c3aed;"></div>
+                        <span class="text-base">Finished</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

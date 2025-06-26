@@ -1,0 +1,506 @@
+{% extends 'base_master.html' %}
+{% load static %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header Section -->
+    <div class="bg-gray-100 p-4 md:p-6 rounded-lg">
+        <h1 class="text-xl md:text-2xl lg:text-3xl font-bold">Issue Solving</h1>
+    </div>
+
+    <!-- Profile List Section -->
+    <div>
+        <h2 class="text-lg md:text-xl font-semibold mb-2">Profile List</h2>
+        <p class="text-gray-500 text-sm md:text-base">{{ current_date }}</p>
+    </div>
+
+    <!-- Job Profile Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {% for job in jobs %}
+        <div class="bg-white p-4 md:p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow" onclick="showIssueDetail({{ job.id }})">
+            <div class="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                <!-- Image container -->
+                <div class="w-full sm:w-20 md:w-24 h-20 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                    {% if job.get_first_image_url %}
+                        <img src="{{ job.get_first_image_url }}" 
+                             alt="{{ job.title }}" 
+                             class="w-full h-full object-cover">
+                    {% endif %}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h4 class="text-base md:text-lg font-semibold mb-3 truncate">{{ job.title }}</h4>
+                    <div class="space-y-2 text-sm md:text-base text-gray-500">
+                        <p class="flex justify-between">
+                            <span>Image:</span>
+                            <span class="font-medium">{{ job.image_count }}</span>
+                        </p>
+                        <p class="flex justify-between">
+                            <span>Date:</span>
+                            <span class="font-medium">{{ job.start_date|date:"d M" }} - {{ job.end_date|date:"d M Y" }}</span>
+                        </p>
+                        <p class="flex justify-between items-center">
+                            <span>Status:</span>
+                            <span class="px-2 py-1 rounded-full text-xs md:text-sm font-medium
+                                {% if job.status == 'not_assign' %}bg-red-100 text-red-700
+                                {% elif job.status == 'in_progress' %}bg-orange-100 text-orange-700
+                                {% elif job.status == 'finish' %}bg-green-100 text-green-700{% endif %}">
+                                {{ job.get_status_display }}
+                            </span>
+                        </p>
+                        {% if job.issues_count > 0 %}
+                        <p class="flex justify-between text-red-600">
+                            <span>Issues:</span>
+                            <span class="font-medium">{{ job.issues_count }}</span>
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Progress Bar -->
+            <div class="mt-4">
+                <div class="flex justify-between text-xs md:text-sm text-gray-600 mb-1">
+                    <span>Progress</span>
+                    <span class="font-medium">{{ job.progress_percentage }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2 md:h-2.5">
+                    <div class="bg-blue-600 h-2 md:h-2.5 rounded-full transition-all duration-300" style="width: {{ job.progress_percentage }}%"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Issue Detail Modal -->
+<div id="issueDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-lg w-full max-w-7xl h-full max-h-screen flex flex-col lg:flex-row overflow-hidden">
+        <!-- Left Panel - Classes -->
+        <div class="w-full lg:w-64 bg-gray-50 p-4 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto">
+            <div class="mb-6">
+                <h3 class="font-semibold mb-2 text-sm md:text-base">Annotations</h3>
+                <div class="border-b-2 border-red-500 w-16 mb-4"></div>
+
+                <!-- Search Classes -->
+                <div class="mb-4">
+                    <h4 class="text-xs md:text-sm font-medium mb-2">CLASSES</h4>
+                    <div class="relative">
+                        <input type="text" 
+                               placeholder="Search class" 
+                               class="w-full px-3 py-2 border rounded-md text-xs md:text-sm">
+                        <svg class="absolute right-3 top-2.5 h-3 w-3 md:h-4 md:w-4 text-gray-400" 
+                             fill="none" 
+                             stroke="currentColor" 
+                             viewBox="0 0 24 24">
+                            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Class List -->
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
+                        <span>mobil</span>
+                        <span class="bg-gray-200 px-2 rounded">1</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
+                        <span>motor</span>
+                        <span class="bg-gray-200 px-2 rounded">2</span>
+                    </div>
+                    <!-- Add more classes as needed -->
+                </div>
+
+                <!-- Segmentation Type -->
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium mb-2">SEGMENTATION TYPE</h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between p-2">
+                            <span>Semantic (4)</span>
+                            <svg class="w-4 h-4" viewBox="0 0 20 20">
+                                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor"/>
+                            </svg>
+                        </div>
+                        <div class="flex items-center justify-between p-2">
+                            <span>Instance (5)</span>
+                            <svg class="w-4 h-4" viewBox="0 0 20 20">
+                                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor"/>
+                            </svg>
+                        </div>
+                        <div class="flex items-center justify-between p-2">
+                            <span>Panoptic (8)</span>
+                            <svg class="w-4 h-4" viewBox="0 0 20 20">
+                                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col">
+            <!-- Header -->
+            <div class="border-b border-gray-200">
+                <div class="p-4 flex justify-between items-center">
+                    <h2 id="modalJobTitle" class="text-2xl font-bold">Loading...</h2>
+                    <button onclick="closeIssueModal()" 
+                            class="text-gray-500 hover:text-gray-700 p-1">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Cards -->
+            <div class="border-b border-gray-200 p-4 grid grid-cols-5 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg text-center">
+                    <div id="modalUnannotated" class="text-2xl font-bold">0</div>
+                    <div class="text-sm text-gray-600">Unannotated</div>
+                </div>
+                <div class="bg-blue-50 p-4 rounded-lg text-center">
+                    <div id="modalInReview" class="text-2xl font-bold">0</div>
+                    <div class="text-sm text-gray-600">In Review</div>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg text-center">
+                    <div id="modalInRework" class="text-2xl font-bold">0</div>
+                    <div class="text-sm text-gray-600">In Rework</div>
+                </div>
+                <div class="bg-red-50 p-4 rounded-lg text-center">
+                    <div id="modalIssues" class="text-2xl font-bold">0</div>
+                    <div class="text-sm text-gray-600">Issues</div>
+                </div>
+                <div class="bg-green-50 p-4 rounded-lg text-center">
+                    <div id="modalFinished" class="text-2xl font-bold">0</div>
+                    <div class="text-sm text-gray-600">Finished</div>
+                </div>
+            </div>
+
+            <!-- Main Image Area -->
+            <div class="flex-1 relative overflow-auto p-4">
+                <!-- Image Slider Container -->
+                <div id="imageSliderContainer" class="w-full h-full flex items-center justify-center relative">
+                    <!-- Previous Button -->
+                    <button id="prevImage" class="absolute left-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
+                    <!-- Image Container -->
+                    <div id="imageContainer" class="w-full h-full flex items-center justify-center">
+                        <!-- Image will be loaded here dynamically -->
+                    </div>
+
+                    <!-- Next Button -->
+                    <button id="nextImage" class="absolute right-4 z-10 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-75">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                    </button>
+
+                    <!-- Image Counter -->
+                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-3 py-1 rounded-full">
+                        <span id="currentImageIndex">1</span>/<span id="totalImages">1</span>
+                    </div>
+                </div>
+
+                <!-- Issue Information Box -->
+                <div class="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg w-72">
+                    <h4 class="font-semibold mb-2">Issue Details</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>Annotator:</span>
+                            <span id="issueAnnotator">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Reviewer:</span>
+                            <span id="issueReviewer">-</span>
+                        </div>
+                        <div class="mt-2">
+                            <p id="issueDescription" class="text-red-600"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Toolbar -->
+        <div class="w-12 bg-gray-800 flex flex-col items-center py-4 space-y-4">
+            <button class="text-white p-2 hover:bg-gray-700 rounded">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+                </svg>
+            </button>
+            <button class="text-white p-2 hover:bg-gray-700 rounded">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                </svg>
+            </button>
+            <button class="text-white p-2 hover:bg-gray-700 rounded">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </button>
+            <button class="text-white p-2 hover:bg-gray-700 rounded">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentImages = [];
+let currentImageIndex = 0;
+
+function showImage(index) {
+    console.log("=== Show Image Debug ===");
+    console.log("Showing image at index:", index);
+    console.log("Total images:", currentImages.length);
+
+    if (index < 0 || index >= currentImages.length) {
+        console.log("Invalid index, returning");
+        return;
+    }
+
+    const image = currentImages[index];
+    console.log("Image data:", image);
+
+    // Show loading state
+    const imageContainer = document.getElementById('imageContainer');
+    imageContainer.innerHTML = `
+        <div class="flex items-center justify-center w-full h-full">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        </div>
+    `;
+
+    // Validate image URL
+    if (!image.url) {
+        console.error('Image URL is missing or invalid');
+        showError('Image URL is missing or invalid');
+        return;
+    }
+
+    // Use a pre-existing img element or create a new one
+    let img = document.getElementById('mainImage');
+    if (!img) {
+        img = new Image();
+        img.id = 'mainImage';
+    }
+
+    // Set image attributes
+    img.className = 'max-w-full max-h-[70vh] object-contain';
+    img.alt = 'Main Image';
+
+    // Set up onload handler
+    img.onload = function() {
+        // Clear the container and add the image
+        imageContainer.innerHTML = '';
+
+        // Ensure the image is properly added to the DOM
+        try {
+            imageContainer.appendChild(img);
+            console.log('Image appended to container');
+        } catch (error) {
+            console.error('Error appending image to container:', error);
+            // Try an alternative approach if the first one fails
+            imageContainer.innerHTML = `<img id="mainImage" src="${image.url}" alt="Main Image" class="max-w-full max-h-[70vh] object-contain">`;
+            console.log('Used innerHTML as fallback');
+        }
+
+        // Update issue details
+        document.getElementById('issueAnnotator').textContent = image.annotator || 'Unassigned';
+        document.getElementById('issueDescription').textContent = image.issue_description || 'No description';
+
+        // Update counter
+        document.getElementById('currentImageIndex').textContent = (index + 1).toString();
+        document.getElementById('totalImages').textContent = currentImages.length.toString();
+
+        currentImageIndex = index;
+        updateImageControls();
+
+        console.log('Image loaded successfully:', image.url);
+    };
+
+    // Set up onerror handler
+    img.onerror = function() {
+        console.error('Failed to load image:', image.url);
+        imageContainer.innerHTML = `
+            <div class="text-center text-gray-500">
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p>Failed to load image: ${image.url}</p>
+            </div>
+        `;
+    };
+
+    // Set the source after all handlers are defined
+    console.log('Setting image source to:', image.url);
+    img.src = image.url;
+}
+
+function showIssueDetail(jobId) {
+    console.log("=== Debug Info ===");
+    console.log("Opening modal for job:", jobId);
+
+    const modal = document.getElementById('issueDetailModal');
+    const modalTitle = document.getElementById('modalJobTitle');
+    const imageContainer = document.getElementById('imageContainer');
+
+    // Verify elements exist
+    console.log("Modal exists:", !!modal);
+    console.log("Modal title exists:", !!modalTitle);
+    console.log("Image container exists:", !!imageContainer);
+
+    // Show loading state in image container
+    if (imageContainer) {
+        imageContainer.innerHTML = `
+            <div class="flex items-center justify-center w-full h-full">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                <p class="ml-3 text-gray-600">Loading images...</p>
+            </div>
+        `;
+    }
+
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    modalTitle.textContent = 'Loading...';
+
+    fetch(`/master/issue-detail/${jobId}/`)
+        .then(response => {
+            console.log("Response status:", response.status);
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Received data:", data);
+            console.log("Number of images:", data.images?.length || 0);
+            if (data.images && data.images.length > 0) {
+                console.log("First image URL:", data.images[0].url);
+            }
+
+            modalTitle.textContent = data.title || 'No Title';
+            updateStatusCounts(data);
+
+            if (data.images && data.images.length > 0) {
+                console.log('Found images:', data.images);
+                currentImages = data.images;
+                showImage(0);
+                // Set up image slider controls after images are loaded
+                setupImageSliderControls();
+            } else {
+                console.log('No images found');
+                showError('No images available for this job. Please check if there are any issues reported.');
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            showError(`Failed to load data: ${error.message}`);
+        });
+}
+
+function updateStatusCounts(data) {
+    document.getElementById('modalUnannotated').textContent = data.unannotated_count || '0';
+    document.getElementById('modalInReview').textContent = data.in_review_count || '0';
+    document.getElementById('modalInRework').textContent = data.in_rework_count || '0';
+    document.getElementById('modalIssues').textContent = data.issues_count || '0';
+    document.getElementById('modalFinished').textContent = data.finished_count || '0';
+}
+
+function updateImageControls() {
+    const prevButton = document.getElementById('prevImage');
+    const nextButton = document.getElementById('nextImage');
+
+    if (prevButton) prevButton.style.display = currentImageIndex > 0 ? 'block' : 'none';
+    if (nextButton) nextButton.style.display = currentImageIndex < currentImages.length - 1 ? 'block' : 'none';
+}
+
+// Add event listeners for previous and next buttons
+function setupImageSliderControls() {
+    const prevButton = document.getElementById('prevImage');
+    const nextButton = document.getElementById('nextImage');
+
+    if (prevButton) {
+        prevButton.addEventListener('click', function() {
+            if (currentImageIndex > 0) {
+                showImage(currentImageIndex - 1);
+            }
+        });
+    }
+
+    if (nextButton) {
+        nextButton.addEventListener('click', function() {
+            if (currentImageIndex < currentImages.length - 1) {
+                showImage(currentImageIndex + 1);
+            }
+        });
+    }
+
+    console.log('Image slider controls set up');
+}
+
+function showError(message) {
+    const imageContainer = document.getElementById('imageContainer');
+    if (imageContainer) {
+        imageContainer.innerHTML = `
+            <div class="text-center text-gray-500">
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+}
+
+function closeIssueModal() {
+    const modal = document.getElementById('issueDetailModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        
+        // Reset modal state
+        currentImages = [];
+        currentImageIndex = 0;
+        
+        // Clear image container
+        const imageContainer = document.getElementById('imageContainer');
+        if (imageContainer) {
+            imageContainer.innerHTML = '';
+        }
+        
+        console.log('Issue modal closed');
+    }
+}
+
+// Setup DOM event listeners when document is ready
+document.addEventListener('DOMContentLoaded', function() {
+    setupImageSliderControls();
+    
+    // Add click outside modal to close
+    const modal = document.getElementById('issueDetailModal');
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                closeIssueModal();
+            }
+        });
+    }
+    
+    // Add ESC key listener to close modal
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('issueDetailModal');
+            if (modal && !modal.classList.contains('hidden')) {
+                closeIssueModal();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

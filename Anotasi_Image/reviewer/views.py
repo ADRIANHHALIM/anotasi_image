@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 import base64
 import os
 from datetime import datetime, time
@@ -59,8 +59,6 @@ def get_base64_images():
     }
 
     return (context)
-
-
 def home_reviewer(request):
     if 'user_id' not in request.session:
         return redirect('reviewer:login')
@@ -113,24 +111,85 @@ def home_reviewer(request):
     # Kirim data Base64 ke template
     return render(request, "reviewer/home_reviewer.html", context)
 
+# def home_reviewer(request):
+    if 'user_id' not in request.session:
+        return redirect('reviewer:login')
+
+    username = request.session.get('username')
+    number_email = request.session.get('contact')
+    user_id = request.session.get('user_id')
+
+    list_ProfileJob = ProfileJob.objects.filter(id_pengguna=user_id)
+
+    tasks = []
+    now = timezone.localtime()
+
+    for profile in list_ProfileJob:
+        job_items = JobItem.objects.filter(id_profile_job=profile)
+
+        for job in job_items:
+            # ✅ Cek hanya jika ada IsuAnotasi
+            has_isu_anotasi = IsuAnotasi.objects.filter(id_anotasi__id_gambar=job.id_gambar).exists()
+
+            if has_isu_anotasi:
+                # Hitung deadline
+                deadline = datetime.combine(profile.end_date, time.max)
+                deadline = timezone.make_aware(deadline, now.tzinfo)
+
+                delta = deadline - now
+                total_seconds = int(delta.total_seconds())
+
+                if total_seconds <= 0:
+                    tr = "Times Up"
+                else:
+                    hours, rem = divmod(total_seconds, 3600)
+                    if hours > 0:
+                        tr = f"{hours} hours left"
+                    else:
+                        minutes, seconds = divmod(rem, 60)
+                        tr = f"{minutes} minutes left" if minutes > 0 else "less than 1 minute"
+
+                tasks.append({
+                    'profile': profile,
+                    'job': job,
+                    'time_remaining': tr
+                })
+
+    context = {
+        'username': username,
+        'number_email': number_email,
+        'tasks': tasks,
+        **get_base64_images(),
+        }
+    return render(request, "reviewer/home_reviewer.html", context)
+
 def task_review(request, id):
     if 'user_id' not in request.session:
         return redirect('reviewer:login')
+
     username = request.session.get('username')
     number_email = request.session.get('contact')
-    profile_id = id
-    request.session['profile_id'] = id
-    data_job = JobItem.objects.filter(id_profile_job=id).select_related('id_gambar')
+    user_id = request.session.get('user_id')
+
+    # ✅ Ambil profile dan pastikan milik user
+    profile = get_object_or_404(ProfileJob, id_profile_job=id, id_pengguna=user_id)
+
+    # Simpan ke session
+    request.session['profile_id'] = profile.id_profile_job
+
+    # Ambil data job terkait profile
+    data_job = JobItem.objects.filter(id_profile_job=profile).select_related('id_gambar')
     total_images = data_job.count()
-    context={
-        'profile_id':profile_id,
-        'total_images':total_images,
-        'data_job':data_job,
-        'username':username,
+
+    context = {
+        'profile_id': profile.id_profile_job,
+        'total_images': total_images,
+        'data_job': data_job,
+        'username': username,
         'number_email': number_email,
         **get_base64_images(),
     }
-    return render(request, 'reviewer/task_review.html',context)
+    return render(request, 'reviewer/task_review.html', context)
 
 def isu(request):
     if 'user_id' not in request.session:
@@ -241,58 +300,64 @@ def sign_up(request):
 def isu_anotasi(request, index):
     if 'user_id' not in request.session:
         return redirect('reviewer:login')
-    # Ambil profile_id dari session
+
+    user_id = request.session.get('user_id')
     profile_id = request.session.get('profile_id')
-    # Ambil JobItem berdasarkan profile_id
+
+    # ✅ Validasi bahwa profile_id benar-benar milik user yang login
+    profile = ProfileJob.objects.filter(id_profile_job=profile_id, id_pengguna=user_id).first()
+    if not profile:
+        return redirect('reviewer:home')  # atau tampilkan pesan error
+
+    nama_profile_job = profile.nama_profile_job.split(":")[-1].strip()
+
+    # ✅ Ambil JobItem hanya untuk profile ini
     job_items = JobItem.objects.select_related('id_gambar').filter(
         id_profile_job=profile_id
     ).order_by('id_job_item')
+
     if index < 0 or index >= job_items.count():
-        return redirect('reviewer:isu_anotasi')  # fallback
+        return redirect('reviewer:isu_anotasi', index=0)  # fallback ke index awal
+
     job_item = job_items[index]
     gambar = job_item.id_gambar
-    # Ambil ProfileJob berdasarkan id_profile_job
-    profile = ProfileJob.objects.filter(id_profile_job=profile_id).first()
-    if profile:
-        nama_profile_job = profile.nama_profile_job
-        nama_profile_job = nama_profile_job.split(":")[-1].strip()
-    # Ambil segmentasi dan anotasi yang terkait dengan gambar
+
     segmentasi_list = Segmentasi.objects.filter(id_job_item=job_item)
     anotasi_list = Anotasi.objects.filter(id_gambar=gambar)
 
+    # === Semantic ===
     anotasi_semantic = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
         id_gambar=gambar,
-        id_segmentasi__id_tipe_segmentasi=1  # Tipe Semantic
+        id_segmentasi__id_tipe_segmentasi=1
     )
     polygon_semantic_list = []
     for anotasi in anotasi_semantic:
-        if anotasi.id_segmentasi.id_tipe_segmentasi_id == 1:
-            titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
-            polygon_semantic_list.append({
-                'warna': anotasi.id_segmentasi.warna_segmentasi,
-                'label': anotasi.id_segmentasi.label_segmentasi,
-                'points': " ".join([f"{x},{y}" for x, y in titik_list]),
-            })
-    anotasi_instance = Anotasi.objects.select_related('id_segmentasi').filter(id_gambar=gambar).filter(
+        titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
+        polygon_semantic_list.append({
+            'warna': anotasi.id_segmentasi.warna_segmentasi,
+            'label': anotasi.id_segmentasi.label_segmentasi,
+            'points': " ".join([f"{x},{y}" for x, y in titik_list]),
+        })
+
+    # === Instance ===
+    anotasi_instance = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
         id_gambar=gambar,
-        id_segmentasi__id_tipe_segmentasi=2  # Hanya Instance
+        id_segmentasi__id_tipe_segmentasi=2
     )
+
+    # === Panoptic ===
     anotasi_panoptic = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
         id_gambar=gambar,
-        id_segmentasi__id_tipe_segmentasi=3  # Tipe Panoptic
+        id_segmentasi__id_tipe_segmentasi=3
     )
     polygon_panoptic_list = []
     for anotasi in anotasi_panoptic:
-        if anotasi.id_segmentasi.id_tipe_segmentasi_id == 3:
-            titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
-            polygon_panoptic_list.append({
-                'warna': anotasi.id_segmentasi.warna_segmentasi,
-                'label': anotasi.id_segmentasi.label_segmentasi,
-                'points': " ".join([f"{x},{y}" for x, y in titik_list]),
-            })
-    
-    lebar_gambar = gambar.lebar
-    tinggi_gambar = gambar.tinggi
+        titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
+        polygon_panoptic_list.append({
+            'warna': anotasi.id_segmentasi.warna_segmentasi,
+            'label': anotasi.id_segmentasi.label_segmentasi,
+            'points': " ".join([f"{x},{y}" for x, y in titik_list]),
+        })
 
     context = {
         'username': request.session.get('username'),
@@ -306,15 +371,16 @@ def isu_anotasi(request, index):
         'segmentasi_list': segmentasi_list,
         'anotasi_list': anotasi_list,
         'anotasi_box': anotasi_instance,
-        'lebar_gambar': lebar_gambar,
-        'tinggi_gambar': tinggi_gambar,
+        'lebar_gambar': gambar.lebar,
+        'tinggi_gambar': gambar.tinggi,
         'polygon_semantic_list': polygon_semantic_list,
         'polygon_panoptic_list': polygon_panoptic_list,
-        'total_semantic':anotasi_semantic.count(),
-        'total_instance':anotasi_instance.count(),
-        'total_panoptic':anotasi_panoptic.count(),
+        'total_semantic': anotasi_semantic.count(),
+        'total_instance': anotasi_instance.count(),
+        'total_panoptic': anotasi_panoptic.count(),
         **get_base64_images(),
     }
+
     return render(request, 'reviewer/isu_anotasi.html', context)
 
 

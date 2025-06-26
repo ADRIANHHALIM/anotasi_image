@@ -16,11 +16,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from django.conf.urls.static import static
 from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
+    #General
     path('admin/', admin.site.urls),
-    path('reviewer/',include(('reviewer.urls','reviewer'),namespace='reviewer')),
-    path('master/',include(('master.urls','master'),namespace='master')),
-    path('annotator/',include(('annotator.urls','annotator'),namespace='annotator'))
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path("accounts/", include("allauth.urls")),
+    
+    # Annotator
+    path('annotator/', include('annotator.urls', namespace='annotator')),
+    
+    # Master
+    path('master/', include('master.urls', namespace='master')),
+    
+    # Reviewer
+    path('reviewer/', include('reviewer.urls', namespace='reviewer')),
+
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

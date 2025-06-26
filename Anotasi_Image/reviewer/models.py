@@ -103,7 +103,7 @@ class IsuAnotasi(models.Model):
     id_pembuat = models.IntegerField()
     tanggal_buat = models.DateTimeField()
     nama_tipe_isu = models.IntegerField()
-    id_parent_isu_anotasi = models.BigIntegerField(null=True, blank=True)
+    id_parent_isu_anotasi = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='isu_anotasi_balasan')
 
     def __str__(self):
         return f"IsuAnotasi {self.id_isu_anotasi} - {self.message}"
@@ -115,7 +115,7 @@ class IsuImage(models.Model):
     id_pembuat = models.IntegerField()
     tanggal_buat = models.DateTimeField()
     nama_tipe_isu = models.IntegerField()
-    id_parent_isu_image = models.BigIntegerField(null=True, blank=True)
+    id_parent_isu_image = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='isu_image_balasan')
 
     def __str__(self):
         return f"IsuImage {self.id_isu_image} - {self.message}"

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-screen bg-white flex relative">
+    {% load socialaccount %}
+    <!-- Logo di kiri atas -->
+    <div class="absolute top-6 left-6">
+        <img src="/static/images/trisakti.png" alt="Logo Trisakti" class="h-20">
+    </div>
+
+    <!-- Gambar di luar container utama -->
+    <div class="hidden md:flex items-center justify-center w-2/3 h-full">
+        <img src="/static/images/masterlogin.png" alt="Logo Trisakti" class="w-3/4 h-auto">
+    </div>
+    
+    <!-- Container utama di sisi kanan -->
+    <div class="w-1/3 h-full bg-[#4527A0] shadow-lg flex flex-col p-10 text-white rounded-tl-[25px] rounded-bl-[25px] overflow-y-auto">
+        <div class="flex flex-col flex-grow">
+            <h2 class="text-2xl font-bold text-center">SIGN UP</h2>
+            <p class="text-sm text-gray-300 text-center mt-1">Buat akun baru untuk melanjutkan</p>
+
+            <!-- Form -->
+            <form method="POST" class="mt-6 space-y-4">
+                {% csrf_token %}
+
+                {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                    <div class="p-4 mb-4 {% if message.tags == 'success' %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %} rounded-lg">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if form.non_field_errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Form fields -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-100">Username</label>
+                        <input type="text" name="username" required 
+                            class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
+                            placeholder="Masukkan username..." value="{{ request.POST.username }}">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100">First Name</label>
+                            <input type="text" name="first_name" required 
+                                class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
+                                placeholder="Nama depan...">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-100">Last Name</label>
+                            <input type="text" name="last_name" required 
+                                class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
+                                placeholder="Nama belakang...">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" name="email" required 
+                            class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
+                            placeholder="Masukkan email..." value="{{ request.POST.email }}">
+                    </div>
+        
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Nomor Telepon</label>
+                        <input type="tel" name="phone_number" required 
+                            class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
+                            placeholder="Masukkan nomor telepon..." value="{{ request.POST.phone_number }}">
+                    </div>
+        
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" name="password1" required 
+                            class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
+                            placeholder="Masukkan password...">
+                    </div>
+        
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Konfirmasi Password</label>
+                        <input type="password" name="password2" required 
+                            class="w-full p-3 bg-gray-200 border border-gray-300 rounded-md focus:ring-[#4527A0] focus:border-[#4527A0] text-gray-900 placeholder-gray-500" 
+                            placeholder="Konfirmasi password...">
+                    </div>
+                    
+                    <button type="submit"
+                            class="w-full p-3 bg-blue-400 text-white rounded-md font-semibold hover:bg-blue-300 transition transform hover:scale-105">
+                        Sign Up
+                    </button>
+                </div>
+            </form>
+
+            <!-- Login link -->
+            <p class="mt-6 text-center text-sm text-white">
+                Sudah punya akun? 
+                <a href="{% url 'master:login' %}" class="text-white font-medium hover:underline">Login</a>
+            </p>
+
+            <!-- Social Sign Up -->
+            <div class="mt-6 text-center">
+                <p class="text-sm text-gray-300">Atau daftar dengan</p>
+                <div class="flex flex-col space-y-3 mt-4">
+                    <!-- Google Sign Up -->
+                    <a href="{% provider_login_url 'google' process='signup' %}" 
+                    class="w-full flex items-center justify-center p-3 border border-white rounded-lg bg-white text-gray-700 font-medium hover:bg-gray-100 transition duration-300 ease-in-out transform hover:scale-105 shadow-md">
+                        <img src="/static/images/logo_google.png" alt="Google Sign Up" class="w-6 h-6 mr-3">
+                        Sign Up dengan Google
+                    </a>
+                    
+                    <!-- Apple Sign Up -->
+                    <a href="/accounts/apple/signup/" 
+                       class="w-full flex items-center justify-center p-3 border border-gray-800 rounded-lg bg-gray-800 text-white font-medium hover:bg-gray-700 transition duration-300 ease-in-out transform hover:scale-105 shadow-md">
+                        <img src="/static/images/logo_apple.png" alt="Apple Sign Up" class="w-6 h-6 mr-3">
+                        Sign Up dengan Apple
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

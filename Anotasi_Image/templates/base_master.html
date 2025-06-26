@@ -1,0 +1,148 @@
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease-in-out;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .overlay {
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.3s ease-in-out;
+            }
+            .overlay.show {
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+        .content-area {
+            transition: margin-left 0.3s ease-in-out;
+        }
+        @media (min-width: 769px) {
+            .content-area {
+                margin-left: 16rem; /* 64 * 0.25rem = 16rem */
+            }
+        }
+    </style>
+</head>
+<body class="h-screen bg-white overflow-hidden">
+    <!-- Mobile Overlay -->
+    <div id="overlay" class="overlay fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"></div>
+    
+    <!-- Mobile Menu Button -->
+    <button id="mobile-menu-btn" class="fixed top-4 left-4 z-50 md:hidden bg-[#4527A0] text-white p-3 rounded-lg shadow-lg">
+        <i class="fas fa-bars text-xl"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar h-screen w-64 bg-[#4527A0] text-white fixed flex flex-col rounded-tr-[25px] rounded-br-[25px] z-50 md:z-30">
+        <!-- Close button for mobile -->
+        <div class="flex items-center justify-between h-20 border-b border-gray-700 px-4 md:justify-center">
+            <img src="/static/images/trisakti.png" alt="Logo Trisakti" class="h-12">
+            <button id="close-sidebar-btn" class="md:hidden text-white p-2">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="flex-1 px-4 py-6 md:py-20 space-y-2 overflow-y-auto">
+            <a href="{% url 'master:home' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
+                <i class="fas fa-home mr-3 text-lg md:text-xl"></i> 
+                <span class="truncate">Home</span>
+            </a>
+            <a href="{% url 'master:assign_roles' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
+                <i class="fas fa-user-cog mr-3 text-lg md:text-xl"></i> 
+                <span class="truncate">Assign Roles</span>
+            </a>
+            <a href="{% url 'master:job_settings' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
+                <i class="fas fa-cogs mr-3 text-lg md:text-xl"></i> 
+                <span class="truncate">Job Settings</span>
+            </a>
+            <a href="{% url 'master:issue_solving' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
+                <i class="fas fa-tools mr-3 text-lg md:text-xl"></i> 
+                <span class="truncate">Issue Solving</span>
+            </a>
+            <a href="{% url 'master:process_validations' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
+                <i class="fas fa-check-circle mr-3 text-lg md:text-xl"></i> 
+                <span class="truncate">Process Validation</span>
+            </a>
+            <a href="{% url 'master:performance' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
+                <i class="fas fa-chart-line mr-3 text-lg md:text-xl"></i> 
+                <span class="truncate">Performance</span>
+            </a>
+        </nav>
+        
+        <!-- Logout -->
+        <div class="px-4 py-4 md:py-6 border-t border-gray-700">
+            <a href="{% url 'master:logout' %}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-[#5E35B1] flex items-center text-base md:text-lg">
+                <i class="fas fa-sign-out-alt mr-3 text-lg md:text-xl"></i> 
+                <span class="truncate">Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="content-area flex-1 h-screen overflow-auto">
+        <div class="p-4 md:p-6 lg:p-8 h-full">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+
+    <!-- JavaScript for sidebar toggle -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+
+            // Open sidebar on mobile
+            mobileMenuBtn.addEventListener('click', function() {
+                sidebar.classList.add('open');
+                overlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            });
+
+            // Close sidebar functions
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+
+            // Close sidebar when close button clicked
+            closeSidebarBtn.addEventListener('click', closeSidebar);
+
+            // Close sidebar when overlay clicked
+            overlay.addEventListener('click', closeSidebar);
+
+            // Close sidebar when window is resized to desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 768) {
+                    closeSidebar();
+                }
+            });
+
+            // Handle escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && window.innerWidth < 768) {
+                    closeSidebar();
+                }
+            });
+        });
+    </script>
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>
