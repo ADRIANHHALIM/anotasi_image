@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 from django.shortcuts import render
 
 # Create your views here.
-=======
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
@@ -247,4 +245,3 @@ def accept_notification_view(request, notification_id):
             'status': 'error',
             'message': str(e)
         }, status=400)
->>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff

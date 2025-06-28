@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 from django.shortcuts import render, redirect
 from .forms import UserForm
 
@@ -12,7 +11,6 @@ def create_user(request):
         form = UserForm()
 
     return render(request, "master/user_form.html", {"form": form})
-=======
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
@@ -1237,4 +1235,3 @@ def performance_individual_view(request, user_id):
     }
     
     return render(request, "master/performance_individual.html", context)
->>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff

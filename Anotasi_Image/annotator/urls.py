@@ -1,11 +1,6 @@
 from django.urls import path
 from . import views
 
-<<<<<<< HEAD
-urlpatterns =[
-    
-]
-=======
 app_name = 'annotator'
 
 urlpatterns = [
@@ -22,4 +17,3 @@ urlpatterns = [
     path('signin/', views.signin_view, name='signin'),
     path('signout/', views.signout_view, name='signout'),
 ]
->>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff
