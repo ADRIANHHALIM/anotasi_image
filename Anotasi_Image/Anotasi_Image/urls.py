@@ -15,22 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    #General
+    # General
     path('admin/', admin.site.urls),
     path("accounts/", include("allauth.urls")),
     
-    # Annotator
-    path('annotator/', include('annotator.urls', namespace='annotator')),
+    # Main app (Master) - handles root URL and /master/
+    path('', include('master.urls')),
     
-    # Master
-    path('master/', include('master.urls', namespace='master')),
+    # Annotator
+    path('annotator/', include('annotator.urls')),
     
     # Reviewer
-    path('reviewer/', include('reviewer.urls', namespace='reviewer')),
+    path('reviewer/', include('reviewer.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

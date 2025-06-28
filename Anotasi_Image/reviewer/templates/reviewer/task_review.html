@@ -47,12 +47,12 @@
       <tbody>
         {% for item in data_job %}
         <tr>
-          <td class="text-center">{{ item.id_gambar.nama_file}}</td>
+          <td class="text-center">{{ item.image.name }}</td>
           <td class="text-center">
-            <p class="btn btn-warning mb-0">Unannotated</p>
+            <p class="btn btn-warning mb-0">{{ item.status|title }}</p>
           </td>
-          <td class="text-center">0s</td>
-          <td class="text-center">-</td>
+          <td class="text-center">{{ item.label_time|default:"0s" }}</td>
+          <td class="text-center">{{ item.review_time|default:"-" }}</td>
         </tr>
         {% endfor %}
       </tbody>

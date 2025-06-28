@@ -1,13 +1,10 @@
 from django.urls import path
 from . import views
 
-<<<<<<< HEAD
-urlpatterns = [
-    path('create/', views.create_user, name='create_user'),  # URL untuk membuat user baru
-=======
 app_name = 'master'
 
 urlpatterns = [
+    path('', views.home_view, name='index'),  # Root URL
     path('signup/', views.signup_view, name='signup'),
     path("activate/<uidb64>/<token>/", views.activate, name="activate"),  
     path('login/', views.login_view, name='login'),
@@ -45,5 +42,4 @@ urlpatterns = [
     path("process_validations/", views.process_validations_view, name="process_validations"),
     path('process_validations/<int:job_id>/', views.process_validations_view, name='process_validation_detail'),
     path('finish-image/', views.finish_image, name='finish_image'),
->>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff
 ]
