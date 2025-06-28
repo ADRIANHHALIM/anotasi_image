@@ -70,8 +70,58 @@ The project has three main apps:
 
 6. **Running the Development Server**:
    ```bash
+   # First, check for any configuration issues
+   python manage.py check
+   
+   # Run migrations to ensure database is ready
+   python manage.py migrate
+   
+   # Start the development server (be patient, it may take 10-30 seconds to load)
    python manage.py runserver
+   
+   # Alternative: Run on a specific port
+   python manage.py runserver 8001
    ```
+   
+   **Important**: 
+   - DO NOT press Ctrl+C immediately after running the command
+   - Wait for the server to fully load (you'll see "Starting development server at...")
+   - The first load may take 30+ seconds due to PostgreSQL connection setup
+
+## Troubleshooting
+
+### Server Won't Start / KeyboardInterrupt Error
+
+If you get a `KeyboardInterrupt` error when starting the server:
+
+1. **Don't interrupt**: Wait for Django to fully load (30+ seconds)
+2. **Check configuration**: Run `python manage.py check` first
+3. **Database issues**: Make sure PostgreSQL is running
+4. **Environment variables**: Ensure `.env` file is properly configured
+
+```bash
+# Step-by-step troubleshooting
+cd Anotasi_Image
+
+# 1. Check Django configuration
+python manage.py check
+
+# 2. Check database connection
+python manage.py migrate --dry-run
+
+# 3. Start server with verbose output
+python manage.py runserver --verbosity=2
+
+# 4. If still failing, try different port
+python manage.py runserver 8001
+```
+
+### Common Issues
+
+1. **PostgreSQL not running**: Start PostgreSQL service
+2. **Missing dependencies**: Run `pip install -r requirements.txt`
+3. **Environment variables**: Check `.env` file exists and has correct values
+4. **Permission issues**: Ensure virtual environment is activated
 
 ## Testing Information
 

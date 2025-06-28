@@ -15,7 +15,7 @@
   </div>
   <div>
     <div class="d-flex">
-      <span class="text-white">{{ nama_profile_job }}</span>
+      <span class="text-white">{{ profile_title }}</span>
       <span class="ps-1 pe-1 text-white">></span>
       <div class="d-flex">
         <span style="color: white;">
@@ -842,8 +842,8 @@
         <div class="">
           <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">
             <img id="zoomImage" src="/media/gambar/anotasi/{{ filename }}" alt="Gambar"
-                style="display: block; transform-origin: top left; width: {{ lebar_gambar }}px ; height: {{ tinggi_gambar }}px;">
-            <svg id="svgSemantic" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
+                style="display: block; transform-origin: top left; width: {{ image_width }}px ; height: {{ image_height }}px;">
+            <svg id="svgSemantic" width="{{ image_width }}" height="{{ image_height }}"
                 style="position: absolute; top: 0; left: 0; pointer-events: none;">
                 {% for poly in polygon_semantic_list %}
                   <polygon 
@@ -856,7 +856,7 @@
                   </polygon>
                 {% endfor %}
               </svg>
-            <svg id="svgInstance" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
+            <svg id="svgInstance" width="{{ image_width }}" height="{{ image_height }}"
                     style="position: absolute; top: 0; left: 0; pointer-events: none;">
               {% for anotasi in anotasi_box %}
               <rect 

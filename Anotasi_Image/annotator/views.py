@@ -1,6 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
@@ -9,7 +6,7 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_protect
 from django.http import JsonResponse
 from functools import wraps
-from master.models import JobProfile, JobImage
+from master.models import JobProfile, JobImage, Notification, Issue
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
@@ -98,8 +95,6 @@ def notifications_view(request):
     """
     View for the notifications page
     """
-    from master.models import Notification
-    
     # Debug: Get current user explicitly
     current_user = request.user
     print(f"DEBUG: Current user = {current_user.username} (ID: {current_user.id})")
@@ -155,8 +150,6 @@ def job_detail_view(request, job_id):
     }
     
     # Handle Issues data - using real Issue model
-    from master.models import Issue
-    
     # Get all issues for this job assigned to current user
     # Issues are only created by Master and Reviewer, not auto-generated
     all_issues = Issue.objects.filter(job=job, assigned_to=request.user).select_related('created_by', 'image')
@@ -215,8 +208,6 @@ def accept_notification_view(request, notification_id):
         }, status=405)
         
     try:
-        from master.models import Notification
-        
         # Check authentication
         if not request.user.is_authenticated:
             return JsonResponse({
