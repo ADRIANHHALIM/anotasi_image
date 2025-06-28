@@ -621,7 +621,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const detailModal = document.getElementById('jobDetailModal');
 
             // Update the fetch URL to use the correct URL pattern
-            fetch(`/master/job-profile/${jobId}/`, {
+            fetch(`/job-profile/${jobId}/`, {
                 method: 'GET',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -971,7 +971,7 @@ function uploadImages(files, jobId) {
     saveButton.disabled = true;
     saveButton.textContent = 'Uploading...';
 
-    fetch('/master/upload-job-images/', {
+    fetch('/upload-job-images/', {
         method: 'POST',
         headers: {
             'X-CSRFToken': csrftoken
@@ -1052,7 +1052,7 @@ function showJobAssignDetail(jobId) {
         }
     });
 
-    fetch(`/master/job-profile/${jobId}/`, {
+    fetch(`/job-profile/${jobId}/`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
@@ -1141,7 +1141,7 @@ function submitAssignments(jobId, annotatorId, reviewerId) {
         reviewer_id: parseInt(reviewerId)
     };
 
-    fetch('/master/assign-workers/', {
+    fetch('/assign-workers/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1395,7 +1395,7 @@ function fetchWorkers(role) {
     // Show loading state
     workersList.innerHTML = '<div class="p-4 text-gray-500 text-center">Loading workers...</div>';
 
-    fetch(`/master/get-workers/${role}/`, {
+    fetch(`/get-workers/${role}/`, {
         headers: {
             'Accept': 'application/json',
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
@@ -1539,7 +1539,7 @@ function showJobAssignDetail(jobId) {
         }
     });
 
-    fetch(`/master/job-profile/${jobId}/`, {
+    fetch(`/job-profile/${jobId}/`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,

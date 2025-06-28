@@ -1,19 +1,4 @@
 from django import forms
-<<<<<<< HEAD
-from .models import User
-
-class UserForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = ['username', 'email', 'first_name', 'last_name', 'role']
-        widgets = {
-            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter username'}),
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter email'}),
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter first name'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter last name'}),
-            'role': forms.Select(attrs={'class': 'form-select'}),
-        }
-=======
 from django.contrib.auth.forms import UserCreationForm
 from .models import CustomUser
 
@@ -64,4 +49,3 @@ class SignUpForm(UserCreationForm):
         if password1 and password2 and password1 != password2:
             raise forms.ValidationError("Password tidak cocok!")
         return password2
->>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff

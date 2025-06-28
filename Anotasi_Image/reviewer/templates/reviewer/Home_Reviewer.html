@@ -29,17 +29,23 @@
       </thead>
       <tbody>
         {% for t in tasks %}
+        {% if t.profile and t.profile.id %}
         <tr>
-          <td>{{ t.profile.id_profile_job }}</td>
-          <td>{{ t.profile.nama_profile_job }}</td>
-          <td>-</td>
+          <td>{{ t.profile.id }}</td>
+          <td>{{ t.profile.title }}</td>
+          <td>{{ t.job_images_count|default:"-" }}</td>
           <td>{{ t.time_remaining }}</td>
-          <td>{{ t.profile.id_pengguna }}</td>
+          <td>{{ t.profile.worker_reviewer.username }}</td>
           <td>
-            <a href="{% url 'reviewer:task_review' t.profile.id_profile_job %}" class="text-decoration-none"
+            <a href="{% url 'reviewer:task_review' t.profile.id %}" class="text-decoration-none"
               >Review</a
             >
           </td>
+        </tr>
+        {% endif %}
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">No tasks assigned to you yet.</td>
         </tr>
         {% endfor %}
       </tbody>

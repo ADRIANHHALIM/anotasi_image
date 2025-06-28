@@ -6,12 +6,31 @@ from django.utils import timezone
 from django.templatetags.static import static
 from django.conf import settings
 from django.http import JsonResponse
-from .models import *
-from .forms import *
-import re
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_protect
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.hashers import make_password,check_password
+from django.contrib import messages
+from functools import wraps
+from master.models import CustomUser, JobProfile, JobImage, Annotation, Segmentation, Issue
+from .forms import LoginForm  # Only login form needed - signup handled by master app
+import re
 
 # Create your views here.
+
+def reviewer_required(view_func):
+    """
+    Custom decorator that requires user to be logged in and have reviewer or master role
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('reviewer:login')
+        if request.user.role not in ['reviewer', 'master']:
+            messages.error(request, 'Access denied. Reviewer access required.')
+            return redirect('reviewer:login')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 def get_base64_images():
     logo_path = os.path.join(settings.BASE_DIR,"reviewer/static/reviewer/image/logo-trisakti.png")
@@ -59,21 +78,25 @@ def get_base64_images():
     }
 
     return (context)
+@reviewer_required
 def home_reviewer(request):
-    if 'user_id' not in request.session:
-        return redirect('reviewer:login')
-    username = request.session.get('username')
-    number_email = request.session.get('contact')
-    user_id = request.session.get('user_id')  
+    user = request.user
+        
+    username = user.username
+    number_email = user.email or user.phone_number or ''
+    user_id = user.id
 
-    list_ProfileJob = ProfileJob.objects.filter(id_pengguna=user_id)
+    list_ProfileJob = JobProfile.objects.filter(worker_reviewer=user_id)
     
-    list_JobItem    = JobItem.objects.filter()
-
+    # Debug: print the profiles found
+    print(f"DEBUG: Found {list_ProfileJob.count()} profiles for user {user_id}")
+    for profile in list_ProfileJob:
+        print(f"DEBUG: Profile ID={profile.id}, Title='{profile.title}', End Date={profile.end_date}")
+    
     tasks = []
     now = timezone.localtime()   # sekarang di timezone aplikasi
 
-    for profile, job in zip(list_ProfileJob, list_JobItem):
+    for profile in list_ProfileJob:
         # hitung deadline = end_date pukul 23:59:59
         deadline = datetime.combine(profile.end_date, time.max)
         deadline = timezone.make_aware(deadline, now.tzinfo)
@@ -94,9 +117,12 @@ def home_reviewer(request):
                 else:
                     tr = f"less than 1 minute"
 
+        # Get job images count for this profile
+        job_images_count = JobImage.objects.filter(job=profile).count()
+
         tasks.append({
             'profile': profile,
-            'job': job,
+            'job_images_count': job_images_count,
             'time_remaining': tr
         })
 
@@ -111,78 +137,23 @@ def home_reviewer(request):
     # Kirim data Base64 ke template
     return render(request, "reviewer/home_reviewer.html", context)
 
-# def home_reviewer(request):
-    if 'user_id' not in request.session:
-        return redirect('reviewer:login')
-
-    username = request.session.get('username')
-    number_email = request.session.get('contact')
-    user_id = request.session.get('user_id')
-
-    list_ProfileJob = ProfileJob.objects.filter(id_pengguna=user_id)
-
-    tasks = []
-    now = timezone.localtime()
-
-    for profile in list_ProfileJob:
-        job_items = JobItem.objects.filter(id_profile_job=profile)
-
-        for job in job_items:
-            # ✅ Cek hanya jika ada IsuAnotasi
-            has_isu_anotasi = IsuAnotasi.objects.filter(id_anotasi__id_gambar=job.id_gambar).exists()
-
-            if has_isu_anotasi:
-                # Hitung deadline
-                deadline = datetime.combine(profile.end_date, time.max)
-                deadline = timezone.make_aware(deadline, now.tzinfo)
-
-                delta = deadline - now
-                total_seconds = int(delta.total_seconds())
-
-                if total_seconds <= 0:
-                    tr = "Times Up"
-                else:
-                    hours, rem = divmod(total_seconds, 3600)
-                    if hours > 0:
-                        tr = f"{hours} hours left"
-                    else:
-                        minutes, seconds = divmod(rem, 60)
-                        tr = f"{minutes} minutes left" if minutes > 0 else "less than 1 minute"
-
-                tasks.append({
-                    'profile': profile,
-                    'job': job,
-                    'time_remaining': tr
-                })
-
-    context = {
-        'username': username,
-        'number_email': number_email,
-        'tasks': tasks,
-        **get_base64_images(),
-        }
-    return render(request, "reviewer/home_reviewer.html", context)
-
+@reviewer_required
 def task_review(request, id):
-    if 'user_id' not in request.session:
-        return redirect('reviewer:login')
+    user = request.user
 
-    username = request.session.get('username')
-    number_email = request.session.get('contact')
-    user_id = request.session.get('user_id')
+    username = user.username
+    number_email = user.email or user.phone_number or ''
+    user_id = user.id
 
     # ✅ Ambil profile dan pastikan milik user
-    profile = get_object_or_404(ProfileJob, id_profile_job=id, id_pengguna=user_id)
+    profile = get_object_or_404(JobProfile, id=id, worker_reviewer=user_id)
 
-    # Simpan ke session
-    request.session['profile_id'] = profile.id_profile_job
-
-    # Ambil data job terkait profile
-    data_job = JobItem.objects.filter(id_profile_job=profile).select_related('id_gambar')
+    # Ambil data job terkait profile - remove select_related for image field since it's ImageField not ForeignKey
+    data_job = JobImage.objects.filter(job=profile).select_related('job', 'annotator')
     total_images = data_job.count()
 
     context = {
-        'profile_id': profile.id_profile_job,
+        'profile_id': profile.id,
         'total_images': total_images,
         'data_job': data_job,
         'username': username,
@@ -191,188 +162,160 @@ def task_review(request, id):
     }
     return render(request, 'reviewer/task_review.html', context)
 
+@reviewer_required
 def isu(request):
-    if 'user_id' not in request.session:
-        return redirect('reviewer:login')
-    username = request.session.get('username')
-    number_email = request.session.get('contact')
-    context={
-        'username':username,
+    user = request.user
+    username = user.username
+    number_email = user.email or user.phone_number or ''
+    
+    context = {
+        'username': username,
         'number_email': number_email,
         **get_base64_images(),
-
     }
-    return render(request, 'reviewer/isu.html',context)
+    return render(request, 'reviewer/isu.html', context)
 
+@csrf_protect
 def login(request):
+    print(f"Login view called - Method: {request.method}")
+    print(f"CSRF token in request: {request.META.get('CSRF_COOKIE')}")
+    
+    if request.user.is_authenticated:
+        # Check if user is reviewer or master
+        if request.user.role in ['reviewer', 'master']:
+            return redirect('reviewer:home_reviewer')
+        else:
+            # User is logged in but not reviewer - redirect them to logout
+            auth_logout(request)
+            messages.error(request, 'Access denied. This portal is for reviewers only. You have been logged out.')
+            
     if request.method == 'POST':
+        print(f"POST data: {request.POST}")
         form = LoginForm(request.POST)
+        print(f"Form is valid: {form.is_valid()}")
+        if not form.is_valid():
+            print(f"Form errors: {form.errors}")
+            
         if form.is_valid():
-            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']  # Now correctly using email field
             password = form.cleaned_data['password']
+            print(f"Attempting login with email: {email}")
 
-            try:
-                pengguna = Pengguna.objects.get(nama_pengguna=username)
-                if check_password(password, pengguna.password):
-                    request.session['user_id'] = pengguna.id_pengguna
-                    request.session['username'] = pengguna.nama_pengguna
-                    member = Member.objects.filter(id_pengguna=pengguna).first()
-                    if member:
-                        if member.email_member:
-                            request.session['contact'] = member.email_member
-                        elif member.no_hp_member:
-                            request.session['contact'] = member.no_hp_member
-                        else:
-                            request.session['contact'] = ''
+            # Use Django's authentication system with email
+            user = authenticate(request, username=email, password=password)
+            if user is not None and user.is_active:
+                print(f"User authenticated: {user.username}, role: {user.role}")
+                # Check if user has reviewer or master role
+                if user.role in ['reviewer', 'master']:
+                    auth_login(request, user)
                     return redirect('reviewer:home_reviewer')
                 else:
-                    form.add_error(None, 'Password salah')
-            except Pengguna.DoesNotExist:    
-                form.add_error(None, 'Username atau password salah')
-            context={   
-                'form':form,
-                **get_base64_images(),
-            }
-            return render(request, 'reviewer/login.html',context)
-    else:
-        form = LoginForm()
-        context={
-            'form':form,
+                    form.add_error(None, 'Access denied. This portal is for reviewers only.')
+            else:
+                print("Authentication failed")
+                form.add_error(None, 'Invalid email or password.')
+                
+        context = {   
+            'form': form,
             **get_base64_images(),
         }
-        return render(request, 'reviewer/login.html',context)
-
-def sign_up(request):
-    if request.method == 'POST':
-        form = SignupForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
-            first_name = form.cleaned_data['first_name']
-            last_name = form.cleaned_data['last_name']
-            peran = form.cleaned_data['peran']
-            input_value = form.cleaned_data['number_email']
-
-            # Cek email atau nomor HP
-            if re.match(r"[^@]+@[^@]+\.[^@]+", input_value):
-                email = input_value
-                no_hp = 0
-            else:
-                email = ""
-                no_hp = int(input_value)
-
-            # Gabung nama lengkap
-            nama_lengkap = f"{first_name} {last_name}"
-
-            pengguna = Pengguna.objects.create(
-                nama_pengguna=username,
-                nama_lengkap=nama_lengkap,
-                email=email,
-                password=make_password(password),
-                is_active=True
-            )
-
-            Member.objects.create(
-                id_pengguna=pengguna,
-                email_member=email,
-                no_hp_member=no_hp,
-                tanggal_registrasi=datetime.now(),
-                afiliasi='-',
-                peran=peran
-            )
-            
-            return redirect('reviewer:login')  # ← ganti dengan URL name halaman login kamu
-        else:
-            # form tidak valid
-            context = {
-                'form': form,
-                **get_base64_images()
-            }
-            return render(request, 'reviewer/sign_up.html', context)
+        return render(request, 'reviewer/login.html', context)
     else:
-        form = SignupForm()
+        form = LoginForm()
         context = {
             'form': form,
-            **get_base64_images()
+            **get_base64_images(),
         }
-        return render(request, 'reviewer/sign_up.html', context)
+        return render(request, 'reviewer/login.html', context)
     
+@reviewer_required
 def isu_anotasi(request, index):
-    if 'user_id' not in request.session:
-        return redirect('reviewer:login')
-
-    user_id = request.session.get('user_id')
-    profile_id = request.session.get('profile_id')
+    user = request.user
+    user_id = user.id
+    # Get profile_id from session or URL parameter - you may need to adjust this
+    profile_id = request.GET.get('profile_id') or request.session.get('profile_id')
+    
+    if not profile_id:
+        return redirect('reviewer:home_reviewer')
 
     # ✅ Validasi bahwa profile_id benar-benar milik user yang login
-    profile = ProfileJob.objects.filter(id_profile_job=profile_id, id_pengguna=user_id).first()
+    profile = JobProfile.objects.filter(id=profile_id, worker_reviewer=user_id).first()
     if not profile:
-        return redirect('reviewer:home')  # atau tampilkan pesan error
+        return redirect('reviewer:home_reviewer')  # atau tampilkan pesan error
 
-    nama_profile_job = profile.nama_profile_job.split(":")[-1].strip()
+    nama_profile_job = profile.title
 
-    # ✅ Ambil JobItem hanya untuk profile ini
-    job_items = JobItem.objects.select_related('id_gambar').filter(
-        id_profile_job=profile_id
-    ).order_by('id_job_item')
+    # ✅ Ambil JobImage hanya untuk profile ini
+    job_items = JobImage.objects.select_related('image').filter(
+        job=profile_id
+    ).order_by('id')
 
     if index < 0 or index >= job_items.count():
         return redirect('reviewer:isu_anotasi', index=0)  # fallback ke index awal
 
     job_item = job_items[index]
-    gambar = job_item.id_gambar
+    gambar = job_item.image
 
-    segmentasi_list = Segmentasi.objects.filter(id_job_item=job_item)
-    anotasi_list = Anotasi.objects.filter(id_gambar=gambar)
+    segmentasi_list = Segmentation.objects.filter(job_image=job_item)
+    anotasi_list = Annotation.objects.filter(job_image=job_item)
 
-    # === Semantic ===
-    anotasi_semantic = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
-        id_gambar=gambar,
-        id_segmentasi__id_tipe_segmentasi=1
+    # === Basic annotation data (simplified for new model structure) ===
+    # Note: This needs to be updated to work with the new annotation models
+    segmentasi_list = Segmentation.objects.filter(job=job_item.job)
+    anotasi_list = Annotation.objects.filter(job_image=job_item)
+
+    # === Semantic (simplified) ===
+    anotasi_semantic = Annotation.objects.filter(
+        job_image=job_item,
+        segmentation__segmentation_type__name='Semantic'
     )
     polygon_semantic_list = []
     for anotasi in anotasi_semantic:
-        titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
-        polygon_semantic_list.append({
-            'warna': anotasi.id_segmentasi.warna_segmentasi,
-            'label': anotasi.id_segmentasi.label_segmentasi,
-            'points': " ".join([f"{x},{y}" for x, y in titik_list]),
-        })
+        # Get polygon points for this annotation
+        points = anotasi.polygon_points.all().order_by('order')
+        if points:
+            polygon_semantic_list.append({
+                'warna': anotasi.segmentation.color if anotasi.segmentation else '#000000',
+                'label': anotasi.segmentation.label if anotasi.segmentation else 'Unknown',
+                'points': " ".join([f"{point.x_coordinate},{point.y_coordinate}" for point in points]),
+            })
 
-    # === Instance ===
-    anotasi_instance = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
-        id_gambar=gambar,
-        id_segmentasi__id_tipe_segmentasi=2
+    # === Instance (simplified) ===
+    anotasi_instance = Annotation.objects.filter(
+        job_image=job_item,
+        segmentation__segmentation_type__name='Instance'
     )
 
-    # === Panoptic ===
-    anotasi_panoptic = Anotasi.objects.select_related('id_segmentasi__id_tipe_segmentasi').filter(
-        id_gambar=gambar,
-        id_segmentasi__id_tipe_segmentasi=3
+    # === Panoptic (simplified) ===
+    anotasi_panoptic = Annotation.objects.filter(
+        job_image=job_item,
+        segmentation__segmentation_type__name='Panoptic'
     )
     polygon_panoptic_list = []
     for anotasi in anotasi_panoptic:
-        titik_list = PolygonTool.objects.filter(id_anotasi=anotasi).values_list('koordinat_xn', 'koordinat_yn')
-        polygon_panoptic_list.append({
-            'warna': anotasi.id_segmentasi.warna_segmentasi,
-            'label': anotasi.id_segmentasi.label_segmentasi,
-            'points': " ".join([f"{x},{y}" for x, y in titik_list]),
-        })
+        # Get polygon points for this annotation
+        points = anotasi.polygon_points.all().order_by('order')
+        if points:
+            polygon_panoptic_list.append({
+                'warna': anotasi.segmentation.color if anotasi.segmentation else '#000000',
+                'label': anotasi.segmentation.label if anotasi.segmentation else 'Unknown',
+                'points': " ".join([f"{point.x_coordinate},{point.y_coordinate}" for point in points]),
+            })
 
     context = {
-        'username': request.session.get('username'),
-        'number_email': request.session.get('contact'),
+        'username': user.username,
+        'number_email': user.email or user.phone_number or '',
         'profile_id': profile_id,
         'nama_profile_job': nama_profile_job,
-        'filename': gambar.nama_file,
-        'gambar_id': gambar.id_gambar,
+        'filename': gambar.name if hasattr(gambar, 'name') else 'image.jpg',
+        'gambar_id': gambar.id if hasattr(gambar, 'id') else job_item.id,
         'image_index': index + 1,
         'total_images': job_items.count(),
         'segmentasi_list': segmentasi_list,
         'anotasi_list': anotasi_list,
         'anotasi_box': anotasi_instance,
-        'lebar_gambar': gambar.lebar,
-        'tinggi_gambar': gambar.tinggi,
+        'lebar_gambar': 800,  # Default width - update if image dimensions are available
+        'tinggi_gambar': 600,  # Default height - update if image dimensions are available
         'polygon_semantic_list': polygon_semantic_list,
         'polygon_panoptic_list': polygon_panoptic_list,
         'total_semantic': anotasi_semantic.count(),
@@ -384,14 +327,20 @@ def isu_anotasi(request, index):
     return render(request, 'reviewer/isu_anotasi.html', context)
 
 
+@reviewer_required
 def isu_image(request):
-    if 'user_id' not in request.session:
-        return redirect('reviewer:login')
-    username = request.session.get('username')
-    number_email = request.session.get('contact')
-    context= {
-        'username':username,
-        'number_email':number_email,
+    user = request.user
+    username = user.username
+    number_email = user.email or user.phone_number or ''
+    
+    context = {
+        'username': username,
+        'number_email': number_email,
         **get_base64_images()
     }
     return render(request, 'reviewer/isu_image.html', context)
+
+def logout(request):
+    """Logout view for reviewers"""
+    auth_logout(request)
+    return redirect('reviewer:login')
