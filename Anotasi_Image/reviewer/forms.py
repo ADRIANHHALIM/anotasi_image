@@ -4,7 +4,7 @@ from django import forms
 # Signup is handled by master app only
 
 class LoginForm(forms.Form):
-    username = forms.EmailField(max_length=254, widget=forms.EmailInput(attrs={
+    email = forms.EmailField(max_length=254, widget=forms.EmailInput(attrs={
         'class': 'form-control',
         'placeholder': 'Email'
     }))

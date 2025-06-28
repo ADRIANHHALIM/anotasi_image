@@ -148,8 +148,8 @@ def task_review(request, id):
     # ✅ Ambil profile dan pastikan milik user
     profile = get_object_or_404(JobProfile, id=id, worker_reviewer=user_id)
 
-    # Ambil data job terkait profile
-    data_job = JobImage.objects.filter(job=profile).select_related('image')
+    # Ambil data job terkait profile - remove select_related for image field since it's ImageField not ForeignKey
+    data_job = JobImage.objects.filter(job=profile).select_related('job', 'annotator')
     total_images = data_job.count()
 
     context = {
@@ -177,6 +177,9 @@ def isu(request):
 
 @csrf_protect
 def login(request):
+    print(f"Login view called - Method: {request.method}")
+    print(f"CSRF token in request: {request.META.get('CSRF_COOKIE')}")
+    
     if request.user.is_authenticated:
         # Check if user is reviewer or master
         if request.user.role in ['reviewer', 'master']:
@@ -187,14 +190,21 @@ def login(request):
             messages.error(request, 'Access denied. This portal is for reviewers only. You have been logged out.')
             
     if request.method == 'POST':
+        print(f"POST data: {request.POST}")
         form = LoginForm(request.POST)
+        print(f"Form is valid: {form.is_valid()}")
+        if not form.is_valid():
+            print(f"Form errors: {form.errors}")
+            
         if form.is_valid():
-            email = form.cleaned_data['username']  # Form field is named username but we treat it as email
+            email = form.cleaned_data['email']  # Now correctly using email field
             password = form.cleaned_data['password']
+            print(f"Attempting login with email: {email}")
 
             # Use Django's authentication system with email
             user = authenticate(request, username=email, password=password)
             if user is not None and user.is_active:
+                print(f"User authenticated: {user.username}, role: {user.role}")
                 # Check if user has reviewer or master role
                 if user.role in ['reviewer', 'master']:
                     auth_login(request, user)
@@ -202,6 +212,7 @@ def login(request):
                 else:
                     form.add_error(None, 'Access denied. This portal is for reviewers only.')
             else:
+                print("Authentication failed")
                 form.add_error(None, 'Invalid email or password.')
                 
         context = {   
