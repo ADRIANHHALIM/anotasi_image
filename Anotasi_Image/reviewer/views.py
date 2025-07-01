@@ -27,8 +27,15 @@ def reviewer_required(view_func):
         if not request.user.is_authenticated:
             return redirect('reviewer:login')
         if request.user.role not in ['reviewer', 'master']:
-            messages.error(request, 'Access denied. Reviewer access required.')
-            return redirect('reviewer:login')
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for reviewers only.')
+            # Redirect to appropriate portal instead of forcing login
+            if request.user.role == 'annotator':
+                return redirect('/annotator/annotate/')
+            elif request.user.role == 'master':
+                return redirect('/')
+            else:
+                # Only redirect to login if user role is unknown/invalid
+                return redirect('reviewer:login')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
@@ -176,18 +183,28 @@ def isu(request):
     return render(request, 'reviewer/isu.html', context)
 
 @csrf_protect
+@csrf_protect
+@csrf_protect
 def login(request):
     print(f"Login view called - Method: {request.method}")
-    print(f"CSRF token in request: {request.META.get('CSRF_COOKIE')}")
+    print(f"CSRF token in META: {request.META.get('CSRF_COOKIE')}")
+    print(f"CSRF token in POST: {request.POST.get('csrfmiddlewaretoken')}")
     
     if request.user.is_authenticated:
         # Check if user is reviewer or master
         if request.user.role in ['reviewer', 'master']:
             return redirect('reviewer:home_reviewer')
         else:
-            # User is logged in but not reviewer - redirect them to logout
-            auth_logout(request)
-            messages.error(request, 'Access denied. This portal is for reviewers only. You have been logged out.')
+            # User is logged in but not reviewer - show error without logout
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for reviewers only.')
+            # Redirect to appropriate portal based on user role
+            if request.user.role == 'annotator':
+                return redirect('/annotator/annotate/')
+            elif request.user.role == 'master':
+                return redirect('/')
+            else:
+                # Unknown role, show login form
+                pass
             
     if request.method == 'POST':
         print(f"POST data: {request.POST}")

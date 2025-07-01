@@ -95,8 +95,8 @@ function handleNotificationClick(notificationId, jobId) {
     row.style.pointerEvents = 'none';
     
     // Update notification status to 'accepted' via AJAX
-    // Use absolute URL construction
-    const acceptUrl = window.location.origin + `/annotator/accept-notification/${notificationId}/`;
+    // Use absolute URL construction to match the URL pattern
+    const acceptUrl = window.location.origin + `/annotator/notification/${notificationId}/accept/`;
     console.log('Trying URL:', acceptUrl);
     
     fetch(acceptUrl, {
