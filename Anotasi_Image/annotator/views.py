@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.conf import settings
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
 from functools import wraps
 from master.models import JobProfile, JobImage, Notification, Issue
@@ -22,8 +22,15 @@ def annotator_required(view_func):
         if not request.user.is_authenticated:
             return redirect('/annotator/signin/')
         if request.user.role != 'annotator':
-            messages.error(request, 'Access denied. This portal is for annotators only.')
-            return redirect('/annotator/signin/')
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for annotators only.')
+            # Redirect to appropriate portal instead of forcing signin
+            if request.user.role == 'reviewer':
+                return redirect('/reviewer/')
+            elif request.user.role == 'master':
+                return redirect('/')
+            else:
+                # Only redirect to signin if user role is unknown/invalid
+                return redirect('/annotator/signin/')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
@@ -37,10 +44,16 @@ def signin_view(request):
         if request.user.role == 'annotator':
             return redirect('annotator:annotate')
         else:
-            # User is logged in but not annotator - redirect them to logout
-            logout(request)
-            messages.error(request, 'Access denied. This portal is for annotators only. You have been logged out.')
-            return render(request, 'annotator/signin.html')
+            # User is logged in but not annotator - show error message without logout
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for annotators only.')
+            # Redirect to appropriate portal based on user role
+            if request.user.role == 'reviewer':
+                return redirect('/reviewer/')
+            elif request.user.role == 'master':
+                return redirect('/')
+            else:
+                # Unknown role, just show the signin form
+                return render(request, 'annotator/signin.html')
     
     if request.method == 'POST':
         email = request.POST.get('username')  # Form field name is username but we treat it as email
@@ -197,6 +210,8 @@ def signout_view(request):
     messages.success(request, 'You have been signed out successfully.')
     return redirect('annotator:signin')
 
+@csrf_protect
+@annotator_required
 def accept_notification_view(request, notification_id):
     """
     Accept notification and update status to 'accepted'
