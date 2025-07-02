@@ -166,6 +166,28 @@
             </div>
 
 <script>
+    // Helper function to get CSRF token
+    function getCsrfToken() {
+        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfInput) {
+            return csrfInput.value;
+        }
+        
+        // Fallback: try to get from cookie
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, 'csrftoken'.length + 1) === ('csrftoken' + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring('csrftoken'.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
     function showRoles() {
         document.getElementById('rolesSection').classList.remove('hidden');
         document.getElementById('membersSection').classList.add('hidden');
@@ -221,14 +243,61 @@
             updates.push({ userId, newRole });
         });
         
+        console.log('Found selects:', selects.length);
+        console.log('Updates to send:', updates);
+        
         if (updates.length === 0) {
             alert('No changes to save.');
             return;
         }
         
-        // Here you would typically send an AJAX request to save the changes
-        console.log('Saving changes:', updates);
-        alert('Changes saved successfully!');
+        // Show loading state
+        const saveButton = event.target;
+        const originalText = saveButton.textContent;
+        saveButton.textContent = 'Saving...';
+        saveButton.disabled = true;
+        
+        // Send updates to server one by one
+        Promise.all(updates.map(update => {
+            console.log('Sending update:', update);
+            return fetch('{% url "master:update_role" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken()
+                },
+                body: JSON.stringify({
+                    user_id: update.userId,
+                    new_role: update.newRole
+                })
+            }).then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            });
+        }))
+        .then(results => {
+            console.log('All results:', results);
+            // Check if all updates were successful
+            const allSuccessful = results.every(result => result.status === 'success');
+            
+            if (allSuccessful) {
+                alert('All changes saved successfully!');
+                // Optionally reload the page to reflect changes
+                location.reload();
+            } else {
+                const failedUpdates = results.filter(result => result.status !== 'success');
+                alert(`Some updates failed: ${failedUpdates.map(f => f.message).join(', ')}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error saving changes:', error);
+            alert('Error saving changes. Please try again.');
+        })
+        .finally(() => {
+            // Restore button state
+            saveButton.textContent = originalText;
+            saveButton.disabled = false;
+        });
     }
 
     // Initialize with roles section visible
