@@ -18,6 +18,7 @@ urlpatterns = [
 
     # Update Role
     path("update_role/", views.update_role, name="update_role"),
+    path("update-user-roles/", views.update_user_roles, name="update_user_roles"),
     path("add_dataset/", views.add_dataset_view, name="add_dataset"),
 
     # Job Settings
