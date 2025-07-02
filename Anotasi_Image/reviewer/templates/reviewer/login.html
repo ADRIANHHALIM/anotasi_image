@@ -49,6 +49,26 @@
             {% endfor %}
           </div>
         {% endif %}
+
+        <!-- Display messages -->
+        {% if messages %}
+          <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'warning' %}warning{% elif message.tags == 'error' %}danger{% else %}success{% endif %} mb-3">
+              {{ message }}
+            </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <!-- Already Logged In Section -->
+        {% if user.is_authenticated and user.role not in 'reviewer,master'|split:',' %}
+          <div class="alert alert-warning text-center mb-3">
+            <strong>⚠️ Currently Logged In</strong><br>
+            <small>You are logged in as: <strong>{{ user.username }} ({{ user.role }})</strong></small><br>
+            <a href="{% url 'reviewer:logout' %}" class="btn btn-outline-danger btn-sm mt-2">Logout and Continue</a>
+          </div>
+        {% endif %}
         
         <form method="post" action="{% url 'reviewer:login' %}">
           {% csrf_token %}
