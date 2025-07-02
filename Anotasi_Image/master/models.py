@@ -57,7 +57,6 @@ class CustomUser(AbstractUser):
         ('annotator', 'Annotator'),
         ('reviewer', 'Reviewer'),
         ('member', 'Member'),
-        ('master', 'Master'),
     ]
     
     username = models.CharField(max_length=150, unique=True)
