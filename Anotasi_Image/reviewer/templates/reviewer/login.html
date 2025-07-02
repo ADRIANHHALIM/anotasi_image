@@ -62,7 +62,7 @@
         {% endif %}
 
         <!-- Already Logged In Section -->
-        {% if user.is_authenticated and user.role not in 'reviewer,master'|split:',' %}
+        {% if user.is_authenticated and user.role != 'reviewer' and user.role != 'master' %}
           <div class="alert alert-warning text-center mb-3">
             <strong>⚠️ Currently Logged In</strong><br>
             <small>You are logged in as: <strong>{{ user.username }} ({{ user.role }})</strong></small><br>

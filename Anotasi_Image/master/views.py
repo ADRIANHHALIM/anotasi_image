@@ -11,7 +11,6 @@ from django.contrib.auth import get_backends
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_protect
 from django.db.models import Count, Q, F
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -270,34 +269,23 @@ def assign_roles_view(request):
 
 @login_required
 @require_http_methods(["POST"])
-@csrf_protect
 def update_role(request):
     try:
-        print(f"Raw request body: {request.body}")
         data = json.loads(request.body)
-        print(f"Parsed data: {data}")
-        
         user_id = data.get('user_id')
         new_role = data.get('new_role')
-        
-        print(f"User ID: {user_id}, New Role: {new_role}")
 
         if not user_id or not new_role:
             return JsonResponse({'status': 'error', 'message': 'Missing required data'}, status=400)
 
         user = CustomUser.objects.get(id=user_id)
-        old_role = user.role
         user.role = new_role
         user.save()
-        
-        print(f"Updated user {user.email} from {old_role} to {new_role}")
 
         return JsonResponse({'status': 'success', 'message': 'Role updated successfully'})
     except CustomUser.DoesNotExist:
-        print(f"User not found: {user_id}")
         return JsonResponse({'status': 'error', 'message': 'User not found'}, status=404)
     except Exception as e:
-        print(f"Error updating role: {str(e)}")
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
@@ -1234,3 +1222,70 @@ def performance_individual_view(request, user_id):
     }
     
     return render(request, "master/performance_individual.html", context)
+
+@login_required
+@require_http_methods(["POST"])
+def update_user_roles(request):
+    """
+    AJAX endpoint to update user roles
+    """
+    try:
+        # Parse JSON data from the request
+        data = json.loads(request.body)
+        updates = data.get('updates', [])
+        
+        if not updates:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No updates provided'
+            }, status=400)
+        
+        success_count = 0
+        errors = []
+        
+        for update in updates:
+            user_id = update.get('userId')
+            new_role = update.get('newRole')
+            
+            if not user_id or not new_role:
+                errors.append(f'Invalid data for update: {update}')
+                continue
+                
+            try:
+                user = CustomUser.objects.get(id=user_id)
+                old_role = user.role
+                user.role = new_role
+                user.save()
+                
+                success_count += 1
+                print(f"Updated user {user.email} from {old_role} to {new_role}")
+                
+            except CustomUser.DoesNotExist:
+                errors.append(f'User with ID {user_id} not found')
+            except Exception as e:
+                errors.append(f'Error updating user {user_id}: {str(e)}')
+        
+        if errors:
+            return JsonResponse({
+                'status': 'partial_success',
+                'message': f'Updated {success_count} users successfully, {len(errors)} errors',
+                'success_count': success_count,
+                'errors': errors
+            })
+        else:
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Successfully updated {success_count} user roles',
+                'success_count': success_count
+            })
+            
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Server error: {str(e)}'
+        }, status=500)

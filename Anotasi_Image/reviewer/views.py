@@ -195,16 +195,9 @@ def login(request):
         if request.user.role in ['reviewer', 'master']:
             return redirect('reviewer:home_reviewer')
         else:
-            # User is logged in but not reviewer - show error without logout
-            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for reviewers only.')
-            # Redirect to appropriate portal based on user role
-            if request.user.role == 'annotator':
-                return redirect('/annotator/annotate/')
-            elif request.user.role == 'master':
-                return redirect('/')
-            else:
-                # Unknown role, show login form
-                pass
+            # User is logged in but not reviewer - show warning
+            messages.warning(request, f'You are currently logged in as {request.user.role}. To use the reviewer portal, please logout first and login with a reviewer account.')
+            # Don't redirect - show the login form with warning
             
     if request.method == 'POST':
         print(f"POST data: {request.POST}")

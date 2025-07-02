@@ -44,16 +44,9 @@ def signin_view(request):
         if request.user.role == 'annotator':
             return redirect('annotator:annotate')
         else:
-            # User is logged in but not annotator - show error message without logout
-            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for annotators only.')
-            # Redirect to appropriate portal based on user role
-            if request.user.role == 'reviewer':
-                return redirect('/reviewer/')
-            elif request.user.role == 'master':
-                return redirect('/')
-            else:
-                # Unknown role, just show the signin form
-                return render(request, 'annotator/signin.html')
+            # User is logged in but not annotator - show warning message
+            messages.warning(request, f'You are currently logged in as {request.user.role}. To use the annotator portal, please logout first and login with an annotator account.')
+            # Don't redirect - show the signin form with warning
     
     if request.method == 'POST':
         email = request.POST.get('username')  # Form field name is username but we treat it as email
