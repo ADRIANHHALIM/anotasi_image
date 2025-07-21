@@ -4,12 +4,25 @@ from . import views
 app_name = 'annotator'
 
 urlpatterns = [
-    path('', lambda request: get_view('annotate_view')(request), name='home'),
-    path('signin/', lambda request: get_view('signin_view')(request), name='signin'),
-    path('signout/', lambda request: get_view('signout_view')(request), name='signout'),
-    path('annotate/', lambda request: get_view('annotate_view')(request), name='annotate'),
-    path('job/<int:job_id>/', lambda request, job_id: get_view('job_detail_view')(request, job_id), name='job_detail'),
-    path('notifications/', lambda request: get_view('notifications_view')(request), name='notifications'),
-    path('accept-notification/<int:notification_id>/', lambda request, notification_id: get_view('accept_notification_view')(request, notification_id), name='accept_notification'),
+    # Main pages
+    path('', views.annotate_view, name='home'),
+    path('annotate/', views.annotate_view, name='annotate'),
+    path('job/<int:job_id>/', views.job_detail_view, name='job_detail'),
+    
+    # Notifications
+    path('notifications/', views.notifications_view, name='notifications'),
+    path('notification/<int:notification_id>/accept/', views.accept_notification_view, name='accept_notification'),
+    
+    # Authentication (if needed for annotator-specific auth)
+    path('signup/', views.signup_view, name= 'signup'),
+    path('signin/', views.signin_view, name='signin'),
+    path('signout/', views.signout_view, name='signout'),
 
+    # labeling
+    path('label/<int:job_id>/<int:image_id>/', views.label_image_view, name='label_image'),
+
+    # mengirim gambar ke web lain
+    path('send-image/<int:image_id>/', views.send_image_view, name='send_image'),
+   
 ]
+
