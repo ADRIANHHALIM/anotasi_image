@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
+import os
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
@@ -10,6 +11,9 @@ from master.models import JobProfile, JobImage, Notification, Issue
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
+from django.http import HttpResponse
+import requests
+AI_API_URL = "http://10.24.80.99:8000/api/proses-gambar/"
 
 # Create your views here.
 
@@ -33,6 +37,49 @@ def annotator_required(view_func):
                 return redirect('/annotator/signin/')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
+
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect('annotator:annotate')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        nama_depan = request.POST.get('nama_depan')
+        nama_belakang = request.POST.get('nama_belakang')
+
+        User = get_user_model()
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Username ini sudah digunakan')
+            return redirect('annotator:signup')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email ini sudah terdaftar. Silakan gunakan email lain.')
+            return redirect('annotator:signup')
+        
+        try:
+            # Gunakan create_user untuk mengenkripsi password secara otomatis
+            new_user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=nama_depan,
+                last_name=nama_belakang
+            )
+            # mendaftar sebagai annotator
+            new_user.role = 'annotator'
+            new_user.save()
+
+            messages.success(request, f'Akun untuk {username} berhasil dibuat! Silakan masuk untuk melanjutkan.')
+            return redirect('annotator:signin')
+        
+        except Exception as e:
+            messages.error(request, f'Terjadi kesalahan saat membuat akun: {e}')
+            return redirect('annotator:signup')
+        
+    return render(request, 'annotator/signup.html')
 
 @csrf_protect
 def signin_view(request):
@@ -244,3 +291,101 @@ def accept_notification_view(request, notification_id):
             'status': 'error',
             'message': str(e)
         }, status=400)
+    
+def label_image_view(request, job_id, image_id):
+
+    job = get_object_or_404(JobProfile, id=job_id, worker_annotator=request.user)
+    image = get_object_or_404(JobImage, id=image_id, job=job)
+
+    # Hitung status semua image job disini
+    all_images= job.images.all()
+    image_list = list(all_images.order_by('id'))
+    try:
+        current_index = image_list.index(image) + 1
+    except ValueError:
+        current_index = 1
+
+    status_counts = {
+         'unannotated': all_images.filter(status='unannotated').count(),
+        'in_progress': all_images.filter(status='in_progress').count(),
+        'in_review': all_images.filter(status='in_review').count(),
+        'in_rework': all_images.filter(status='in_rework').count(),
+        'annotated': all_images.filter(status='annotated').count(),
+        'finished': all_images.filter(status='finished').count(),
+    }
+
+    # Dummy classes - bisa ganti sesuai database
+    classes = ['mobil', 'orang', 'jalan', 'gedung']
+
+    # Dummy polygon annotations
+    dummy_annotations = [
+        {
+            'label': 'mobil',
+            'points': [[600,400], [700,400], [700,500], [600,500]],
+            'color': 'rgba(255, 0, 0, 0.4)'
+        },
+        {
+            'label': 'gedung',
+            'points': [[200,50], [400,50], [400,300], [200,300]],
+            'color': 'rgba(0, 0, 255, 0.3)'
+        },
+    ]
+
+
+    context = {
+         'current_page': 'annotate',
+        'user': request.user,
+        'job': job,
+        'image': image,
+        'classes': classes,
+        'status_counts': status_counts,
+        'total_images': all_images.count(),
+        'current_image_index': current_index,
+        'total_image': len(image_list),
+        'dummy_annotations': dummy_annotations,
+    }
+
+    return render (request, 'annotator/label_image.html', context)
+
+# mengirim,menerima,dan memproses gambar
+@csrf_exempt
+def send_image_view(request, image_id):
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+    image_obj = get_object_or_404(JobImage, id=image_id)
+    image_file = image_obj.image
+
+    try:
+        # 1. Siapkan file untuk dikirim
+        files = {
+            'file': (image_file.name, image_file.open('rb'))
+        }
+
+        # 2. Kirim gambar dan tunggu respons yang berisi JSON
+        response = requests.post(AI_API_URL, files=files, timeout=60)
+        response.raise_for_status() # Error jika status bukan 2xx
+
+        # 3. Langsung proses data JSON dari respons
+        annotation_data = response.json() 
+
+        # 4. Simpan hasil anotasi ke database Anda (ganti sesuai model Anda)
+        # Contoh:
+        # for ann in annotation_data.get('annotations', []):
+        #     Annotation.objects.create(
+        #         image=image_obj,
+        #         label=ann.get('label'),
+        #         # ... field lainnya
+        #     )
+            
+        print("Debug: Data anotasi berhasil diterima ->", annotation_data)
+        return JsonResponse({'success': True, 'message': 'Gambar berhasil dikirim dan anotasi diterima.'})
+
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({'success': False, 'error': f'Gagal menghubungi sistem cerdas: {e}'}, status=500)
+    except json.JSONDecodeError:
+        error_msg = 'Gagal mem-parsing JSON dari sistem cerdas. Pastikan API mengembalikan JSON. Respons: ' + response.text
+        return JsonResponse({'success': False, 'error': error_msg}, status=500)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
