@@ -1,200 +1,212 @@
 {% extends 'base_master.html' %}
 {% block content %}
-<div class="ml-64 p-4 pr-4">
-    <div class="flex flex-col gap-8 w-full">
-        <!-- Header dengan Tombol Kembali -->
-        <div class="flex items-center gap-4">
-            <button onclick="history.back()" class="text-gray-500 hover:text-gray-700">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                </svg>
-            </button>
-            <h1 class="text-3xl font-bold">Performance</h1>
+<div class="space-y-6">
+    <!-- Header dengan Tombal Kembali -->
+    <div class="flex items-center gap-4 mb-6">
+        <button onclick="history.back()" class="flex items-center justify-center w-10 h-10 rounded-full bg-white shadow-md text-gray-500 hover:text-gray-700 hover:shadow-lg transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+        </button>
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Individual Performance</h1>
+            <p class="text-gray-600 mt-1">Detailed performance analytics and statistics</p>
         </div>
+    </div>
 
-        <!-- Bagian Profil -->
-        <div class="bg-white rounded-xl p-12 shadow-lg w-full">
-            <h2 class="text-2xl font-bold mb-8">Profile</h2>
-            <div class="flex gap-16">
-                <!-- Gambar Profil -->
-                <div class="w-52 h-52 bg-gray-300 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <svg class="w-28 h-28 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+    <!-- Profile Section -->
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4">
+            <h2 class="text-xl font-semibold text-white">User Profile</h2>
+        </div>
+        <div class="p-6 md:p-8">
+            <div class="flex flex-col md:flex-row gap-8 items-start">
+                <!-- Profile Image -->
+                <div class="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
+                    <svg class="w-16 h-16 md:w-20 md:h-20 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
                 
-                <!-- Detail Profil -->
-                <div class="flex-1 space-y-5 text-xl">
-                    <div class="flex">
-                        <span class="w-36 text-gray-600">Name</span>
-                        <span class="mx-8">:</span>
-                        <span class="font-medium">{{ user_profile.name }}</span>
-                    </div>
-                    <div class="flex">
-                        <span class="w-36 text-gray-600">Username</span>
-                        <span class="mx-8">:</span>
-                        <span class="font-medium">{{ user_profile.email }}</span>
-                    </div>
-                    <div class="flex">
-                        <span class="w-36 text-gray-600">Role</span>
-                        <span class="mx-8">:</span>
-                        <span class="font-medium">{{ user_profile.role|capfirst }}</span>
-                    </div>
-                    <div class="flex">
-                        <span class="w-36 text-gray-600">Status</span>
-                        <span class="mx-8">:</span>
-                        <span class="px-5 py-2 rounded text-white text-base {{ user_profile.status_class }}">
-                            {{ user_profile.status }}
-                        </span>
+                <!-- Profile Details -->
+                <div class="flex-1 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center">
+                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Full Name</span>
+                                <span class="font-semibold text-gray-900">{{ user_profile.name }}</span>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center">
+                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Email</span>
+                                <span class="font-medium text-gray-700">{{ user_profile.email }}</span>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:items-center">
+                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Role</span>
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{{ user_profile.role|capfirst }}</span>
+                            </div>
+                            <div class="flex flex-col sm:flex-row sm:items-center">
+                                <span class="w-32 text-sm font-medium text-gray-500 mb-1 sm:mb-0">Status</span>
+                                <span class="px-3 py-1 rounded-full text-sm font-medium {{ user_profile.status_class }}">
+                                    {{ user_profile.status }}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Kartu Statistik -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 w-full">
-            <!-- Kartu Kiri - Statistik Job -->
-            <div class="bg-gray-100 rounded-xl p-12 w-full min-h-[550px]">
-                <div class="text-center mb-10">
-                    <h3 class="text-2xl font-semibold text-gray-700">{{ user_profile.email }}</h3>
-                    <p class="text-lg text-gray-500 mt-2">{{ user_stats.total_jobs }} job{{ user_stats.total_jobs|pluralize }}</p>
-                </div>
-                
-                <!-- Kontainer Chart -->
-                <div class="flex items-end justify-center gap-10 h-80 mb-10">
-                    <!-- Bar Assign -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-28 bg-purple-500 rounded-sm" 
-                             style="height: {% if user_stats.chart_data.assign.height > 0 %}{{ user_stats.chart_data.assign.height }}%{% else %}8px{% endif %};"
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <!-- Job Statistics Card -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-teal-600 px-6 py-4">
+                <h3 class="text-lg font-semibold text-white">Job Statistics</h3>
+                <p class="text-green-100 text-sm">{{ user_stats.total_jobs }} total job{{ user_stats.total_jobs|pluralize }}</p>
+            </div>
+            <div class="p-6">
+                <!-- Chart Container -->
+                <div class="flex items-end justify-center gap-4 md:gap-6 h-64 mb-6 bg-gray-50 rounded-xl p-4">
+                    <!-- Assign Bar -->
+                    <div class="flex flex-col items-center group">
+                        <div class="w-12 md:w-16 bg-gradient-to-t from-purple-600 to-purple-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
+                             style="height: {% if user_stats.chart_data.assign.height > 0 %}{{ user_stats.chart_data.assign.height }}%{% else %}12px{% endif %};"
                              title="Assign: {{ user_stats.chart_data.assign.count }}"></div>
-                        <span class="text-base mt-5 text-gray-600 font-medium">Assign</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Assign</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.assign.count }}</span>
                     </div>
-                    <!-- Bar Progress -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-28 bg-green-500 rounded-sm" 
-                             style="height: {% if user_stats.chart_data.progress.height > 0 %}{{ user_stats.chart_data.progress.height }}%{% else %}8px{% endif %};"
+                    <!-- Progress Bar -->
+                    <div class="flex flex-col items-center group">
+                        <div class="w-12 md:w-16 bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
+                             style="height: {% if user_stats.chart_data.progress.height > 0 %}{{ user_stats.chart_data.progress.height }}%{% else %}12px{% endif %};"
                              title="Progress: {{ user_stats.chart_data.progress.count }}"></div>
-                        <span class="text-base mt-5 text-gray-600 font-medium">Progress</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Progress</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.progress.count }}</span>
                     </div>
-                    <!-- Bar Reworking -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-28 bg-red-500 rounded-sm" 
-                             style="height: {% if user_stats.chart_data.reworking.height > 0 %}{{ user_stats.chart_data.reworking.height }}%{% else %}8px{% endif %};"
+                    <!-- Reworking Bar -->
+                    <div class="flex flex-col items-center group">
+                        <div class="w-12 md:w-16 bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
+                             style="height: {% if user_stats.chart_data.reworking.height > 0 %}{{ user_stats.chart_data.reworking.height }}%{% else %}12px{% endif %};"
                              title="Reworking: {{ user_stats.chart_data.reworking.count }}"></div>
-                        <span class="text-base mt-5 text-gray-600 font-medium">Reworking</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Rework</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.reworking.count }}</span>
                     </div>
-                    <!-- Bar Finished -->
-                    <div class="flex flex-col items-center">
-                        <div class="w-28 bg-purple-600 rounded-sm" 
-                             style="height: {% if user_stats.chart_data.finished.height > 0 %}{{ user_stats.chart_data.finished.height }}%{% else %}8px{% endif %};"
+                    <!-- Finished Bar -->
+                    <div class="flex flex-col items-center group">
+                        <div class="w-12 md:w-16 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl" 
+                             style="height: {% if user_stats.chart_data.finished.height > 0 %}{{ user_stats.chart_data.finished.height }}%{% else %}12px{% endif %};"
                              title="Finished: {{ user_stats.chart_data.finished.count }}"></div>
-                        <span class="text-base mt-5 text-gray-600 font-medium">Finished</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Finished</span>
+                        <span class="text-xs text-gray-400">{{ user_stats.chart_data.finished.count }}</span>
                     </div>
                 </div>
 
-                <!-- Legenda -->
-                <div class="space-y-3">
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-purple-500 rounded-full mr-3"></div>
-                        <span class="text-base">Assign</span>
+                <!-- Legend -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="flex items-center p-2 bg-purple-50 rounded-lg">
+                        <div class="w-3 h-3 bg-purple-500 rounded-full mr-2 flex-shrink-0"></div>
+                        <span class="text-sm font-medium">Assign</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-green-500 rounded-full mr-3"></div>
-                        <span class="text-base">Progress</span>
+                    <div class="flex items-center p-2 bg-green-50 rounded-lg">
+                        <div class="w-3 h-3 bg-green-500 rounded-full mr-2 flex-shrink-0"></div>
+                        <span class="text-sm font-medium">Progress</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-red-500 rounded-full mr-3"></div>
-                        <span class="text-base">Reworking</span>
+                    <div class="flex items-center p-2 bg-red-50 rounded-lg">
+                        <div class="w-3 h-3 bg-red-500 rounded-full mr-2 flex-shrink-0"></div>
+                        <span class="text-sm font-medium">Reworking</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 bg-purple-600 rounded-full mr-3"></div>
-                        <span class="text-base">Finished</span>
+                    <div class="flex items-center p-2 bg-blue-50 rounded-lg">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full mr-2 flex-shrink-0"></div>
+                        <span class="text-sm font-medium">Finished</span>
                     </div>
                 </div>
             </div>
-
-            <!-- Kartu Kanan - Statistik Gambar -->
-            <div class="bg-gray-100 rounded-xl p-12 w-full min-h-[550px]">
-                <div class="text-center mb-10">
-                    <h3 class="text-2xl font-semibold text-gray-700">{{ user_profile.email }}</h3>
-                    <p class="text-lg text-gray-500 mt-2">{{ user_stats.total_images }} image{{ user_stats.total_images|pluralize }}</p>
-                </div>
-                
+        </div>
+        <!-- Image Statistics Card -->
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-600 to-pink-600 px-6 py-4">
+                <h3 class="text-lg font-semibold text-white">Image Statistics</h3>
+                <p class="text-orange-100 text-sm">{{ user_stats.total_images }} total image{{ user_stats.total_images|pluralize }}</p>
+            </div>
+            <div class="p-6">
                 <!-- Chart Container -->
-                <div class="flex items-end justify-center gap-8 h-80 mb-10">
+                <div class="flex items-end justify-center gap-3 md:gap-4 h-64 mb-6 bg-gray-50 rounded-xl p-4">
                     <!-- Unannotated Bar -->
-                    <div class="flex flex-col items-center">
+                    <div class="flex flex-col items-center group">
                         {% with height=user_stats.image_chart_data.unannotated.height count=user_stats.image_chart_data.unannotated.count %}
-                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-purple-300 border-dashed{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #c084fc;{% else %}background-color: rgba(192, 132, 252, 0.1);{% endif %}"
+                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-purple-300 border-dashed bg-purple-50{% else %}bg-gradient-to-t from-purple-600 to-purple-400{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
                              title="Unannotated: {{ count }}"></div>
                         {% endwith %}
-                        <span class="text-sm mt-3 text-gray-600 font-medium">Unann</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Unann</span>
                         <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.unannotated.count }}</span>
                     </div>
                     <!-- Annotated Bar -->
-                    <div class="flex flex-col items-center">
+                    <div class="flex flex-col items-center group">
                         {% with height=user_stats.image_chart_data.annotated.height count=user_stats.image_chart_data.annotated.count %}
-                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-blue-300 border-dashed{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #3b82f6;{% else %}background-color: rgba(59, 130, 246, 0.1);{% endif %}"
+                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-blue-300 border-dashed bg-blue-50{% else %}bg-gradient-to-t from-blue-600 to-blue-400{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
                              title="Annotated: {{ count }}"></div>
                         {% endwith %}
-                        <span class="text-sm mt-3 text-gray-600 font-medium">Annot</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Annot</span>
                         <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.annotated.count }}</span>
                     </div>
-                    <!-- Progress Bar (In Review) -->
-                    <div class="flex flex-col items-center">
+                    <!-- In Review Bar -->
+                    <div class="flex flex-col items-center group">
                         {% with height=user_stats.image_chart_data.progress.height count=user_stats.image_chart_data.progress.count %}
-                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-green-300 border-dashed{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #059669;{% else %}background-color: rgba(5, 150, 105, 0.1);{% endif %}"
+                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-green-300 border-dashed bg-green-50{% else %}bg-gradient-to-t from-green-600 to-green-400{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
                              title="In Review: {{ count }}"></div>
                         {% endwith %}
-                        <span class="text-sm mt-3 text-gray-600 font-medium">Review</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Review</span>
                         <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.progress.count }}</span>
                     </div>
                     <!-- In Rework Bar -->
-                    <div class="flex flex-col items-center">
+                    <div class="flex flex-col items-center group">
                         {% with height=user_stats.image_chart_data.rework.height count=user_stats.image_chart_data.rework.count %}
-                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-yellow-300 border-dashed{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #eab308;{% else %}background-color: rgba(234, 179, 8, 0.1);{% endif %}"
+                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-yellow-300 border-dashed bg-yellow-50{% else %}bg-gradient-to-t from-yellow-600 to-yellow-400{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
                              title="In Rework: {{ count }}"></div>
                         {% endwith %}
-                        <span class="text-sm mt-3 text-gray-600 font-medium">Rework</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Rework</span>
                         <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.rework.count }}</span>
                     </div>
                     <!-- Finished Bar -->
-                    <div class="flex flex-col items-center">
+                    <div class="flex flex-col items-center group">
                         {% with height=user_stats.image_chart_data.finished.height count=user_stats.image_chart_data.finished.count %}
-                        <div class="w-24 rounded-sm {% if count == 0 %}border-2 border-purple-300 border-dashed{% endif %}" 
-                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %}; {% if count > 0 %}background-color: #7c3aed;{% else %}background-color: rgba(124, 58, 237, 0.1);{% endif %}"
+                        <div class="w-10 md:w-12 rounded-t-lg shadow-lg transition-all duration-300 group-hover:shadow-xl {% if count == 0 %}border-2 border-indigo-300 border-dashed bg-indigo-50{% else %}bg-gradient-to-t from-indigo-600 to-indigo-400{% endif %}" 
+                             style="height: {% if height > 0 %}{{ height }}%{% else %}15px{% endif %};"
                              title="Finished: {{ count }}"></div>
                         {% endwith %}
-                        <span class="text-sm mt-3 text-gray-600 font-medium">Finish</span>
+                        <span class="text-xs font-medium mt-2 text-gray-600">Finish</span>
                         <span class="text-xs text-gray-400">{{ user_stats.image_chart_data.finished.count }}</span>
                     </div>
                 </div>
 
                 <!-- Legend -->
-                <div class="space-y-3">
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #c084fc;"></div>
-                        <span class="text-base">Unannotated</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-2">
+                    <div class="flex items-center p-2 bg-purple-50 rounded-lg">
+                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #c084fc;"></div>
+                        <span class="text-sm font-medium">Unannotated</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #3b82f6;"></div>
-                        <span class="text-base">Annotated</span>
+                    <div class="flex items-center p-2 bg-blue-50 rounded-lg">
+                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #3b82f6;"></div>
+                        <span class="text-sm font-medium">Annotated</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #059669;"></div>
-                        <span class="text-base">In Review</span>
+                    <div class="flex items-center p-2 bg-green-50 rounded-lg">
+                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #059669;"></div>
+                        <span class="text-sm font-medium">In Review</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #eab308;"></div>
-                        <span class="text-base">In Rework</span>
+                    <div class="flex items-center p-2 bg-yellow-50 rounded-lg">
+                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #eab308;"></div>
+                        <span class="text-sm font-medium">In Rework</span>
                     </div>
-                    <div class="flex items-center">
-                        <div class="w-4 h-4 rounded-full mr-3" style="background-color: #7c3aed;"></div>
-                        <span class="text-base">Finished</span>
+                    <div class="flex items-center p-2 bg-indigo-50 rounded-lg col-span-1 sm:col-span-2 lg:col-span-1 xl:col-span-2">
+                        <div class="w-3 h-3 rounded-full mr-2 flex-shrink-0" style="background-color: #7c3aed;"></div>
+                        <span class="text-sm font-medium">Finished</span>
                     </div>
                 </div>
             </div>

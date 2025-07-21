@@ -369,7 +369,7 @@ function showIssueDetail(jobId) {
     modal.classList.add('flex');
     modalTitle.textContent = 'Loading...';
 
-    fetch(`/master/issue-detail/${jobId}/`)
+    fetch(`/issue-detail/${jobId}/`)
         .then(response => {
             console.log("Response status:", response.status);
             if (!response.ok) {

@@ -1,0 +1,1104 @@
+{% extends 'base_reviewer.html' %} 
+{% block style %}
+{% endblock %}
+
+{% block content-header %}
+<div class="d-flex align-items-center"> 
+  <div>
+    <a href="{% url 'reviewer:task_review' profile_id %}" class="">
+      <span style="color: white;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24">
+          <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12l6 6m-6-6l6-6"/>
+        </svg>
+      </span>
+    </a>
+  </div>
+  <div>
+    <div class="d-flex">
+      <span class="text-white">{{ profile_title }}</span>
+      <span class="ps-1 pe-1 text-white"></span>
+      <div class="d-flex">
+        <span style="color: white;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 100 100">
+            <path fill="currentColor" d="M82.488 68.439V31.561a10.41 10.41 0 0 0 5.424-9.143c0-5.753-4.664-10.417-10.417-10.417a10.4 10.4 0 0 0-8.577 4.512H31.083a10.4 10.4 0 0 0-8.577-4.512c-5.753 0-10.417 4.664-10.417 10.417c0 3.944 2.192 7.375 5.424 9.143v36.877a10.41 10.41 0 0 0-5.424 9.143c0 5.753 4.664 10.417 10.417 10.417c4.371 0 8.107-2.695 9.653-6.512h35.682c1.546 3.816 5.282 6.512 9.653 6.512c5.753 0 10.417-4.664 10.417-10.417c0-3.943-2.192-7.373-5.423-9.142m-55-.007V31.568a10.46 10.46 0 0 0 4.61-5.081h35.806a10.46 10.46 0 0 0 4.61 5.081v36.864a10.46 10.46 0 0 0-3.473 3.081h-38.08a10.45 10.45 0 0 0-3.473-3.081"/>
+          </svg>
+        </span>
+        <span class="text-white">Labeling</span>
+      </div>
+    </div>
+    <div class="d-flex">
+      <span class="text-white">{{ filename }}</span>
+    </div>
+  </div>
+  <div class="d-flex align-items-end ms-5 pb-1 h-100">
+    <div>
+      <span id="zoomIn" style="color: white; cursor: pointer;">
+        <!-- Zoom In -->
+         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 32 32">
+          <path fill="currentColor" d="M18 12h-4V8h-2v4H8v2h4v4h2v-4h4z"/><path fill="currentColor" d="M21.448 20A10.86 10.86 0 0 0 24 13a11 11 0 1 0-11 11a10.86 10.86 0 0 0 7-2.552L27.586 29L29 27.586ZM13 22a9 9 0 1 1 9-9a9.01 9.01 0 0 1-9 9"/>
+        </svg>
+      </span>
+    </div>
+    <div class="ms-3">
+      <span id="zoomOut" style="color: white; cursor: pointer;">
+        <!-- Zoom Out -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 32 32">
+          <path fill="currentColor" d="M8 12h10v2H8z"/><path fill="currentColor" d="M21.448 20A10.86 10.86 0 0 0 24 13a11 11 0 1 0-11 11a10.86 10.86 0 0 0 7-2.552L27.586 29L29 27.586ZM13 22a9 9 0 1 1 9-9a9.01 9.01 0 0 1-9 9"/>
+        </svg>
+      </span>
+    </div>
+    <div class="ms-1">
+      <span id="zoomFit" style="color: white; cursor: pointer;">
+        <!-- Zoom Fit -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 32 32">
+          <path fill="currentColor" d="M21.448 20A10.86 10.86 0 0 0 24 13a11 11 0 1 0-11 11a10.86 10.86 0 0 0 7-2.552L27.586 29L29 27.586ZM13 22a9 9 0 1 1 9-9a9.01 9.01 0 0 1-9 9"/><path fill="currentColor" d="M10 12H8v-2a2 2 0 0 1 2-2h2v2h-2zm8 0h-2v-2h-2V8h2a2 2 0 0 1 2 2zm-6 6h-2a2 2 0 0 1-2-2v-2h2v2h2zm4 0h-2v-2h2v-2h2v2a2 2 0 0 1-2 2"/>
+        </svg>
+      </span>
+    </div>
+  </div>
+  <div class="d-flex w-100 justify-content-center">
+    <div class="rounded" style="background-color:rgba(87,180,206,0.1);">
+      <div class="d-flex justify-content-senter align-items-center" style="font-size: 1.2rem;" >
+        <div class="btn" id="prevBtn">
+          <span style="color: white;">
+            <a href="{% if image_index > 1 %}{% url 'reviewer:isu_anotasi' image_index|add:'-2' %}{% else %}#{% endif %}" id="prevBtn" class="text-secondary text-decoration-none"> 
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="#ffffff" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 7l-5 5m0 0l5 5"/>
+            </svg>
+            </a>
+          </span>
+        </div>
+        <div class="ms-3 me-3 text-center text-white" id="pageInfo" style="width: 60px;">{{ image_index }} / {{ total_images }}</div>
+        <div class=" btn justify-content-senter align-items-center" id="nextBtn" style="height: 40px;">
+          <span style="color: white;">
+            <a href="{% if image_index < total_images %}{% url 'reviewer:isu_anotasi' image_index %}{% else %}#{% endif %}" id="nextBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <path fill="#ffffff" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 17l5-5m0 0l-5-5"/>
+            </svg>
+            </a>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ms-auto">
+    <button class="btn btn-primary text-white p-0 me-2" style="width: 100px; height: 30px;">Finish</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block sidebar %}
+<div class="ms-2 ps-0 pe-0 border-end border-dark d-flex flex-column" style="width: 200px;">
+    <div>
+        <a href="{% url 'reviewer:isu' %}" class="mt-2 w-100 text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
+            <img src="{{ nav_isu_base64 }}" alt="nav_isu" class="me-2">
+            Isu
+        </a>
+    </div>
+    <div>
+        <a href="" class="mt-2 pt-1 pb-1 border border-dark rounded w-100 text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
+            <img src="{{ nav_proses_base64 }}" alt="nav_proses" class="me-2">
+            Proses Review
+        </a>
+    </div>
+    <div class="" >
+        <a href="{% url 'reviewer:home_reviewer' %}" class="mt-2 mb-2 pt-1 pb-1 w-100 text-dark text-decoration-none d-flex align-items-center pe-2 ps-2" type="button">
+            <img src="{{ nav_notif_base64 }}" alt="nav_notif" class="me-2">
+            Notifications
+        </a>
+    </div>
+    <div class="w-100 mt-auto">
+        <div class="d-flex align-items-center  pt-2 pb-2 ps-1 pe-2 " style="width: fit-content;">
+            <div class="d-flex justify-content-center align-items-center " style="width: 35px; height: 35px;">
+                <img src="{{ nav_username_base64 }}" alt="user" style="width: 100%; height: auto;">
+            </div>
+            <div class="flex-grow-1 ps-1">
+                <p class="mb-0 fw-bold">{{ username }}</p>
+                <div class="scroll-hidden">
+                    <p class="mb-0 text-muted" style="font-size: 12px; min-width: max-content;">{{ number_email }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content1 %}
+<div class="d-flex">
+  <div class="p-0 border-end" style="width: 180px; gap: 20px">
+    <div class="border-end">
+      <p class="mt-2 ps-2">Annotations</p>
+      <p class="text-center border-bottom" style="text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 4px;">CLASSES</p>
+      <div>
+        <div class="">
+          <div class="input-group rounded">
+            <input type="search" class="form-control rounded" placeholder="Search" aria-label="Search" aria-describedby="search-addon" />
+            <span class="input-group-text border-0" id="search-addon"><i class="fas fa-search"></i></span>
+          </div>
+        </div>
+      </div>
+
+      <div style="height: 10px"></div>
+      {% for segmentasi in segmentasi_list %}
+      <div class="d-flex align-items-center border" style="width: 100%">
+        <div class="ps-2">{{ segmentasi.label_segmentasi }}</div>
+        <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">{{ forloop.counter }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="height: 50px"></div>
+    <div class="">
+      <p class="text-center border border-end-0 pt-2" style="text-decoration: underline; text-decoration-color: red; text-decoration-thickness: 4px;">SEGMENTATION TYPE</p>
+      <div class="">
+        <div class="">
+          <div class="d-flex align-items-center p-0 collapse-toggle" data-target="#kontensemantic" data-label="#labelsemantic" data-icon="#iconsemantic" data-eye="#eyesemantic" data-mode="semantic" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#kontensemantic" aria-expanded="false">
+            <span class="m-0 me-2" >
+              <span id="iconsemantic">
+                <span class="icon-show" style="display: inline;">{% include "icons/arrow-down.html" %}</span>
+                <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
+              </span>
+            </span>
+            <p id="labelsemantic" class="p-0 m-0">Semantic ({{ total_semantic }})</p>
+            <span id="eyesemantic" class="ms-auto">
+              <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
+              <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
+            </span>
+          </div>
+          <div class="collapse" id="kontensemantic">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: red">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>mobil</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <div class="btn-group dropend">
+                    <span type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      {% include "icons/three-dot.html" %}
+                    </span>
+                    <ul class="dropdown-menu p-0">
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none" href="#">
+                          <span style="color: red;">
+                            {% include "icons/delete.html" %}
+                          </span>
+                          <span class="text-danger h6-font-size">Delete</span>
+                        </a>
+                      </li>
+                      <li>
+                        <div class="dropend">
+                          <a class="dropdown-item text-decoration-none text-dark" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span>
+                              {% include "icons/change-circle.html" %}
+                            </span>
+                            <span>Change Class</span>
+                          </a>
+                          <ul class="dropdown-menu p-0">
+                            <div class="d-flex justify-content-center p-0 m-0 text-white" style="background-color: #0F84D0;width: 100%;"><span>Class Editor</span></div>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">1</div>
+                                <div class="ps-2">mobil</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">2</div>
+                                <div class="ps-2">motor</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">3</div>
+                                <div class="ps-2">truk</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">4</div>
+                                <div class="ps-2">bus</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">5</div>
+                                <div class="ps-2">kereta</div>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/git-isu.html" %}
+                          </span>
+                          <span>Make Issue</span>
+                        </a>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/copy-fill.html" %}
+                          </span>
+                          <span>Copy</span>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </li>
+              
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: gold">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>orang</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #00d1ff">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>jalanan</span>
+                </div>
+                <div>
+                  <span style="color: #48bf53">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #0047FF">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>gedung</span>
+                </div>
+                <div>
+                  <span style="color: #48bf53">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="">
+          <div class="d-flex align-items-center p-0 collapse-toggle" data-target="#konteninstance" data-label="#labelinstance" data-icon="#iconinstance" data-eye="#eyeinstance" data-mode="instance" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#konteninstance" aria-expanded="false">
+            <span class="m-0 me-2" >
+              <span id="iconinstance">
+                <span class="icon-show" style="display: inline;">{% include "icons/arrow-down.html" %}</span>
+                <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
+              </span>
+            </span>
+            <p id="labelinstance" class="p-0 m-0">Instance ({{ total_instance }})</p>
+            <span id="eyeinstance" class="ms-auto">
+              <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
+              <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
+            </span>
+          </div>
+          <div class="collapse" id="konteninstance">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: red">
+                    {% include "icons/rectangle.html" %}
+                  </span>
+                  <span>mobil 1</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <div class="btn-group dropend">
+                    <span type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      {% include "icons/three-dot.html" %}
+                    </span>
+                    <ul class="dropdown-menu p-0">
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none" href="#">
+                          <span style="color: red;">
+                            {% include "icons/delete.html" %}
+                          </span>
+                          <span class="text-danger h6-font-size">Delete</span>
+                        </a>
+                      </li>
+                      <li>
+                        <div class="dropend">
+                          <a class="dropdown-item text-decoration-none text-dark" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span>
+                              {% include "icons/change-circle.html" %}
+                            </span>
+                            <span>Change Class</span>
+                          </a>
+                          <ul class="dropdown-menu p-0">
+                            <div class="d-flex justify-content-center p-0 m-0 text-white" style="background-color: #0F84D0;width: 100%;"><span>Class Editor</span></div>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">1</div>
+                                <div class="ps-2">mobil</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">2</div>
+                                <div class="ps-2">motor</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">3</div>
+                                <div class="ps-2">truk</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">4</div>
+                                <div class="ps-2">bus</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">5</div>
+                                <div class="ps-2">kereta</div>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/git-isu.html" %}
+                          </span>
+                          <span>Make Issue</span>
+                        </a>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/copy-fill.html" %}
+                          </span>
+                          <span>Copy</span>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: red">
+                    {% include "icons/rectangle.html" %}
+                  </span>
+                  <span>mobil 2</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <div class="btn-group dropend">
+                    <span type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      {% include "icons/three-dot.html" %}
+                    </span>
+                    <ul class="dropdown-menu p-0">
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none" href="#">
+                          <span style="color: red;">
+                            {% include "icons/delete.html" %}
+                          </span>
+                          <span class="text-danger h6-font-size">Delete</span>
+                        </a>
+                      </li>
+                      <li>
+                        <div class="dropend">
+                          <a class="dropdown-item text-decoration-none text-dark" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span>
+                              {% include "icons/change-circle.html" %}
+                            </span>
+                            <span>Change Class</span>
+                          </a>
+                          <ul class="dropdown-menu p-0">
+                            <div class="d-flex justify-content-center p-0 m-0 text-white" style="background-color: #0F84D0;width: 100%;"><span>Class Editor</span></div>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">1</div>
+                                <div class="ps-2">mobil</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">2</div>
+                                <div class="ps-2">motor</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">3</div>
+                                <div class="ps-2">truk</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">4</div>
+                                <div class="ps-2">bus</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">5</div>
+                                <div class="ps-2">kereta</div>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/git-isu.html" %}
+                          </span>
+                          <span>Make Issue</span>
+                        </a>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/copy-fill.html" %}
+                          </span>
+                          <span>Copy</span>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: gold">
+                    {% include "icons/rectangle.html" %}
+                  </span>
+                  <span>orang 1</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: gold">
+                    {% include "icons/rectangle.html" %}
+                  </span>
+                  <span>orang 2</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: gold">
+                    {% include "icons/rectangle.html" %}
+                  </span>
+                  <span>orang 3</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="">
+          <div class="d-flex align-items-center p-0 collapse-toggle" data-target="#kontenpanoptic" data-label="#labelpanoptic" data-icon="#iconpanoptic" data-eye="#eyepanoptic" data-mode="panoptic" role="button" tabindex="0" data-bs-toggle="collapse" data-bs-target="#kontenpanoptic" aria-expanded="false">
+            <span class="m-0 me-2" >
+              <span id="iconpanoptic">
+                <span class="icon-show" style="display: inline;">{% include "icons/arrow-down.html" %}</span>
+                <span class="icon-hide" style="display: none;">{% include "icons/arrow-right.html" %}</span>
+              </span>
+            </span>
+            <p id="labelpanoptic" class="p-0 m-0">Panoptic ({{ total_panoptic }})</p>
+            <span id="eyepanoptic" class="ms-auto">
+              <span class="eye-show" style="display: inline;">{% include "icons/eye-show.html" %}</span>
+              <span class="eye-hide" style="display: none;">{% include "icons/eye-hide.html" %}</span>
+            </span>
+          </div>
+          <div class="collapse" id="kontenpanoptic">
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #118DFF">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>mobil 1</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <div class="btn-group dropend">
+                    <span type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                      {% include "icons/three-dot.html" %}
+                    </span>
+                    <ul class="dropdown-menu p-0">
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none" href="#">
+                          <span style="color: red;">
+                            {% include "icons/delete.html" %}
+                          </span>
+                          <span class="text-danger h6-font-size">Delete</span>
+                        </a>
+                      </li>
+                      <li>
+                        <div class="dropend">
+                          <a class="dropdown-item text-decoration-none text-dark" href="#" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span>
+                              {% include "icons/change-circle.html" %}
+                            </span>
+                            <span>Change Class</span>
+                          </a>
+                          <ul class="dropdown-menu p-0">
+                            <div class="d-flex justify-content-center p-0 m-0 text-white" style="background-color: #0F84D0;width: 100%;"><span>Class Editor</span></div>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">1</div>
+                                <div class="ps-2">mobil</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">2</div>
+                                <div class="ps-2">motor</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">3</div>
+                                <div class="ps-2">truk</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">4</div>
+                                <div class="ps-2">bus</div>
+                              </a>
+                            </li>
+                            <li>
+                              <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="badge text-dark" style="background-color: #d4d4d4">5</div>
+                                <div class="ps-2">kereta</div>
+                              </a>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/git-isu.html" %}
+                          </span>
+                          <span>Make Issue</span>
+                        </a>
+                      </li>
+                      <li class="dropdown-item">
+                        <a class="text-decoration-none text-dark" href="#">
+                          <span>
+                            {% include "icons/copy-fill.html" %}
+                          </span>
+                          <span>Copy</span>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #00FF29">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>mobil 2</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #9E00FF">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>orang 1</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #072690">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>orang 2</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #FF7A00">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>orang 3</span>
+                </div>
+                <div>
+                  <span style="color: #f6d35c">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #0047FF">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>gedung</span>
+                </div>
+                <div>
+                  <span style="color: #48bf53">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
+                <div class="d-flex align-items-center ps-1">
+                  <span class="me-2" style="color: #00D1FF">
+                    {% include "icons/polygon.html" %}
+                  </span>
+                  <span>jalanan</span>
+                </div>
+                <div>
+                  <span style="color: #48bf53">
+                    {% include "icons/warning.html" %}
+                  </span>
+                  <span style="color: #48bf53">●</span>
+                  <span class="m-0 p-0">
+                    {% include "icons/eye-show.html" %}
+                  </span>
+                  <span>
+                    {% include "icons/three-dot.html" %}
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex-grow-1">
+    <div>
+      <div class="d-flex gap-1 flex-wrap" style="white-space: nowrap;">
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">10</div>
+            <div class="small text-muted">Unannotated</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">In Review</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">In Rework</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">Finished</div>
+          </div>
+        </div>
+        <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
+          <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
+            <div class="fs-4 fw-bold">0</div>
+            <div class="small text-muted">Issues</div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-secondary w-100">
+        <div class="">
+          <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">
+            <img id="zoomImage" src="/media/gambar/anotasi/{{ filename }}" alt="Gambar"
+                style="display: block; transform-origin: top left; width: {{ image_width }}px ; height: {{ image_height }}px;">
+            <svg id="svgSemantic" width="{{ image_width }}" height="{{ image_height }}"
+                style="position: absolute; top: 0; left: 0; pointer-events: none;">
+                {% for poly in polygon_semantic_list %}
+                  <polygon 
+                    points="{{ poly.points }}"
+                    fill="{{ poly.warna }}"
+                    fill-opacity="0.4"
+                    stroke="{{ poly.warna }}"
+                    stroke-width="2">
+                    <title>{{ poly.label }}</title>
+                  </polygon>
+                {% endfor %}
+              </svg>
+            <svg id="svgInstance" width="{{ image_width }}" height="{{ image_height }}"
+                    style="position: absolute; top: 0; left: 0; pointer-events: none;">
+              {% for anotasi in anotasi_box %}
+              <rect 
+                x="{{ anotasi.koordinat_x }}" 
+                y="{{ anotasi.koordinat_y }}" 
+                width="{{ anotasi.lebar }}" 
+                height="{{ anotasi.tinggi }}" 
+                fill="none" 
+                stroke="{{ anotasi.id_segmentasi.warna_segmentasi }}" 
+                stroke-width="2"/>
+              {% endfor %}
+            </svg>
+            <svg id="svgPanoptic" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
+                    style="position: absolute; top: 0; left: 0; pointer-events: none;">
+              <polygon points="628.88,622.28 821.96,625.81 817.26,516.32 773.69,458.62 661.84,458.62 617.10,493.95"
+                fill="rgba(17,141,255,0.3)" stroke="#118DFF" stroke-width="2" />
+              <polygon points="471.75,518.89 513.91,515.86 525.68,511.30 524.92,489.65 516.19,476.74 482.39,477.88 468.71,487.75 468.71,500.28"
+                fill="rgba(0,255,41,0.3)" stroke="#00FF29" stroke-width="2" />
+              <!-- orang -->
+              <polygon points="368.92,471.22 356.55,474.24 353.53,479.07 356.24,492.36 355.34,516.21 347.49,527.98 353.83,532.21 339.94,569.04 362.28,570.85 364.09,546.70 376.17,561.79 377.07,569.34 395.19,561.49 375.56,530.70 378.89,507.75 373.45,487.53"
+                fill="rgba(158,0,255,0.3)" stroke="#9E00FF" stroke-width="2" />
+              <polygon points="139.21,483.88 138.00,490.22 126.23,512.56 136.50,520.71 137.10,539.43 148.27,539.13 147.97,521.92 159.14,499.58 150.38,489.32 147.67,481.47"
+                fill="rgba(7,38,144,0.3)" stroke="#072690" stroke-width="2" />
+              <polygon points="32.34,495.66 21.78,500.49 20.27,522.22 20.87,521.92 18.76,540.33 29.63,549.39 39.59,546.67 37.48,537.62 44.72,518.30 49.85,524.94 56.19,519.81 51.97,507.73 45.93,495.66 42.00,487.50 34.76,489.62"
+                fill="rgba(255,112,0,0.3)" stroke="#FF7A00" stroke-width="2" />
+              <!-- gedung -->
+              <polygon points="464.04,177.23 651.25,168.99 681.86,231.39 705.41,236.10 706.58,416.24 464.04,428.01"
+                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
+              <polygon points="726.60,11.22 1097.47,13.58 1108.07,356.19 987.97,351.48 919.69,305.57 801.95,318.52 737.19,337.36"
+                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
+              <polygon points="451.09,367.97 451.09,46.55 401.64,19.47 265.07,44.19 255.65,209.02 83.75,210.20 59.03,396.22"
+                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
+              <!-- Jalanan -->
+              <polygon points="597.09,495.12 574.72,508.07 541.75,506.90 509.96,522.20 461.69,518.67 393.40,524.56 394.58,577.54 326.29,577.54 331.00,531.62 103.77,541.04 19.00,602.26 24.89,690.57 1135.15,699.99 1122.19,635.23 938.52,586.96 918.51,555.17 950.30,537.51 986.80,537.51 962.07,526.91 846.69,528.09 843.16,565.77 846.69,641.12 707.76,639.94 638.30,637.58 599.44,611.68 608.86,542.22 614.75,512.78"
+                fill="rgba(0,209,255,0.3)" stroke="#00D1FF" stroke-width="2" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block scriptjs %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const toggles = document.querySelectorAll('.collapse-toggle');
+
+  toggles.forEach(toggleGroup => {
+    const collapseId = toggleGroup.getAttribute('data-target');
+    const labelSelector = toggleGroup.getAttribute('data-label');
+    const iconSelector = toggleGroup.getAttribute('data-icon');
+    const eyeSelector = toggleGroup.getAttribute('data-eye');
+    const mode = toggleGroup.getAttribute('data-mode');
+
+    const svgSemantic = document.getElementById("svgSemantic");
+    const svgInstance = document.getElementById("svgInstance");
+    const svgPanoptic = document.getElementById("svgPanoptic");
+
+    const collapseEl = document.querySelector(collapseId);
+    const labelEl = document.querySelector(labelSelector);
+    const iconContainer = document.querySelector(iconSelector);
+    const eyeContainer = document.querySelector(eyeSelector);
+
+    const iconShow = iconContainer.querySelector('.icon-show');
+    const iconHide = iconContainer.querySelector('.icon-hide');
+    const eyeShow = eyeContainer.querySelector('.eye-show');
+    const eyeHide = eyeContainer.querySelector('.eye-hide');
+
+    // Inisialisasi status awal
+    if (collapseEl.classList.contains('show')) {
+      labelEl.classList.remove('text-muted');
+      labelEl.classList.add('text-dark');
+      iconShow.style.display = 'inline';
+      iconHide.style.display = 'none';
+      eyeShow.style.display = 'inline';
+      eyeHide.style.display = 'none';
+
+      if (mode === "semantic") {
+        svgSemantic.style.display = 'inline';
+        svgInstance.style.display = 'none';
+        svgPanoptic.style.display = 'none';
+      } else if (mode === "instance") {
+        svgSemantic.style.display = 'none';
+        svgInstance.style.display = 'inline';
+        svgPanoptic.style.display = 'none';
+      } else if (mode === "instance") {
+        svgSemantic.style.display = 'none';
+        svgInstance.style.display = 'none';
+        svgPanoptic.style.display = 'inline';
+      }
+    } else {
+      labelEl.classList.remove('text-dark');
+      labelEl.classList.add('text-muted');
+      iconShow.style.display = 'none';
+      iconHide.style.display = 'inline';
+      eyeShow.style.display = 'none';
+      eyeHide.style.display = 'inline';
+
+      svgSemantic.style.display = 'none';
+      svgInstance.style.display = 'none';
+      svgPanoptic.style.display = 'none';
+    }
+
+    // Saat collapse dibuka, tutup collapse lain
+    collapseEl.addEventListener('show.bs.collapse', () => {
+      console.log('Collapse opened:', collapseId);
+
+      // Tutup semua collapse lain
+      toggles.forEach(otherToggle => {
+        const otherCollapseId = otherToggle.getAttribute('data-target');
+        if (otherCollapseId !== collapseId) {
+          const otherCollapseEl = document.querySelector(otherCollapseId);
+          if (otherCollapseEl.classList.contains('show')) {
+            const bsCollapse = bootstrap.Collapse.getInstance(otherCollapseEl);
+            if (bsCollapse) {
+              bsCollapse.hide();
+            } else {
+              new bootstrap.Collapse(otherCollapseEl, { toggle: false }).hide();
+            }
+          }
+        }
+      });
+
+      labelEl.classList.remove('text-muted');
+      labelEl.classList.add('text-dark');
+      iconShow.style.display = 'inline';
+      iconHide.style.display = 'none';
+      eyeShow.style.display = 'inline';
+      eyeHide.style.display = 'none';
+
+      // Tampilkan SVG sesuai mode
+      if (mode === "semantic") {
+        svgSemantic.style.display = 'inline';
+        svgInstance.style.display = 'none';
+        svgPanoptic.style.display = 'none';
+      } else if (mode === "instance") {
+        svgSemantic.style.display = 'none';
+        svgInstance.style.display = 'inline';
+        svgPanoptic.style.display = 'none';
+      } else if (mode === "panoptic") {
+        svgSemantic.style.display = 'none';
+        svgInstance.style.display = 'none';
+        svgPanoptic.style.display = 'inline';
+      }
+    });
+
+    collapseEl.addEventListener('hide.bs.collapse', () => {
+      console.log('Collapse closed:', collapseId);
+      labelEl.classList.remove('text-dark');
+      labelEl.classList.add('text-muted');
+      iconShow.style.display = 'none';
+      iconHide.style.display = 'inline';
+      eyeShow.style.display = 'none';
+      eyeHide.style.display = 'inline';
+
+      svgSemantic.style.display = 'none';
+      svgInstance.style.display = 'none';
+      svgPanoptic.style.display = 'none';
+    });
+  });
+});
+  //Zoom 
+  //Zoom 
+const zoomInButton = document.getElementById("zoomIn");
+const zoomOutButton = document.getElementById("zoomOut");
+const zoomFitButton = document.getElementById("zoomFit");
+const zoomImage = document.getElementById("zoomImage");
+const zoomWrapper = document.getElementById("zoomWrapper");
+const svgSemantic = document.getElementById("svgSemantic");
+const svgInstance = document.getElementById("svgInstance");
+const svgPanoptic = document.getElementById("svgPanoptic");
+
+let scale = 1;
+
+// Zoom In
+zoomInButton.addEventListener("click", () => {
+  scale += 0.1;
+  applyZoom();
+});
+
+// Zoom Out
+zoomOutButton.addEventListener("click", () => {
+  scale -= 0.1;
+  if (scale < 0.1) scale = 0.1;
+  applyZoom();
+});
+
+// Zoom Fit by height
+zoomFitButton.addEventListener("click", () => {
+  const containerHeight = zoomWrapper.clientHeight;
+  const imageHeight = zoomImage.naturalHeight;
+
+  if (imageHeight > 0) {
+    scale = containerHeight / imageHeight;
+    applyZoom();
+  }
+});
+
+// Terapkan transformasi
+function applyZoom() {
+  zoomImage.style.transform = `scale(${scale})`;
+  
+  [svgSemantic, svgInstance, svgPanoptic].forEach(svg => {
+    svg.style.transform = `scale(${scale})`;
+    svg.style.transformOrigin = "top left";
+  });
+}
+/*
+  //Pagination
+  let currentPage = 1;
+  const totalPages = 10;
+
+  const pageInfo = document.getElementById('pageInfo');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  function updatePagination() {
+    pageInfo.textContent = `${currentPage} / ${totalPages}`;
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+  }
+
+  prevBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+      currentPage--;
+      updatePagination();
+    }
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (currentPage < totalPages) {
+      currentPage++;
+      updatePagination();
+    }
+  });
+
+  updatePagination(); // Initial update
+  */
+</script>
+{% endblock %}

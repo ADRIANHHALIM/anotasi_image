@@ -23,6 +23,3 @@ urlpatterns = [
 
     # mengirim gambar ke web lain
     path('send-image/<int:image_id>/', views.send_image_view, name='send_image'),
-   
-]
-

@@ -4,6 +4,7 @@ from . import views
 app_name = 'master'
 
 urlpatterns = [
+    path('', views.home_view, name='index'),  # Root URL
     path('signup/', views.signup_view, name='signup'),
     path("activate/<uidb64>/<token>/", views.activate, name="activate"),  
     path('login/', views.login_view, name='login'),
@@ -17,6 +18,7 @@ urlpatterns = [
 
     # Update Role
     path("update_role/", views.update_role, name="update_role"),
+    path("update-user-roles/", views.update_user_roles, name="update_user_roles"),
     path("add_dataset/", views.add_dataset_view, name="add_dataset"),
 
     # Job Settings
