@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
+import os
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib import messages
 from django.conf import settings
 from django.views.decorators.csrf import csrf_protect, csrf_exempt
@@ -10,6 +11,9 @@ from master.models import JobProfile, JobImage, Notification, Issue
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
+from django.http import HttpResponse
+import requests
+AI_API_URL = "https://closed-mon-cell-future.trycloudflare.com/api/proses-gambar/"
 
 # Create your views here.
 
@@ -33,6 +37,49 @@ def annotator_required(view_func):
                 return redirect('/annotator/signin/')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
+
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect('annotator:annotate')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        nama_depan = request.POST.get('nama_depan')
+        nama_belakang = request.POST.get('nama_belakang')
+
+        User = get_user_model()
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Username ini sudah digunakan')
+            return redirect('annotator:signup')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email ini sudah terdaftar. Silakan gunakan email lain.')
+            return redirect('annotator:signup')
+        
+        try:
+            # Gunakan create_user untuk mengenkripsi password secara otomatis
+            new_user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                first_name=nama_depan,
+                last_name=nama_belakang
+            )
+            # mendaftar sebagai annotator
+            new_user.role = 'annotator'
+            new_user.save()
+
+            messages.success(request, f'Akun untuk {username} berhasil dibuat! Silakan masuk untuk melanjutkan.')
+            return redirect('annotator:signin')
+        
+        except Exception as e:
+            messages.error(request, f'Terjadi kesalahan saat membuat akun: {e}')
+            return redirect('annotator:signup')
+        
+    return render(request, 'annotator/signup.html')
 
 @csrf_protect
 def signin_view(request):
@@ -244,3 +291,131 @@ def accept_notification_view(request, notification_id):
             'status': 'error',
             'message': str(e)
         }, status=400)
+    
+def label_image_view(request, job_id, image_id):
+
+    job = get_object_or_404(JobProfile, id=job_id, worker_annotator=request.user)
+    image = get_object_or_404(JobImage, id=image_id, job=job)
+
+    # Hitung status semua image job disini
+    all_images= job.images.all()
+    image_list = list(all_images.order_by('id'))
+    try:
+        current_index = image_list.index(image) + 1
+    except ValueError:
+        current_index = 1
+
+    status_counts = {
+         'unannotated': all_images.filter(status='unannotated').count(),
+        'in_progress': all_images.filter(status='in_progress').count(),
+        'in_review': all_images.filter(status='in_review').count(),
+        'in_rework': all_images.filter(status='in_rework').count(),
+        'annotated': all_images.filter(status='annotated').count(),
+        'finished': all_images.filter(status='finished').count(),
+    }
+
+    # Dummy classes - bisa ganti sesuai database
+    classes = ['mobil', 'orang', 'jalan', 'gedung']
+    
+    # ambil data anotasi dari database
+    annotations_qs = image.annotations.all()
+    
+    # definisikan data json nya
+    annotation_data = 'detections'
+
+    # format data agar mudah dibaca oleh javascript
+    annotation_data = []
+    for ann in annotations_qs:
+        annotation_data.append({
+            'label': ann.label,
+            'bbox': [ann.x_min, ann.y_min, ann.x_max, ann.y_max],
+            'is_auto_generated': ann.is_auto_generated 
+        })
+
+
+   
+    context = {
+         'current_page': 'annotate',
+        'user': request.user,
+        'job': job,
+        'image': image,
+        'classes': classes,
+        'status_counts': status_counts,
+        'total_images': all_images.count(),
+        'current_image_index': current_index,
+        'total_image': len(image_list),
+        # kirim adta anotasi asli sebagai string json ke template
+        'annotations_json': json.dumps(annotation_data)
+    }
+
+    return render (request, 'annotator/label_image.html', context)
+
+# mengirim,menerima,dan memproses gambar
+# file: annotator/views.py
+
+@csrf_exempt
+def send_image_view(request, image_id):
+    
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+    
+    image_obj = get_object_or_404(JobImage, id=image_id)
+    image_file = image_obj.image
+
+    try:
+        files = { 'file': (image_file.name, image_file.open('rb')) }
+        response = requests.post(AI_API_URL, files=files, timeout=60)
+        response.raise_for_status()
+
+        annotation_data = response.json()
+        print("--- MULAI DEBUG PROSES SIMPAN ---")
+        print("Debug: Data mentah diterima ->", annotation_data)
+
+        detections = annotation_data.get('detections', [])
+        print(f"Debug: Ditemukan total {len(detections)} deteksi dari AI.")
+        
+        saved_count = 0
+        for i, ann in enumerate(detections):
+            box = ann.get('bbox')
+            label = ann.get('label_vgg16')
+
+            print(f"\nDebug [{i+1}/{len(detections)}]: Memproses label '{label}' dengan box {box}")
+
+            if box and label and len(box) == 4:
+                try:
+                    Annotation.objects.create(
+                        image=image_obj,
+                        label=label,
+                        x_min=box[0],
+                        y_min=box[1],
+                        x_max=box[2],
+                        y_max=box[3],
+                        is_auto_generated=True,
+                    )
+                    saved_count += 1
+                    print(f"Debug: Anotasi untuk '{label}' BERHASIL disimpan.")
+                except Exception as e:
+                    print(f"!!! DEBUG: GAGAL menyimpan anotasi untuk '{label}'. Error: {e}")
+            else:
+                print(f"Debug: Data untuk '{label}' tidak valid atau tidak lengkap, dilewati.")
+        
+        print(f"\n--- SELESAI DEBUG ---")
+        print(f"Debug: Total anotasi yang berhasil disimpan: {saved_count} dari {len(detections)}")
+        
+        return JsonResponse({'success': True, 'message': 'Gambar berhasil dikirim dan anotasi diterima.'})
+
+    except requests.exceptions.RequestException as e:
+        return JsonResponse({'success': False, 'error': f'Gagal menghubungi sistem cerdas: {e}'}, status=500)
+    except json.JSONDecodeError:
+        error_msg = 'Gagal mem-parsing JSON dari sistem cerdas. Respons: ' + response.text
+        return JsonResponse({'success': False, 'error': error_msg}, status=500)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+# menampilkan hasil JSON ke label image
+def get_result_json(request, image_id):
+    image_obj = get_object_or_404(JobImage, id=image_id)
+    annotations = Annotation.objects.filter(image=image_obj).values(
+        'label', 'x_min', 'y_min', 'x_max', 'y_max', 'is_auto_generated'
+    )
+    return JsonResponse(list(annotations), safe=False)
