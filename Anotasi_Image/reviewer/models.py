@@ -41,7 +41,6 @@ __all__ = [
     'AnnotationIssue',
     'ImageAnnotationIssue',
 ]
-
 # Note: The following models have been removed as they are redundant or replaced:
 # - Pengguna -> replaced by CustomUser in master
 # - Gambar -> replaced by JobImage in master  

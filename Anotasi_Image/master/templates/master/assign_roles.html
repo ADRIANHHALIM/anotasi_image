@@ -226,9 +226,43 @@
             return;
         }
         
-        // Here you would typically send an AJAX request to save the changes
-        console.log('Saving changes:', updates);
-        alert('Changes saved successfully!');
+        // Show loading state
+        const saveButton = event.target;
+        const originalText = saveButton.textContent;
+        saveButton.textContent = 'Saving...';
+        saveButton.disabled = true;
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Send AJAX request to save the changes
+        fetch('/update-user-roles/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ updates: updates })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' || data.status === 'partial_success') {
+                alert(data.message);
+                // Refresh the page to show updated data
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving changes. Please try again.');
+        })
+        .finally(() => {
+            // Restore button state
+            saveButton.textContent = originalText;
+            saveButton.disabled = false;
+        });
     }
 
     // Initialize with roles section visible

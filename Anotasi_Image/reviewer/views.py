@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 import base64
+from PIL import Image
 import os
 from datetime import datetime, time
 from django.utils import timezone
@@ -17,6 +18,27 @@ from .forms import LoginForm  # Only login form needed - signup handled by maste
 import re
 
 # Create your views here.
+def reviewer_required(view_func):
+    """
+    Custom decorator that requires user to be logged in and have reviewer or master role
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('reviewer:login')
+        if request.user.role not in ['reviewer', 'master']:
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for reviewers only.')
+            # Redirect to appropriate portal instead of forcing login
+            if request.user.role == 'annotator':
+                return redirect('/annotator/annotate/')
+            elif request.user.role == 'master':
+                return redirect('/')
+            else:
+                # Only redirect to login if user role is unknown/invalid
+                return redirect('reviewer:login')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
 def reviewer_required(view_func):
     """
     Custom decorator that requires user to be logged in and have reviewer or master role
@@ -237,6 +259,7 @@ def login(request):
         }
         return render(request, 'reviewer/login.html', context)
 
+    
 @reviewer_required
 def isu_anotasi(request, index=0):
     user = request.user
@@ -345,7 +368,6 @@ def isu_anotasi(request, index=0):
         **get_base64_images(),
     }
     return render(request, 'reviewer/isu_anotasi.html', context)
-
 
 @reviewer_required
 def isu_image(request):

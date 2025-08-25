@@ -1,17 +1,12 @@
-<<<<<<< HEAD
-from django.shortcuts import render
-
-# Create your views here.
-=======
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.conf import settings
-from django.views.decorators.csrf import csrf_protect
+from django.views.decorators.csrf import csrf_protect, csrf_exempt
 from django.http import JsonResponse
 from functools import wraps
-from master.models import JobProfile, JobImage
+from master.models import JobProfile, JobImage, Notification, Issue
 from django.utils import timezone
 from django.db.models import Count, Q
 import json
@@ -27,8 +22,15 @@ def annotator_required(view_func):
         if not request.user.is_authenticated:
             return redirect('/annotator/signin/')
         if request.user.role != 'annotator':
-            messages.error(request, 'Access denied. This portal is for annotators only.')
-            return redirect('/annotator/signin/')
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for annotators only.')
+            # Redirect to appropriate portal instead of forcing signin
+            if request.user.role == 'reviewer':
+                return redirect('/reviewer/')
+            elif request.user.role == 'master':
+                return redirect('/')
+            else:
+                # Only redirect to signin if user role is unknown/invalid
+                return redirect('/annotator/signin/')
         return view_func(request, *args, **kwargs)
     return _wrapped_view
 
@@ -42,10 +44,9 @@ def signin_view(request):
         if request.user.role == 'annotator':
             return redirect('annotator:annotate')
         else:
-            # User is logged in but not annotator - redirect them to logout
-            logout(request)
-            messages.error(request, 'Access denied. This portal is for annotators only. You have been logged out.')
-            return render(request, 'annotator/signin.html')
+            # User is logged in but not annotator - show warning message
+            messages.warning(request, f'You are currently logged in as {request.user.role}. To use the annotator portal, please logout first and login with an annotator account.')
+            # Don't redirect - show the signin form with warning
     
     if request.method == 'POST':
         email = request.POST.get('username')  # Form field name is username but we treat it as email
@@ -100,8 +101,6 @@ def notifications_view(request):
     """
     View for the notifications page
     """
-    from master.models import Notification
-    
     # Debug: Get current user explicitly
     current_user = request.user
     print(f"DEBUG: Current user = {current_user.username} (ID: {current_user.id})")
@@ -157,8 +156,6 @@ def job_detail_view(request, job_id):
     }
     
     # Handle Issues data - using real Issue model
-    from master.models import Issue
-    
     # Get all issues for this job assigned to current user
     # Issues are only created by Master and Reviewer, not auto-generated
     all_issues = Issue.objects.filter(job=job, assigned_to=request.user).select_related('created_by', 'image')
@@ -206,6 +203,8 @@ def signout_view(request):
     messages.success(request, 'You have been signed out successfully.')
     return redirect('annotator:signin')
 
+@csrf_protect
+@annotator_required
 def accept_notification_view(request, notification_id):
     """
     Accept notification and update status to 'accepted'
@@ -217,8 +216,6 @@ def accept_notification_view(request, notification_id):
         }, status=405)
         
     try:
-        from master.models import Notification
-        
         # Check authentication
         if not request.user.is_authenticated:
             return JsonResponse({
@@ -247,4 +244,3 @@ def accept_notification_view(request, notification_id):
             'status': 'error',
             'message': str(e)
         }, status=400)
->>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff

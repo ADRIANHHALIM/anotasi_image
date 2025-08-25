@@ -143,10 +143,6 @@ SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'none'
 
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
-ACCOUNT_EMAIL_VERIFICATION = 'none'
 SOCIALACCOUNT_AUTO_SIGNUP = True
 
 SOCIALACCOUNT_ADAPTER = 'master.adapters.CustomSocialAccountAdapter'
@@ -167,8 +163,11 @@ USE_TZ = True
 
 # Static Files (CSS, JS, Images)
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Untuk production
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'master', 'static'),
+    os.path.join(BASE_DIR, 'staticfiles'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'collected_static')  # For collectstatic
 
 # Media Files (User Uploads)
 MEDIA_URL = '/media/'
@@ -182,11 +181,9 @@ MAX_UPLOAD_SIZE = 52428800  # 50MB in bytes
 # Primary Key
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Django Allauth Settings
-ACCOUNT_AUTHENTICATION_METHOD = "email"  # Login pakai email
-ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_USERNAME_REQUIRED = False
-ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = True
+# Django Allauth Settings (Updated for new version)
+ACCOUNT_LOGIN_METHODS = {'email'}  # Use new format
+ACCOUNT_SIGNUP_FIELDS = ['email*', 'password1*', 'password2*']  # Use new format
 ACCOUNT_SESSION_REMEMBER = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None

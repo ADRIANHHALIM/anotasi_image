@@ -394,7 +394,11 @@ class AnnotationTool(models.Model):
 
 class Segmentation(models.Model):
     """Model for segmentation tasks with job relationships (translated from reviewer Segmentasi)"""
+<<<<<<< HEAD
     job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='segmentations')
+=======
+    job = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='segmentations')
+>>>>>>> main
     segmentation_type = models.ForeignKey(SegmentationType, on_delete=models.CASCADE)
     label = models.CharField(max_length=100)  # label_segmentasi -> label
     color = models.CharField(max_length=7)  # warna_segmentasi -> color (hex color)
@@ -545,4 +549,8 @@ class ImageAnnotationIssue(models.Model):
         return f"Image Issue: {self.title} (Image {self.job_image.id})"
 
     class Meta:
+<<<<<<< HEAD
         ordering = ['-created_at']
+=======
+        ordering = ['-created_at']
+>>>>>>> main

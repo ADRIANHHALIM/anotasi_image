@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-from django.shortcuts import render, redirect
-from .forms import UserForm
-
-def create_user(request):
-    if request.method == "POST":
-        form = UserForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('success_page')
-    else:
-        form = UserForm()
-
-    return render(request, "master/user_form.html", {"form": form})
-=======
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
@@ -1237,4 +1222,70 @@ def performance_individual_view(request, user_id):
     }
     
     return render(request, "master/performance_individual.html", context)
->>>>>>> 25292504d23e7f8e25be5caa7222ee2190cf9cff
+
+@login_required
+@require_http_methods(["POST"])
+def update_user_roles(request):
+    """
+    AJAX endpoint to update user roles
+    """
+    try:
+        # Parse JSON data from the request
+        data = json.loads(request.body)
+        updates = data.get('updates', [])
+        
+        if not updates:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'No updates provided'
+            }, status=400)
+        
+        success_count = 0
+        errors = []
+        
+        for update in updates:
+            user_id = update.get('userId')
+            new_role = update.get('newRole')
+            
+            if not user_id or not new_role:
+                errors.append(f'Invalid data for update: {update}')
+                continue
+                
+            try:
+                user = CustomUser.objects.get(id=user_id)
+                old_role = user.role
+                user.role = new_role
+                user.save()
+                
+                success_count += 1
+                print(f"Updated user {user.email} from {old_role} to {new_role}")
+                
+            except CustomUser.DoesNotExist:
+                errors.append(f'User with ID {user_id} not found')
+            except Exception as e:
+                errors.append(f'Error updating user {user_id}: {str(e)}')
+        
+        if errors:
+            return JsonResponse({
+                'status': 'partial_success',
+                'message': f'Updated {success_count} users successfully, {len(errors)} errors',
+                'success_count': success_count,
+                'errors': errors
+            })
+        else:
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Successfully updated {success_count} user roles',
+                'success_count': success_count
+            })
+            
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Server error: {str(e)}'
+        }, status=500)
