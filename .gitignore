@@ -19,6 +19,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.pyc
+__pycache__/
 
 # Django
 *.log
@@ -29,6 +31,7 @@ db.sqlite3-journal
 # Environment variables
 .env
 *.env
+env/
 
 # VS Code
 .vscode/
