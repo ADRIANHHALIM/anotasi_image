@@ -22,6 +22,7 @@
                 {% for notification in notifications %}
                 <tr class="hover:bg-gray-50 {% if notification.status == 'unread' %}bg-blue-50{% endif %} cursor-pointer" 
                     onclick="handleNotificationClick({{ notification.id }}, {% if notification.job %}{{ notification.job.id }}{% else %}null{% endif %})">
+                    
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {{ notification.get_task_id }}
                     </td>
@@ -62,6 +63,7 @@
                         {% endif %}
                     </td>
                 </tr>
+
                 {% empty %}
                 <tr>
                     <td colspan="5" class="px-6 py-12 text-center">

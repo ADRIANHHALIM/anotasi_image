@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils import timezone
 from django.db.models.functions import Cast
+from django.conf import settings
 import os
 
 class User(models.Model):
@@ -360,6 +361,36 @@ class Notification(models.Model):
         from django.utils.timesince import timesince
         return f"{timesince(self.created_at)} ago"
 
+class Annotation(models.Model):
+    # Menyimpan satu data anotasi (bounding box) pada sebuah gambar
+    image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='annotations')
+
+    # Menyimpan label dari deteksi
+    label = models.CharField(max_length=100)
+
+    # 4 titik koordinat bouning box
+    x_min = models.FloatField()
+    y_min = models.FloatField()
+    x_max = models.FloatField()
+    y_max = models.FloatField()
+
+    # anotasi dibuat otomatis
+    is_auto_generated = models.BooleanField(default=True)
+
+    # siapa yg buat anotasi
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+    
+    # otomatis mencatat waktu saat anotasi 
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"Anotasi '{self.label}' pada gambar ID {self.image.id}"
+
+
 # ===== ANNOTATION SYSTEM MODELS (Translated from reviewer models) =====
 
 class SegmentationType(models.Model):
@@ -393,7 +424,7 @@ class AnnotationTool(models.Model):
 
 class Segmentation(models.Model):
     """Model for segmentation tasks with job relationships (translated from reviewer Segmentasi)"""
-    job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='segmentations')
+    job = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='segmentations')
     segmentation_type = models.ForeignKey(SegmentationType, on_delete=models.CASCADE)
     label = models.CharField(max_length=100)  # label_segmentasi -> label
     color = models.CharField(max_length=7)  # warna_segmentasi -> color (hex color)

@@ -1,6 +1,14 @@
 import os
 from pathlib import Path
 
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "ba81abbf02db.ngrok-free.app",
+    "*",  # opsional untuk testing
+]
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -38,7 +46,7 @@ USER_PORT = 8000
 # Admin port
 ADMIN_PORT = 8001
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','172.16.1.54']
 
 # Make sure these settings are correct
 MEDIA_URL = '/media/'
