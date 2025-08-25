@@ -23,6 +23,9 @@ urlpatterns = [
 
     # mengirim gambar ke web lain
     path('send-image/<int:image_id>/', views.send_image_view, name='send_image'),
-   
+
+    # menerima filejson
+    path('result-json/<int:image_id>/', views.get_result_json, name='get_result_json'),
 ]
+
 

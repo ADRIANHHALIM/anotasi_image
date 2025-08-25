@@ -16,7 +16,7 @@ SECRET_KEY = os.getenv("SECRET_KEY", "django-insecure-default-key")
 DEBUG = os.getenv("DEBUG", "True") == "True"
 
 # Host yang diizinkan (gunakan wildcard '*' hanya untuk pengembangan)
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1, 10.24.80.161").split(",")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1, 10.24.80.161, 172.16.1.54").split(",")
 
 # Application definition
 INSTALLED_APPS = [

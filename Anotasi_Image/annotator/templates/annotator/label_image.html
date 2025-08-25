@@ -92,9 +92,10 @@
     </div>
 
     <!-- Image Display -->
-    <div class="w-3/4 bg-white rounded shadow p-4 flex flex-col items-center">
+    <div class="relative w-3/4 bg-white rounded shadow p-4 flex flex-col items-center">
       {% if image.image %}
-        <img src="{{ image.image.url }}" alt="Image to label" class="max-w-full max-h-[75vh] border rounded" />
+        <img id="labelingImage" src="{{ image.image.url }}" alt="Image to label" class="max-w-full max-h-[75vh] border rounded" />
+        <canvas id="annotationsCanvas" class="absolute top-0 left-0 pointer-events-none" style="width: 100%; height: 100%;"></canvas>
         <p class="mt-2 text-xs text-gray-400 break-all">URL: {{ image.image.url }}</p>
       {% else %}
         <p class="text-red-500 text-sm">⚠️ Gambar tidak tersedia</p>
@@ -104,46 +105,125 @@
   </div>
 
   <script>
-    function toggleLabelStatus() {
-      const btn = document.getElementById('labelStatusBtn');
-
-      // Ubah warna tombol
-      const isActive = btn.classList.contains('bg-green-500');
-      if (isActive) {
-        btn.classList.remove('bg-green-500');
-        btn.classList.add('bg-red-500');
-        btn.textContent = 'Label Assist 🔴';
-      } else {
-        btn.classList.remove('bg-red-500');
-        btn.classList.add('bg-green-500');
-        btn.textContent = 'Label Assist 🟢';
-
-        // Kirim ke server via fetch
-        fetch("{% url 'annotator:send_image' image.id %}", {
-          method: 'POST',
-          headers: {
-            'X-CSRFToken': '{{ csrf_token }}',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            image_id: {{ image.id }}
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            alert("Gambar berhasil dikirim ke server lain!");
-          } else {
-            alert("Gagal kirim gambar: " + data.error);
-          }
-        })
-        .catch(err => {
-          alert("Gagal kirim gambar!");
-          console.error(err);
-        });
-      }
+    function drawAllAnnotations(annotationsToDraw) {
+    const image = document.getElementById('labelingImage');
+    const canvas = document.getElementById('annotationsCanvas');
+    if (!image || !canvas || !image.naturalWidth || image.naturalWidth === 0) {
+      return; 
     }
-  </script>
+    
+    // PERBAIKAN 1: Seharusnya '2d'
+    const ctx = canvas.getContext('2d');
 
+    canvas.removeAttribute('width');
+    canvas.removeAttribute('height');
+
+    canvas.style.width = image.clientWidth + 'px';
+    canvas.style.height = image.clientHeight + 'px';
+    
+    canvas.width = image.clientWidth;
+    canvas.height = image.clientHeight;
+    
+    const scaleX = canvas.width / image.naturalWidth;
+    const scaleY = canvas.height / image.naturalHeight;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    annotationsToDraw.forEach(ann => {
+        const box = ann.bbox ? ann.bbox : [ann.x_min, ann.y_min, ann.x_max, ann.y_max];
+        const x = box[0] * scaleX;
+        const y = box[1] * scaleY;
+        // PERBAIKAN 2: Seharusnya box[2]
+        const width = (box[2] - box[0]) * scaleX;
+        const height = (box[3] - box[1]) * scaleY;
+        const label = ann.label;
+        const color = ann.is_auto_generated ? '#f59e0b' : '#34D399';
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, width, height);
+
+        const fontSize = 12;
+        ctx.font = `${fontSize}px sans-serif`;
+        const textMetrics = ctx.measureText(label);
+        
+        ctx.fillStyle = color;
+        ctx.fillRect(x - 1, y - fontSize - 5, textMetrics.width + 8, fontSize + 4);
+
+        ctx.fillStyle = 'white';
+        ctx.textBaseline = 'top';
+        ctx.fillText(label, x + 3, y - fontSize - 2);
+    });
+  }
+
+  // Fungsi saat tombol "Label Assist" ditekan (TIDAK BERUBAH)
+  function toggleLabelStatus() {
+    const btn = document.getElementById('labelStatusBtn');
+    const isActive = btn.classList.contains('bg-green-500');
+    const initialAnnotations = JSON.parse('{{ annotations_json|safe }}');
+
+    if (isActive) {
+      btn.classList.remove('bg-green-500');
+      btn.classList.add('bg-red-500');
+      btn.textContent = 'Label Assist 🔴';
+      drawAllAnnotations(initialAnnotations);
+    } else {
+      btn.classList.remove('bg-red-500');
+      btn.classList.add('bg-green-500');
+      btn.textContent = 'Processing... ⏳';
+      btn.disabled = true;
+
+      fetch("{% url 'annotator:send_image' image.id %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          fetch("{% url 'annotator:get_result_json' image.id %}")
+            .then(res => res.json())
+            .then(newAnnotations => {
+              const allAnnotations = initialAnnotations.concat(newAnnotations);
+              drawAllAnnotations(allAnnotations);
+              btn.textContent = 'Label Assist 🟢';
+              btn.disabled = false;
+            });
+        } else {
+          alert("Gagal memproses gambar: " + data.error);
+          btn.textContent = 'Label Assist 🔴';
+          btn.disabled = false;
+        }
+      })
+      .catch(err => {
+        alert("Terjadi kesalahan jaringan.");
+        console.error(err);
+        btn.textContent = 'Label Assist 🔴';
+        btn.disabled = false;
+      });
+    }
+  }
+
+  // =================================================================
+  // PERUBAHAN UTAMA DI SINI
+  // =================================================================
+  function runDrawing() {
+    const initialAnnotations = JSON.parse('{{ annotations_json|safe }}');
+    // Beri jeda 50 milidetik sebelum menggambar
+    setTimeout(() => {
+      drawAllAnnotations(initialAnnotations);
+    }, 50); 
+  }
+
+  window.addEventListener('load', function () {
+    const image = document.getElementById('labelingImage');
+
+    if (image.complete && image.naturalWidth > 0) {
+      runDrawing();
+    } else {
+      image.onload = runDrawing;
+    }
+    window.onresize = runDrawing;
+  });
+</script>
 </body>
 </html>
