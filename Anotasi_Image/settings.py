@@ -1,6 +1,14 @@
 import os
 from pathlib import Path
 
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "ba81abbf02db.ngrok-free.app",
+    "*",  # opsional untuk testing
+]
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

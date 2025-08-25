@@ -15,7 +15,7 @@
   </div>
   <div>
     <div class="d-flex">
-      <span class="text-white">{{ profile_title }}</span>
+      <span class="text-white">{{ nama_profile_job }}</span>
       <span class="ps-1 pe-1 text-white"></span>
       <div class="d-flex">
         <span style="color: white;">
@@ -61,7 +61,7 @@
       <div class="d-flex justify-content-senter align-items-center" style="font-size: 1.2rem;" >
         <div class="btn" id="prevBtn">
           <span style="color: white;">
-            <a href="{% if image_index > 1 %}{% url 'reviewer:isu_anotasi' image_index|add:'-2' %}{% else %}#{% endif %}" id="prevBtn" class="text-secondary text-decoration-none"> 
+            <a href="{% if image_index > 1 %}{% url 'reviewer:isu_anotasi' image_index|add:'-2' %}?profile_id={{ profile_id }}{% else %}#{% endif %}  " id="prevBtn" class="text-secondary text-decoration-none"> 
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
               <path fill="#ffffff" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m14 7l-5 5m0 0l5 5"/>
             </svg>
@@ -71,7 +71,7 @@
         <div class="ms-3 me-3 text-center text-white" id="pageInfo" style="width: 60px;">{{ image_index }} / {{ total_images }}</div>
         <div class=" btn justify-content-senter align-items-center" id="nextBtn" style="height: 40px;">
           <span style="color: white;">
-            <a href="{% if image_index < total_images %}{% url 'reviewer:isu_anotasi' image_index %}{% else %}#{% endif %}" id="nextBtn">
+            <a href="{% if image_index < total_images %}{% url 'reviewer:isu_anotasi' image_index %}?profile_id={{ profile_id }}{% else %}#{% endif %}" id="nextBtn">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
               <path fill="#ffffff" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m10 17l5-5m0 0l-5-5"/>
             </svg>
@@ -142,7 +142,7 @@
       <div style="height: 10px"></div>
       {% for segmentasi in segmentasi_list %}
       <div class="d-flex align-items-center border" style="width: 100%">
-        <div class="ps-2">{{ segmentasi.label_segmentasi }}</div>
+        <div class="ps-2">{{ segmentasi.label }}</div>
         <div class="ms-auto badge text-dark text me-1" style="background-color: #d4d4d4">{{ forloop.counter }}</div>
       </div>
       {% endfor %}
@@ -255,7 +255,6 @@
                   </div>
                 </div>
               </li>
-              
               <li class="list-group-item d-flex align-items-center justify-content-between p-0">
                 <div class="d-flex align-items-center ps-1">
                   <span class="me-2" style="color: gold">
@@ -335,17 +334,23 @@
           </div>
           <div class="collapse" id="konteninstance">
             <ul class="list-group list-group-flush">
+              {% for item in segmentasi_anotasi_info %}
               <li class="list-group-item d-flex align-items-center justify-content-between p-0">
                 <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: red">
+                  <span class="me-2" style="color: {{ item.warna }}">
                     {% include "icons/rectangle.html" %}
                   </span>
-                  <span>mobil 1</span>
+                  <span>{{ item.nama }}</span>
                 </div>
                 <div>
                   <span style="color: #f6d35c">●</span>
-                  <span class="m-0 p-0">
+                  <span class="eye-show" id="eye-show-{{ item.id }}" data-id="{{ item.id }}" 
+                        style="display:inline; cursor: pointer;">
                     {% include "icons/eye-show.html" %}
+                  </span>
+                  <span class="eye-hide" id="eye-hide-{{ item.id }}" data-id="{{ item.id }}" 
+                        style="display:none; cursor: pointer;">
+                    {% include "icons/eye-hide.html" %}
                   </span>
                   <div class="btn-group dropend">
                     <span type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -423,154 +428,7 @@
                   </div>
                 </div>
               </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: red">
-                    {% include "icons/rectangle.html" %}
-                  </span>
-                  <span>mobil 2</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <div class="btn-group dropend">
-                    <span type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                      {% include "icons/three-dot.html" %}
-                    </span>
-                    <ul class="dropdown-menu p-0">
-                      <li class="dropdown-item">
-                        <a class="text-decoration-none" href="#">
-                          <span style="color: red;">
-                            {% include "icons/delete.html" %}
-                          </span>
-                          <span class="text-danger h6-font-size">Delete</span>
-                        </a>
-                      </li>
-                      <li>
-                        <div class="dropend">
-                          <a class="dropdown-item text-decoration-none text-dark" href="#" data-bs-toggle="dropdown" aria-expanded="false">
-                            <span>
-                              {% include "icons/change-circle.html" %}
-                            </span>
-                            <span>Change Class</span>
-                          </a>
-                          <ul class="dropdown-menu p-0">
-                            <div class="d-flex justify-content-center p-0 m-0 text-white" style="background-color: #0F84D0;width: 100%;"><span>Class Editor</span></div>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">1</div>
-                                <div class="ps-2">mobil</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">2</div>
-                                <div class="ps-2">motor</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">3</div>
-                                <div class="ps-2">truk</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">4</div>
-                                <div class="ps-2">bus</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">5</div>
-                                <div class="ps-2">kereta</div>
-                              </a>
-                            </li>
-                          </ul>
-                        </div>
-                      </li>
-                      <li class="dropdown-item">
-                        <a class="text-decoration-none text-dark" href="#">
-                          <span>
-                            {% include "icons/git-isu.html" %}
-                          </span>
-                          <span>Make Issue</span>
-                        </a>
-                      </li>
-                      <li class="dropdown-item">
-                        <a class="text-decoration-none text-dark" href="#">
-                          <span>
-                            {% include "icons/copy-fill.html" %}
-                          </span>
-                          <span>Copy</span>
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: gold">
-                    {% include "icons/rectangle.html" %}
-                  </span>
-                  <span>orang 1</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: gold">
-                    {% include "icons/rectangle.html" %}
-                  </span>
-                  <span>orang 2</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: gold">
-                    {% include "icons/rectangle.html" %}
-                  </span>
-                  <span>orang 3</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
+              {% endfor %}
             </ul>
           </div>
         </div>
@@ -840,59 +698,114 @@
       </div>
       <div class="bg-secondary w-100">
         <div class="">
-          <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">
-            <img id="zoomImage" src="/media/gambar/anotasi/{{ filename }}" alt="Gambar"
-                style="display: block; transform-origin: top left; width: {{ image_width }}px ; height: {{ image_height }}px;">
-            <svg id="svgSemantic" width="{{ image_width }}" height="{{ image_height }}"
-                style="position: absolute; top: 0; left: 0; pointer-events: none;">
-                {% for poly in polygon_semantic_list %}
-                  <polygon 
-                    points="{{ poly.points }}"
-                    fill="{{ poly.warna }}"
-                    fill-opacity="0.4"
-                    stroke="{{ poly.warna }}"
-                    stroke-width="2">
-                    <title>{{ poly.label }}</title>
-                  </polygon>
-                {% endfor %}
-              </svg>
-            <svg id="svgInstance" width="{{ image_width }}" height="{{ image_height }}"
-                    style="position: absolute; top: 0; left: 0; pointer-events: none;">
-              {% for anotasi in anotasi_box %}
-              <rect 
-                x="{{ anotasi.koordinat_x }}" 
-                y="{{ anotasi.koordinat_y }}" 
-                width="{{ anotasi.lebar }}" 
-                height="{{ anotasi.tinggi }}" 
-                fill="none" 
-                stroke="{{ anotasi.id_segmentasi.warna_segmentasi }}" 
-                stroke-width="2"/>
-              {% endfor %}
-            </svg>
+          <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">n
+            <img id="zoomImage" src="/media/{{ filename }}" alt="Gambar"
+                style="display: block; transform-origin: top left; width: {{ lebar_gambar }}px ; height: {{ tinggi_gambar }}px;">
+<svg id="svgSemantic" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
+     style="position: absolute; top: 0; left: 0;">
+    {% for poly in polygon_semantic_list %}
+      <g class="semantic-group">
+        <!-- polygon -->
+        <polygon 
+          class="semantic-polygon"
+          points="{{ poly.points }}"
+          fill="{{ poly.warna }}"
+          fill-opacity="0.4"
+          stroke="{{ poly.warna }}"
+          stroke-width="2">
+          <title>{{ poly.label }}</title>
+        </polygon>
+
+        <!-- background label (sementara width=50, nanti diubah JS) -->
+        <rect 
+          class="label-bg"
+          data-label="{{ poly.label }}"
+          data-color="{{ poly.warna }}"
+          x="{{ poly.min_x }}" 
+          y="{{ poly.min_y|add:-18 }}" 
+          width="50" height="18" 
+          rx="3" ry="3"/>
+
+        <!-- teks label -->
+        <text 
+          class="label-text"
+          x="{{ poly.min_x|add:4 }}" 
+          y="{{ poly.min_y|add:-5 }}" 
+          font-size="13" font-weight="bold" fill="white">
+          {{ poly.label }}
+        </text>
+      </g>
+    {% endfor %}
+</svg>
+<svg id="svgInstance" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
+     style="position: absolute; top: 0; left: 0;">
+    {% for anotasi in anotasi_box %}
+      <g class="bbox-group">
+        <rect 
+          class="bbox"
+          x="{{ anotasi.x_coordinate }}" 
+          y="{{ anotasi.y_coordinate }}" 
+          width="{{ anotasi.width }}" 
+          height="{{ anotasi.height }}" 
+          fill="none" 
+          stroke="{{ anotasi.segmentation.color }}" 
+          stroke-width="2"/>
+
+        <!-- background label, width akan diupdate JS -->
+        <rect 
+          class="label-bg"
+          data-label="{{ anotasi.segmentation.label }}"
+          data-color="{{ anotasi.segmentation.color }}"
+          x="{{ anotasi.x_coordinate }}" 
+          y="{{ anotasi.y_coordinate|add:-18 }}" 
+          width="50" height="18" 
+          rx="3" ry="3"/>
+
+        <text 
+          class="label-text"
+          x="{{ anotasi.x_coordinate|add:4 }}" 
+          y="{{ anotasi.y_coordinate|add:-5 }}" 
+          font-size="13" font-weight="bold" fill="white">
+          {{ anotasi.segmentation.label }}
+        </text>
+      </g>
+    {% endfor %}
+</svg>
             <svg id="svgPanoptic" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
-                    style="position: absolute; top: 0; left: 0; pointer-events: none;">
-              <polygon points="628.88,622.28 821.96,625.81 817.26,516.32 773.69,458.62 661.84,458.62 617.10,493.95"
-                fill="rgba(17,141,255,0.3)" stroke="#118DFF" stroke-width="2" />
-              <polygon points="471.75,518.89 513.91,515.86 525.68,511.30 524.92,489.65 516.19,476.74 482.39,477.88 468.71,487.75 468.71,500.28"
-                fill="rgba(0,255,41,0.3)" stroke="#00FF29" stroke-width="2" />
-              <!-- orang -->
-              <polygon points="368.92,471.22 356.55,474.24 353.53,479.07 356.24,492.36 355.34,516.21 347.49,527.98 353.83,532.21 339.94,569.04 362.28,570.85 364.09,546.70 376.17,561.79 377.07,569.34 395.19,561.49 375.56,530.70 378.89,507.75 373.45,487.53"
-                fill="rgba(158,0,255,0.3)" stroke="#9E00FF" stroke-width="2" />
-              <polygon points="139.21,483.88 138.00,490.22 126.23,512.56 136.50,520.71 137.10,539.43 148.27,539.13 147.97,521.92 159.14,499.58 150.38,489.32 147.67,481.47"
-                fill="rgba(7,38,144,0.3)" stroke="#072690" stroke-width="2" />
-              <polygon points="32.34,495.66 21.78,500.49 20.27,522.22 20.87,521.92 18.76,540.33 29.63,549.39 39.59,546.67 37.48,537.62 44.72,518.30 49.85,524.94 56.19,519.81 51.97,507.73 45.93,495.66 42.00,487.50 34.76,489.62"
-                fill="rgba(255,112,0,0.3)" stroke="#FF7A00" stroke-width="2" />
-              <!-- gedung -->
-              <polygon points="464.04,177.23 651.25,168.99 681.86,231.39 705.41,236.10 706.58,416.24 464.04,428.01"
-                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
-              <polygon points="726.60,11.22 1097.47,13.58 1108.07,356.19 987.97,351.48 919.69,305.57 801.95,318.52 737.19,337.36"
-                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
-              <polygon points="451.09,367.97 451.09,46.55 401.64,19.47 265.07,44.19 255.65,209.02 83.75,210.20 59.03,396.22"
-                fill="rgba(0,71,255,0.3)" stroke="#0047FF" stroke-width="2" />
-              <!-- Jalanan -->
-              <polygon points="597.09,495.12 574.72,508.07 541.75,506.90 509.96,522.20 461.69,518.67 393.40,524.56 394.58,577.54 326.29,577.54 331.00,531.62 103.77,541.04 19.00,602.26 24.89,690.57 1135.15,699.99 1122.19,635.23 938.52,586.96 918.51,555.17 950.30,537.51 986.80,537.51 962.07,526.91 846.69,528.09 843.16,565.77 846.69,641.12 707.76,639.94 638.30,637.58 599.44,611.68 608.86,542.22 614.75,512.78"
-                fill="rgba(0,209,255,0.3)" stroke="#00D1FF" stroke-width="2" />
-            </svg>
+     style="position: absolute; top: 0; left: 0;">
+    {% for poly in panoptic_list %}
+      <g class="panoptic-group">
+        <!-- polygon -->
+        <polygon 
+          points="{{ poly.points }}"
+          fill="{{ poly.fill }}"
+          stroke="{{ poly.stroke }}"
+          stroke-width="2" 
+          fill-opacity="0.3">
+        </polygon>
+
+        <!-- background label -->
+        <rect 
+          class="label-bg"
+          data-label="{{ poly.label }}"
+          data-color="{{ poly.fill }}"
+          x="{{ poly.min_x }}" 
+          y="{{ poly.min_y|add:-18 }}" 
+          width="50" 
+          height="18" 
+          rx="3" ry="3"/>
+
+        <!-- teks label -->
+        <text 
+          class="label-text"
+          x="{{ poly.min_x|add:4 }}" 
+          y="{{ poly.min_y|add:-5 }}" 
+          font-size="13" font-weight="bold" fill="white">
+          {{ poly.label }}
+        </text>
+      </g>
+    {% endfor %}
+</svg>
           </div>
         </div>
       </div>
@@ -909,16 +822,19 @@
 document.addEventListener("DOMContentLoaded", function () {
   const toggles = document.querySelectorAll('.collapse-toggle');
 
+  const svgSemantic = document.getElementById("svgSemantic");
+  const svgInstance = document.getElementById("svgInstance");
+  const svgPanoptic = document.getElementById("svgPanoptic");
+
+  // =======================
+  // 1. Eye Utama (Group Besar)
+  // =======================
   toggles.forEach(toggleGroup => {
     const collapseId = toggleGroup.getAttribute('data-target');
     const labelSelector = toggleGroup.getAttribute('data-label');
     const iconSelector = toggleGroup.getAttribute('data-icon');
     const eyeSelector = toggleGroup.getAttribute('data-eye');
     const mode = toggleGroup.getAttribute('data-mode');
-
-    const svgSemantic = document.getElementById("svgSemantic");
-    const svgInstance = document.getElementById("svgInstance");
-    const svgPanoptic = document.getElementById("svgPanoptic");
 
     const collapseEl = document.querySelector(collapseId);
     const labelEl = document.querySelector(labelSelector);
@@ -947,7 +863,7 @@ document.addEventListener("DOMContentLoaded", function () {
         svgSemantic.style.display = 'none';
         svgInstance.style.display = 'inline';
         svgPanoptic.style.display = 'none';
-      } else if (mode === "instance") {
+      } else if (mode === "panoptic") {
         svgSemantic.style.display = 'none';
         svgInstance.style.display = 'none';
         svgPanoptic.style.display = 'inline';
@@ -1022,9 +938,58 @@ document.addEventListener("DOMContentLoaded", function () {
       svgPanoptic.style.display = 'none';
     });
   });
+
+  // =======================
+  // 2. Eye Sub-Bab (tiap item list)
+  // =======================
+document.querySelectorAll(".eye-show, .eye-hide").forEach(el => {
+  el.addEventListener("click", function() {
+    const id = this.dataset.id; // ambil id item yang diklik
+    const eyeShow = document.getElementById("eye-show-" + id);
+    const eyeHide = document.getElementById("eye-hide-" + id);
+    const objectEl = document.getElementById("object-" + id); // rect di SVG
+
+    if (!eyeShow || !eyeHide || !objectEl) return; // safety check
+
+    if (eyeShow.style.display === "inline") {
+      eyeShow.style.display = "none";
+      eyeHide.style.display = "inline";
+      objectEl.style.display = "none";
+    } else {
+      eyeShow.style.display = "inline";
+      eyeHide.style.display = "none";
+      objectEl.style.display = "inline";
+    }
+  });
 });
-  //Zoom 
-  //Zoom 
+});
+// Sesuaikan panjang background label agar sesuai teks
+document.querySelectorAll("#svgInstance .bbox-group").forEach(group => {
+  const textEl = group.querySelector(".label-text");
+  const rectEl = group.querySelector(".label-bg");
+
+  // hitung panjang text aktual
+  const textLength = textEl.getComputedTextLength();
+  rectEl.setAttribute("width", textLength + 8); // + padding
+  rectEl.setAttribute("fill", rectEl.dataset.color);
+});
+document.querySelectorAll("#svgSemantic .semantic-group").forEach(group => {
+  const textEl = group.querySelector(".label-text");
+  const rectEl = group.querySelector(".label-bg");
+
+  const textLength = textEl.getComputedTextLength();
+  rectEl.setAttribute("width", textLength + 8); // + padding
+  rectEl.setAttribute("fill", rectEl.dataset.color);
+});
+document.querySelectorAll("#svgPanoptic .panoptic-group").forEach(group => {
+  const textEl = group.querySelector(".label-text");
+  const rectEl = group.querySelector(".label-bg");
+
+  const textLength = textEl.getComputedTextLength();
+  rectEl.setAttribute("width", textLength + 8); // + padding
+  rectEl.setAttribute("fill", rectEl.dataset.color);
+});
+
 const zoomInButton = document.getElementById("zoomIn");
 const zoomOutButton = document.getElementById("zoomOut");
 const zoomFitButton = document.getElementById("zoomFit");
@@ -1069,36 +1034,6 @@ function applyZoom() {
     svg.style.transformOrigin = "top left";
   });
 }
-/*
-  //Pagination
-  let currentPage = 1;
-  const totalPages = 10;
 
-  const pageInfo = document.getElementById('pageInfo');
-  const prevBtn = document.getElementById('prevBtn');
-  const nextBtn = document.getElementById('nextBtn');
-
-  function updatePagination() {
-    pageInfo.textContent = `${currentPage} / ${totalPages}`;
-    prevBtn.disabled = currentPage === 1;
-    nextBtn.disabled = currentPage === totalPages;
-  }
-
-  prevBtn.addEventListener('click', () => {
-    if (currentPage > 1) {
-      currentPage--;
-      updatePagination();
-    }
-  });
-
-  nextBtn.addEventListener('click', () => {
-    if (currentPage < totalPages) {
-      currentPage++;
-      updatePagination();
-    }
-  });
-
-  updatePagination(); // Initial update
-  */
 </script>
 {% endblock %}

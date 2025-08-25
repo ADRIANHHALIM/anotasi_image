@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 import base64
+from PIL import Image
 import os
 from datetime import datetime, time
 from django.utils import timezone
@@ -17,6 +18,26 @@ from .forms import LoginForm  # Only login form needed - signup handled by maste
 import re
 
 # Create your views here.
+def reviewer_required(view_func):
+    """
+    Custom decorator that requires user to be logged in and have reviewer or master role
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('reviewer:login')
+        if request.user.role not in ['reviewer', 'master']:
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for reviewers only.')
+            # Redirect to appropriate portal instead of forcing login
+            if request.user.role == 'annotator':
+                return redirect('/annotator/annotate/')
+            elif request.user.role == 'master':
+                return redirect('/')
+            else:
+                # Only redirect to login if user role is unknown/invalid
+                return redirect('reviewer:login')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 def reviewer_required(view_func):
     """
@@ -169,6 +190,7 @@ def task_review(request, id):
     }
     return render(request, 'reviewer/task_review.html', context)
 
+
 @reviewer_required
 def isu(request):
     user = request.user
@@ -181,7 +203,6 @@ def isu(request):
         **get_base64_images(),
     }
     return render(request, 'reviewer/isu.html', context)
-
 @csrf_protect
 @csrf_protect
 @csrf_protect
@@ -237,105 +258,116 @@ def login(request):
             **get_base64_images(),
         }
         return render(request, 'reviewer/login.html', context)
+
     
 @reviewer_required
-def isu_anotasi(request, index):
+def isu_anotasi(request, index=0):
     user = request.user
-    user_id = user.id
-    # Get profile_id from session or URL parameter - you may need to adjust this
-    profile_id = request.GET.get('profile_id') or request.session.get('profile_id')
-    
-    if not profile_id:
+    profile_id_raw = request.GET.get('profile_id') or request.session.get('profile_id')
+    try:
+        profile_id = int(profile_id_raw)
+    except (TypeError, ValueError):
         return redirect('reviewer:home_reviewer')
 
-    # ✅ Validasi bahwa profile_id benar-benar milik user yang login
-    profile = JobProfile.objects.filter(id=profile_id, worker_reviewer=user_id).first()
+    profile = JobProfile.objects.filter(id=profile_id, worker_reviewer=user.id).first()
     if not profile:
-        return redirect('reviewer:home_reviewer')  # atau tampilkan pesan error
+        return redirect('reviewer:home_reviewer')
 
-    nama_profile_job = profile.title
-
-    # ✅ Ambil JobImage hanya untuk profile ini
-    job_items = JobImage.objects.select_related('image').filter(
-        job=profile_id
-    ).order_by('id')
-
-    if index < 0 or index >= job_items.count():
-        return redirect('reviewer:isu_anotasi', index=0)  # fallback ke index awal
-
-    job_item = job_items[index]
-    gambar = job_item.image
-
-    segmentasi_list = Segmentation.objects.filter(job_image=job_item)
-    anotasi_list = Annotation.objects.filter(job_image=job_item)
-
-    # === Basic annotation data (simplified for new model structure) ===
-    # Note: This needs to be updated to work with the new annotation models
-    segmentasi_list = Segmentation.objects.filter(job=job_item.job)
-    anotasi_list = Annotation.objects.filter(job_image=job_item)
-
-    # === Semantic (simplified) ===
-    anotasi_semantic = Annotation.objects.filter(
-        job_image=job_item,
-        segmentation__segmentation_type__name='Semantic'
+    job_images = (
+        JobImage.objects
+        .filter(job_id=profile_id)
+        .select_related('job')
+        .order_by('id')
     )
-    polygon_semantic_list = []
-    for anotasi in anotasi_semantic:
-        # Get polygon points for this annotation
-        points = anotasi.polygon_points.all().order_by('order')
-        if points:
-            polygon_semantic_list.append({
-                'warna': anotasi.segmentation.color if anotasi.segmentation else '#000000',
-                'label': anotasi.segmentation.label if anotasi.segmentation else 'Unknown',
-                'points': " ".join([f"{point.x_coordinate},{point.y_coordinate}" for point in points]),
+    total = job_images.count()
+    if total == 0:
+        return render(request, 'reviewer/tidak_ada_gambar.html')
+    if index < 0 or index >= total:
+        return redirect('reviewer:isu_anotasi', index=0)
+
+    # ✅ Ambil ukuran semua gambar
+    image_sizes = []
+    for img in job_images:
+        try:
+            path = img.image.path
+            with Image.open(path) as im:
+                width, height = im.size
+                image_sizes.append({'width': width, 'height': height})
+        except Exception as e:
+            image_sizes.append({'width': 0, 'height': 0})  # fallback jika gagal
+
+    # Gambar yang sedang ditampilkan
+    job_image = job_images[index]
+    gambar = job_image.image
+    current_image_size = image_sizes[index]
+    job_profile = job_image.job.id
+
+    # Ambil data segmentasi & anotasi
+    segmentasi_list = Segmentation.objects.filter(job=job_profile)
+    anotasi_list = Annotation.objects.filter(job_image=job_image)
+
+    anotasi_semantic = anotasi_list.filter(segmentation__segmentation_type__name='semantic')
+    anotasi_instance = anotasi_list.filter(segmentation__segmentation_type__name='instance')
+    anotasi_panoptic = anotasi_list.filter(segmentation__segmentation_type__name='panoptic')
+
+    polygon_semantic_list = [
+        {
+            'warna': a.segmentation.color,
+            'label': a.segmentation.label,
+            'points': " ".join(f"{p.x_coordinate},{p.y_coordinate}" for p in a.polygon_points.all().order_by('order'))
+        }
+        for a in anotasi_semantic if a.polygon_points.exists()
+    ]
+
+    polygon_panoptic_list = [
+        {
+            'warna': a.segmentation.color,
+            'label': a.segmentation.label,
+            'points': " ".join(f"{p.x_coordinate},{p.y_coordinate}" for p in a.polygon_points.all().order_by('order'))
+        }
+        for a in anotasi_panoptic if a.polygon_points.exists()
+    ]
+    segmentasi_anotasi_info = []
+
+    for segmentasi in segmentasi_list:
+        anotasi_terkait = anotasi_list.filter(segmentation=segmentasi)
+        anotasi_items = []
+        for i, anotasi in enumerate(anotasi_terkait, start=1):
+            anotasi_items.append({
+                'anotasi_id': anotasi.id,
+                'nama': f"{segmentasi.label} {i}",
+                'warna': segmentasi.color,
+                'label': segmentasi.label,
+                'tipe': segmentasi.segmentation_type.name.title(),  # Instance / Semantic / Panoptic
             })
-
-    # === Instance (simplified) ===
-    anotasi_instance = Annotation.objects.filter(
-        job_image=job_item,
-        segmentation__segmentation_type__name='Instance'
-    )
-
-    # === Panoptic (simplified) ===
-    anotasi_panoptic = Annotation.objects.filter(
-        job_image=job_item,
-        segmentation__segmentation_type__name='Panoptic'
-    )
-    polygon_panoptic_list = []
-    for anotasi in anotasi_panoptic:
-        # Get polygon points for this annotation
-        points = anotasi.polygon_points.all().order_by('order')
-        if points:
-            polygon_panoptic_list.append({
-                'warna': anotasi.segmentation.color if anotasi.segmentation else '#000000',
-                'label': anotasi.segmentation.label if anotasi.segmentation else 'Unknown',
-                'points': " ".join([f"{point.x_coordinate},{point.y_coordinate}" for point in points]),
-            })
-
+        if anotasi_items:
+            segmentasi_anotasi_info.extend(anotasi_items)
+    print("JobImage ID:", job_image.id)
+    print("Segmentasi count:", Segmentation.objects.filter(job=job_image).count())  
     context = {
         'username': user.username,
-        'number_email': user.email or user.phone_number or '',
+        'number_email': user.email or getattr(user, 'phone_number', '') or '',
         'profile_id': profile_id,
-        'nama_profile_job': nama_profile_job,
-        'filename': gambar.name if hasattr(gambar, 'name') else 'image.jpg',
-        'gambar_id': gambar.id if hasattr(gambar, 'id') else job_item.id,
+        'nama_profile_job': profile.title,
+        'filename': gambar.name,
+        'gambar_id': job_image.id,
         'image_index': index + 1,
-        'total_images': job_items.count(),
+        'total_images': total,
         'segmentasi_list': segmentasi_list,
         'anotasi_list': anotasi_list,
         'anotasi_box': anotasi_instance,
-        'lebar_gambar': 800,  # Default width - update if image dimensions are available
-        'tinggi_gambar': 600,  # Default height - update if image dimensions are available
+        'lebar_gambar': current_image_size['width'],    # ✅ width gambar sekarang
+        'tinggi_gambar': current_image_size['height'],  # ✅ height gambar sekarang
+        'image_sizes': image_sizes,                     # ✅ semua ukuran gambar
         'polygon_semantic_list': polygon_semantic_list,
         'polygon_panoptic_list': polygon_panoptic_list,
         'total_semantic': anotasi_semantic.count(),
         'total_instance': anotasi_instance.count(),
         'total_panoptic': anotasi_panoptic.count(),
+        'segmentasi_anotasi_info': segmentasi_anotasi_info,
         **get_base64_images(),
     }
-
     return render(request, 'reviewer/isu_anotasi.html', context)
-
 
 @reviewer_required
 def isu_image(request):

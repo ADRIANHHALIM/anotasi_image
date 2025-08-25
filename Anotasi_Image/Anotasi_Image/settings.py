@@ -13,6 +13,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv  # Gunakan dotenv untuk membaca file .env
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "ba81abbf02db.ngrok-free.app",
+    "*",  # opsional untuk testing
+]
+
+
 
 # Load environment variables dari file .env
 load_dotenv()
