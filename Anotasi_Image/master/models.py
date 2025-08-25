@@ -5,6 +5,24 @@ from django.db.models.functions import Cast
 from django.conf import settings
 import os
 
+class User(models.Model):
+    ROLE_CHOICES = [
+        ('annotator', 'Annotator'),
+        ('master', 'Master'),
+        ('reviewer', 'Reviewer'),
+    ]
+
+    username = models.CharField(max_length=150, unique=True)
+    email = models.EmailField(max_length=254, unique=True)
+    first_name = models.CharField(max_length=50, blank=True, null=True)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='annotator')
+    date_joined = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.username} ({self.get_role_display()})"
+    
 class CustomUserManager(BaseUserManager):
     """Custom manager untuk model CustomUser agar mendukung login dengan email atau username."""
 
@@ -343,6 +361,7 @@ class Notification(models.Model):
         from django.utils.timesince import timesince
         return f"{timesince(self.created_at)} ago"
 
+<<<<<<< HEAD
 class Annotation(models.Model):
     # Menyimpan satu data anotasi (bounding box) pada sebuah gambar
     image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='annotations')
@@ -372,3 +391,190 @@ class Annotation(models.Model):
     def __str__(self):
         return f"Anotasi '{self.label}' pada gambar ID {self.image.id}"
 
+=======
+# ===== ANNOTATION SYSTEM MODELS (Translated from reviewer models) =====
+
+class SegmentationType(models.Model):
+    """Model for different types of segmentation (Semantic, Instance, Panoptic)"""
+    name = models.CharField(max_length=50, unique=True)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class AnnotationTool(models.Model):
+    """Model for annotation tools configuration"""
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        ordering = ['name']
+
+
+class Segmentation(models.Model):
+    """Model for segmentation tasks with job relationships (translated from reviewer Segmentasi)"""
+    job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='segmentations')
+    segmentation_type = models.ForeignKey(SegmentationType, on_delete=models.CASCADE)
+    label = models.CharField(max_length=100)  # label_segmentasi -> label
+    color = models.CharField(max_length=7)  # warna_segmentasi -> color (hex color)
+    coordinates = models.TextField(blank=True, null=True)  # koordinat -> coordinates
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.label} ({self.segmentation_type.name}) - {self.job.title}"
+
+    class Meta:
+        ordering = ['job', 'label']
+        unique_together = ['job', 'label']
+
+
+class Annotation(models.Model):
+    """Model for individual annotations (translated from reviewer Anotasi)"""
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_review', 'In Review'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+        ('needs_revision', 'Needs Revision'),
+    ]
+
+    job_image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='annotations')
+    segmentation = models.ForeignKey(Segmentation, on_delete=models.CASCADE, related_name='annotations')
+    tool = models.ForeignKey(AnnotationTool, on_delete=models.SET_NULL, null=True, blank=True)
+    annotator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_annotations')
+    reviewer = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_annotations')
+    
+    # Annotation coordinates (translated from koordinat_x, koordinat_y, lebar, tinggi)
+    x_coordinate = models.FloatField(null=True, blank=True)  # koordinat_x -> x_coordinate
+    y_coordinate = models.FloatField(null=True, blank=True)  # koordinat_y -> y_coordinate
+    width = models.FloatField(null=True, blank=True)  # lebar -> width
+    height = models.FloatField(null=True, blank=True)  # tinggi -> height
+    
+    # Status and verification
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    confidence_score = models.FloatField(null=True, blank=True, help_text="Confidence score (0.0 to 1.0)")
+    notes = models.TextField(blank=True, null=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Annotation {self.id} - {self.segmentation.label} on {self.job_image}"
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['job_image', 'status']),
+            models.Index(fields=['annotator', 'created_at']),
+        ]
+
+
+class PolygonPoint(models.Model):
+    """Model for polygon annotation points (translated from reviewer PolygonTool)"""
+    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='polygon_points')
+    x_coordinate = models.FloatField()  # koordinat_xn -> x_coordinate
+    y_coordinate = models.FloatField()  # koordinat_yn -> y_coordinate
+    order = models.PositiveIntegerField()  # Order of points in the polygon
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Point {self.order} ({self.x_coordinate}, {self.y_coordinate}) for Annotation {self.annotation.id}"
+
+    class Meta:
+        ordering = ['annotation', 'order']
+        unique_together = ['annotation', 'order']
+
+
+class AnnotationIssue(models.Model):
+    """Enhanced issue tracking for annotations (translated from reviewer IsuAnotasi)"""
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    ]
+
+    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='annotation_issues')
+    title = models.CharField(max_length=255)
+    description = models.TextField()  # message -> description
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    
+    # Relationships
+    reported_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reported_annotation_issues')
+    assigned_to = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_annotation_issues')
+    parent_issue = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='child_issues')  # id_parent_isu_anotasi
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)  # tanggal_buat -> created_at
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Issue: {self.title} (Annotation {self.annotation.id})"
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class ImageAnnotationIssue(models.Model):
+    """Image-specific issue management (translated from reviewer IsuImage)"""
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+        ('critical', 'Critical'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('open', 'Open'),
+        ('in_progress', 'In Progress'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    ]
+
+    job_image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='image_issues')
+    title = models.CharField(max_length=255)
+    description = models.TextField()  # message -> description
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    
+    # Relationships
+    reported_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reported_image_issues')
+    assigned_to = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_image_issues')
+    parent_issue = models.ForeignKey('self', null=True, blank=True, on_delete=models.CASCADE, related_name='child_issues')  # id_parent_isu_image
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)  # tanggal_buat -> created_at
+    updated_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Image Issue: {self.title} (Image {self.job_image.id})"
+
+    class Meta:
+        ordering = ['-created_at']
+>>>>>>> 2b0cd7e218682f72290f65152bdd8940f54979cf

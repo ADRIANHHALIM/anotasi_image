@@ -1,0 +1,56 @@
+{% extends 'base_reviewer.html' %} 
+{% load crispy_forms_tags %} 
+
+{% block reviewer %}
+<a href="#" class="ps-0 pe-0 pt-0 btn" style="background-color: #0f84d0; width: 65px; height: 45px;">
+    <div>
+        <img src="{{ nav_reviewer_base64 }}" alt="nav_reviewer" style="width: 18px; height: 14px;">
+        <p style="font-size: 11px;">Reviewer</p>
+    </div>
+</a>
+{% endblock %}
+
+{% block content1 %}
+<div class="ps-1 pe-1">
+  <div>
+    <p class="ms-3 mt-2 mb-0" style="font-size: 30px">Notifications</p>
+  </div>
+  <div class="border border-dark border-bottom-0 rounded overflow-hidden">
+    <table class="table mb-0 border-dark">
+      <thead>
+        <tr>
+          <th scope="col-1" class="col-1">Task ID</th>
+          <th scope="col" class="col">Task Name</th>
+          <th scope="col" class="col-1">Time</th>
+          <th scope="col" class="col-2">Time Remaining</th>
+          <th scope="col" class="col-2">By</th>
+          <th scope="col" class="col-1">Process</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tasks %}
+        {% if t.profile and t.profile.id %}
+        <tr>
+          <td>{{ t.profile.id }}</td>
+          <td>{{ t.profile.title }}</td>
+          <td>{{ t.job_images_count|default:"-" }}</td>
+          <td>{{ t.time_remaining }}</td>
+          <td>{{ t.profile.worker_reviewer.username }}</td>
+          <td>
+            <a href="{% url 'reviewer:task_review' t.profile.id %}" class="text-decoration-none"
+              >Review</a
+            >
+          </td>
+        </tr>
+        {% endif %}
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">No tasks assigned to you yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
