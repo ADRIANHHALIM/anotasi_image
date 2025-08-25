@@ -13,6 +13,14 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv  # Gunakan dotenv untuk membaca file .env
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "ba81abbf02db.ngrok-free.app",
+    "*",  # opsional untuk testing
+]
+
+
 
 # Load environment variables dari file .env
 load_dotenv()
@@ -105,8 +113,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'anotasi_image_db',
-        'USER': 'adrianhalim',  # Your macOS username
-        'PASSWORD': '',  # Empty for local development
+        'USER': 'postgres',  # Your macOS username
+        'PASSWORD': '1123',  # Empty for local development
         'HOST': 'localhost',
         'PORT': '5432',
     }

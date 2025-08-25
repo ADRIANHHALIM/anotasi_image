@@ -393,7 +393,7 @@ class AnnotationTool(models.Model):
 
 class Segmentation(models.Model):
     """Model for segmentation tasks with job relationships (translated from reviewer Segmentasi)"""
-    job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='segmentations')
+    job = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='segmentations')
     segmentation_type = models.ForeignKey(SegmentationType, on_delete=models.CASCADE)
     label = models.CharField(max_length=100)  # label_segmentasi -> label
     color = models.CharField(max_length=7)  # warna_segmentasi -> color (hex color)
