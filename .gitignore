@@ -1,0 +1,13 @@
+# Virtual environment
+env/
+
+# Python bytecode
+*.pyc
+__pycache__/
+
+# IDE files (optional)
+.vscode/
+.idea/
+
+# Media / temporary files
+*.log
