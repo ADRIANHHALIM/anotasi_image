@@ -13,7 +13,9 @@ from django.db.models import Count, Q
 import json
 from django.http import HttpResponse
 import requests
+
 AI_API_URL = "https://pursue-various-engineer-corporate.trycloudflare.com/api/proses-gambar/"
+
 
 # Create your views here.
 
@@ -295,7 +297,9 @@ def accept_notification_view(request, notification_id):
             'message': str(e)
         }, status=400)
     
+
 @annotator_required
+
 def label_image_view(request, job_id, image_id):
 
     job = get_object_or_404(JobProfile, id=job_id, worker_annotator=request.user)
@@ -306,6 +310,7 @@ def label_image_view(request, job_id, image_id):
     image_list = list(all_images.order_by('id'))
     try:
         current_index = image_list.index(image) + 1
+
         current_list_index = image_list.index(image)
     except ValueError:
         current_index = 1
@@ -342,6 +347,29 @@ def label_image_view(request, job_id, image_id):
     classes.sort()  # Sort alphabetically for better display
     print(f"DEBUG: Classes found: {classes}")
     
+
+    except ValueError:
+        current_index = 1
+
+    status_counts = {
+         'unannotated': all_images.filter(status='unannotated').count(),
+        'in_progress': all_images.filter(status='in_progress').count(),
+        'in_review': all_images.filter(status='in_review').count(),
+        'in_rework': all_images.filter(status='in_rework').count(),
+        'annotated': all_images.filter(status='annotated').count(),
+        'finished': all_images.filter(status='finished').count(),
+    }
+
+    # Dummy classes - bisa ganti sesuai database
+    classes = ['mobil', 'orang', 'jalan', 'gedung']
+    
+    # ambil data anotasi dari database
+    annotations_qs = image.annotations.all()
+    
+    # definisikan data json nya
+    annotation_data = 'detections'
+
+
     # format data agar mudah dibaca oleh javascript
     annotation_data = []
     for ann in annotations_qs:
@@ -350,7 +378,9 @@ def label_image_view(request, job_id, image_id):
             'bbox': [ann.x_min, ann.y_min, ann.x_max, ann.y_max],
             'is_auto_generated': ann.is_auto_generated 
         })
+
     print(f"DEBUG: Annotation data prepared: {annotation_data}")
+
 
 
    
@@ -364,8 +394,10 @@ def label_image_view(request, job_id, image_id):
         'total_images': all_images.count(),
         'current_image_index': current_index,
         'total_image': len(image_list),
+
         'prev_image_id': prev_image_id,
         'next_image_id': next_image_id,
+
         # kirim adta anotasi asli sebagai string json ke template
         'annotations_json': json.dumps(annotation_data)
     }
@@ -400,6 +432,7 @@ def send_image_view(request, image_id):
         for i, ann in enumerate(detections):
             box = ann.get('bbox')
             label = ann.get('label_vgg16')
+
             confidence = ann.get('confidence')
 
             print(f"\nDebug [{i+1}/{len(detections)}]: Memproses label '{label}' dengan box {box}, confidence: {confidence}")
@@ -439,11 +472,21 @@ def send_image_view(request, image_id):
                         image=image_obj,      # Keep legacy field for compatibility
                         segmentation=segmentation,  # Link to segmentation
                         tool=annotation_tool,
+
+
+            print(f"\nDebug [{i+1}/{len(detections)}]: Memproses label '{label}' dengan box {box}")
+
+            if box and label and len(box) == 4:
+                try:
+                    Annotation.objects.create(
+                        image=image_obj,
+
                         label=label,
                         x_min=box[0],
                         y_min=box[1],
                         x_max=box[2],
                         y_max=box[3],
+
                         x_coordinate=box[0],  # Use x_min as x_coordinate
                         y_coordinate=box[1],  # Use y_min as y_coordinate
                         width=box[2] - box[0],  # x_max - x_min
@@ -458,6 +501,12 @@ def send_image_view(request, image_id):
                     
                     saved_count += 1
                     print(f"Debug: Anotasi untuk '{label}' BERHASIL disimpan dengan segmentation dan polygon points.")
+
+                        is_auto_generated=True,
+                    )
+                    saved_count += 1
+                    print(f"Debug: Anotasi untuk '{label}' BERHASIL disimpan.")
+
                 except Exception as e:
                     print(f"!!! DEBUG: GAGAL menyimpan anotasi untuk '{label}'. Error: {e}")
             else:
@@ -465,7 +514,7 @@ def send_image_view(request, image_id):
         
         print(f"\n--- SELESAI DEBUG ---")
         print(f"Debug: Total anotasi yang berhasil disimpan: {saved_count} dari {len(detections)}")
-        
+
         # Update image status to 'annotated' after annotations are created
         if saved_count > 0:
             image_obj.status = 'annotated'
@@ -473,7 +522,7 @@ def send_image_view(request, image_id):
             print(f"Debug: Status gambar diubah menjadi 'annotated' dari {image_obj.status}")
         else:
             print(f"Debug: Tidak ada anotasi yang disimpan, status tetap {image_obj.status}")
-        
+
         return JsonResponse({'success': True, 'message': 'Gambar berhasil dikirim dan anotasi diterima.'})
 
     except requests.exceptions.RequestException as e:
@@ -487,6 +536,7 @@ def send_image_view(request, image_id):
 # menampilkan hasil JSON ke label image
 def get_result_json(request, image_id):
     image_obj = get_object_or_404(JobImage, id=image_id)
+
     annotations = Annotation.objects.filter(job_image=image_obj).values(
         'label', 'x_min', 'y_min', 'x_max', 'y_max', 'is_auto_generated'
     )
@@ -527,3 +577,9 @@ def finish_annotation_view(request, image_id):
         
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+    annotations = Annotation.objects.filter(image=image_obj).values(
+        'label', 'x_min', 'y_min', 'x_max', 'y_max', 'is_auto_generated'
+    )
+    return JsonResponse(list(annotations), safe=False)
+

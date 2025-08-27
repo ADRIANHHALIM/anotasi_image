@@ -34,9 +34,11 @@ def reviewer_required(view_func):
                 return redirect('/annotator/annotate/')
             elif request.user.role == 'master':
                 return redirect('/')
+
             elif request.user.role == 'guest':
                 messages.error(request, 'Akun Anda masih dalam status guest. Silakan tunggu admin untuk memberikan akses.')
                 return redirect('/login/')
+
             else:
                 # Only redirect to login if user role is unknown/invalid
                 return redirect('reviewer:login')
@@ -310,7 +312,11 @@ def isu_anotasi(request, index=0):
     job_profile = job_image.job.id
 
     # Ambil data segmentasi & anotasi
+
     segmentasi_list = Segmentation.objects.filter(job=job_image)
+
+    segmentasi_list = Segmentation.objects.filter(job=job_profile)
+
     anotasi_list = Annotation.objects.filter(job_image=job_image)
 
     anotasi_semantic = anotasi_list.filter(segmentation__segmentation_type__name='semantic')
@@ -346,6 +352,7 @@ def isu_anotasi(request, index=0):
                 'warna': segmentasi.color,
                 'label': segmentasi.label,
                 'tipe': segmentasi.segmentation_type.name.title(),  # Instance / Semantic / Panoptic
+
             })
         if anotasi_items:
             segmentasi_anotasi_info.extend(anotasi_items)
@@ -378,12 +385,20 @@ def isu_anotasi(request, index=0):
     print("Anotasi count:", anotasi_list.count())
     print("Semantic annotations:", anotasi_semantic.count())
     print("Panoptic annotations:", anotasi_panoptic.count())  
+
+            })
+        if anotasi_items:
+            segmentasi_anotasi_info.extend(anotasi_items)
+    print("JobImage ID:", job_image.id)
+    print("Segmentasi count:", Segmentation.objects.filter(job=job_image).count())  
+
     context = {
         'username': user.username,
         'number_email': user.email or getattr(user, 'phone_number', '') or '',
         'profile_id': profile_id,
         'nama_profile_job': profile.title,
         'filename': gambar.name,
+
         'gambar': gambar,
         'gambar_id': job_image.id,
         'image_index': index + 1,
@@ -397,6 +412,10 @@ def isu_anotasi(request, index=0):
         'in_rework_count': in_rework_count,
         'finished_count': finished_count,
         'issues_count': issues_count,
+        'gambar_id': job_image.id,
+        'image_index': index + 1,
+        'total_images': total,
+
         'segmentasi_list': segmentasi_list,
         'anotasi_list': anotasi_list,
         'anotasi_box': anotasi_instance,
@@ -409,7 +428,9 @@ def isu_anotasi(request, index=0):
         'total_instance': anotasi_instance.count(),
         'total_panoptic': anotasi_panoptic.count(),
         'segmentasi_anotasi_info': segmentasi_anotasi_info,
+
         'annotations_json': json.dumps(annotation_data),  # Add JSON data for bounding box rendering
+
         **get_base64_images(),
     }
     return render(request, 'reviewer/isu_anotasi.html', context)

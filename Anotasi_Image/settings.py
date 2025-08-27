@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+
 # Load environment variables from .env file
 load_dotenv()
 
@@ -15,6 +16,17 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-your-secret-key-cha
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
+
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "ba81abbf02db.ngrok-free.app",
+    "*",  # opsional untuk testing
+]
+
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+
 
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -52,6 +64,7 @@ USER_PORT = 8000
 # Admin port
 ADMIN_PORT = 8001
 
+
 # Database
 DATABASES = {
     'default': {
@@ -67,6 +80,9 @@ DATABASES = {
         'CONN_MAX_AGE': 600,  # Keep connections for 10 minutes
     }
 }
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1','172.16.1.54']
+
 
 # Make sure these settings are correct
 MEDIA_URL = '/media/'
