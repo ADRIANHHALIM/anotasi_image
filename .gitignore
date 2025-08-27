@@ -32,6 +32,9 @@ db.sqlite3-journal
 .env
 *.env
 env/
+anotasienv_arm64/
+venv/
+.venv/
 
 # VS Code
 .vscode/
