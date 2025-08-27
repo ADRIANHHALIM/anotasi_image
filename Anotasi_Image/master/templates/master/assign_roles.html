@@ -35,7 +35,7 @@
                                 <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
                                 <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
                                 <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
-                                <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                                <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
                             </select>
                         </div>
                         <div>
@@ -75,7 +75,7 @@
                                         <option value="guest" {% if user.role == 'guest' %}selected{% endif %}>Guest</option>
                                         <option value="annotator" {% if user.role == 'annotator' %}selected{% endif %}>Annotator</option>
                                         <option value="reviewer" {% if user.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
-                                        <option value="member" {% if user.role == 'member' %}selected{% endif %}>Member</option>
+                                        <option value="master" {% if user.role == 'master' %}selected{% endif %}>Master</option>
                                     </select>
                                 </td>
                                 <td class="py-4 px-6 border-b">{{ user.project_count }} <span class="text-gray-500">(All)</span></td>
@@ -92,6 +92,7 @@
         <div id="membersSection" class="hidden">
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-2 sm:space-y-0">
                 <h2 class="text-lg md:text-xl font-semibold">Members</h2>
+                <button class="py-2 md:py-3 px-4 md:px-6 bg-[#4527A0] text-white rounded-lg focus:outline-none text-sm md:text-lg font-medium" onclick="saveMemberChanges()">Save Changes</button>
             </div>
             
             <!-- Filters -->
@@ -102,7 +103,7 @@
                     <option value="guest">Guest</option>
                     <option value="annotator">Annotator</option>
                     <option value="reviewer">Reviewer</option>
-                    <option value="member">Member</option>
+                    <option value="master">Master</option>
                 </select>
                 <select id="groupFilter" class="py-2 md:py-3 px-3 md:px-4 border border-gray-300 rounded-lg text-sm md:text-base" onchange="filterMembers()">
                     <option value="">Group</option>
@@ -121,7 +122,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">Default Role</label>
-                            <div class="text-sm">{{ member.role|title }}</div>
+                            <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full text-sm member-role-select" data-member-id="{{ member.id }}">
+                                <option value="guest" {% if member.role == 'guest' %}selected{% endif %}>Guest</option>
+                                <option value="annotator" {% if member.role == 'annotator' %}selected{% endif %}>Annotator</option>
+                                <option value="reviewer" {% if member.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
+                                <option value="master" {% if member.role == 'master' %}selected{% endif %}>Master</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-700 mb-1">Project</label>
@@ -155,7 +161,14 @@
                                     <div class="font-medium">{{ member.email }}</div>
                                     <div class="text-gray-500 mt-1 text-sm">{{ member.phone_number }}</div>
                                 </td>
-                                <td class="py-4 px-6 border-b">{{ member.role|title }}</td>
+                                <td class="py-4 px-6 border-b">
+                                    <select class="bg-gray-200 border border-gray-300 rounded-lg focus:ring-[#4527A0] focus:border-[#4527A0] py-2 px-3 w-full member-role-select" data-member-id="{{ member.id }}">
+                                        <option value="guest" {% if member.role == 'guest' %}selected{% endif %}>Guest</option>
+                                        <option value="annotator" {% if member.role == 'annotator' %}selected{% endif %}>Annotator</option>
+                                        <option value="reviewer" {% if member.role == 'reviewer' %}selected{% endif %}>Reviewer</option>
+                                        <option value="master" {% if member.role == 'master' %}selected{% endif %}>Master</option>
+                                    </select>
+                                </td>
                                 <td class="py-4 px-6 border-b">{{ member.project_count }} <span class="text-gray-500">(All)</span></td>
                                 <td class="py-4 px-6 border-b">{{ member.group|default:"-" }}</td>
                             </tr>
@@ -208,6 +221,60 @@
             } else {
                 item.style.display = 'none';
             }
+        });
+    }
+
+    function saveMemberChanges() {
+        const selects = document.querySelectorAll('.member-role-select[data-member-id]');
+        const updates = [];
+        
+        selects.forEach(select => {
+            const memberId = select.dataset.memberId;
+            const newRole = select.value;
+            updates.push({ userId: memberId, newRole: newRole });
+        });
+        
+        if (updates.length === 0) {
+            alert('No members to update.');
+            return;
+        }
+        
+        // Show loading state
+        const saveButton = event.target;
+        const originalText = saveButton.textContent;
+        saveButton.textContent = 'Saving...';
+        saveButton.disabled = true;
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Send AJAX request to save the changes
+        fetch('/update-user-roles/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
+            },
+            body: JSON.stringify({ updates: updates })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success' || data.status === 'partial_success') {
+                alert(data.message);
+                // Refresh the page to show updated data
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving changes. Please try again.');
+        })
+        .finally(() => {
+            // Restore button state
+            saveButton.textContent = originalText;
+            saveButton.disabled = false;
         });
     }
 

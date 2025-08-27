@@ -13,6 +13,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Count, Q, F
 from django.db.models.functions import Coalesce
+from functools import wraps
 from django.utils import timezone
 import json
 from .tokens import account_activation_token
@@ -39,6 +40,28 @@ from django.conf import settings  # Add this at the top with other imports
 import logging
 
 logger = logging.getLogger(__name__)
+
+def master_required(view_func):
+    """
+    Custom decorator that requires user to be logged in and have master role
+    """
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('master:login')
+        if request.user.role != 'master':
+            messages.error(request, f'Access denied. You are logged in as {request.user.role}. This portal is for administrators only.')
+            # Redirect to appropriate portal based on role
+            if request.user.role == 'annotator':
+                return redirect('/annotator/')
+            elif request.user.role == 'reviewer':
+                return redirect('/reviewer/')
+            elif request.user.role == 'guest':
+                return redirect('master:access_denied')
+            else:
+                return redirect('master:access_denied')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 def signup_view(request):
     if request.method == "POST":
@@ -96,9 +119,26 @@ def login_view(request):
 
         if user is not None:
             if user.is_active:
+                # Check role BEFORE logging in
+                if user.role == 'guest':
+                    messages.info(request, "Akun Anda masih dalam status guest. Akun akan dapat digunakan setelah mendapat akses dari admin. Anda akan mendapat notifikasi melalui email ketika akun sudah diaktifkan.")
+                    return redirect("master:login")
+                
+                # Only log in non-guest users
                 login(request, user)
                 messages.success(request, "Login berhasil!")
-                return redirect("master:home")
+                
+                # Redirect based on user role
+                if user.role == 'master':
+                    return redirect("master:home")
+                elif user.role == 'annotator':
+                    return redirect("/annotator/")
+                elif user.role == 'reviewer':
+                    return redirect("/reviewer/")
+                else:
+                    messages.warning(request, "Role tidak dikenal. Silakan hubungi administrator.")
+                    logout(request)  # Logout if unknown role
+                    return redirect("master:login")
             else:
                 error_message = "Akun belum diaktifkan!"
         else:
@@ -110,6 +150,14 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('master:login')
+
+def access_denied_view(request):
+    """
+    View for users who don't have permission to access master functionality
+    """
+    return render(request, 'access_denied.html', {
+        'user_role': request.user.role if request.user.is_authenticated else 'anonymous'
+    })
 
 def activate(request, uidb64, token):
     try:
@@ -128,7 +176,7 @@ def activate(request, uidb64, token):
         messages.error(request, "Link aktivasi tidak valid atau sudah kedaluwarsa.")
         return redirect("master:login")
 
-@login_required
+@master_required
 def home_view(request):
     # Real data for Status Section - get users with job assignments
     annotators_reviewers = CustomUser.objects.filter(role__in=['annotator', 'reviewer']).order_by('email')
@@ -224,7 +272,7 @@ def home_view(request):
     }
     return render(request, 'master/home.html', context)
 
-@login_required
+@master_required
 def assign_roles_view(request):
     # Get new members (guests) with project count
     new_members = CustomUser.objects.filter(role='guest')
@@ -288,7 +336,7 @@ def update_role(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-@login_required
+@master_required
 def job_settings_view(request):
     if request.method == 'POST':
         try:
@@ -317,6 +365,8 @@ def issue_detail_view(request, job_id):
     Retrieves the job by ID and gathers all associated images marked with status 'Issue'. For each image, includes its absolute URL, annotator's email (or 'Unassigned'), and issue description. Returns a JSON response containing the job title and a list of issue images. On error, returns a JSON error message with status 500.
     """
     try:
+        from .models import Annotation, Segmentation, SegmentationType, PolygonPoint
+        
         job = get_object_or_404(JobProfile, id=job_id)
         print("=== Debug Info ===")
         print(f"Job ID: {job_id}")
@@ -337,13 +387,36 @@ def issue_detail_view(request, job_id):
         finished_count = JobImage.objects.filter(job=job, status='finished').count()
         issues_count = JobImage.objects.filter(job=job, status='Issue').count()
 
+        # Get all classes and segmentation types for this job
+        # Fix: Segmentation.job refers to JobImage, not JobProfile
+        all_segmentations = Segmentation.objects.filter(job__in=job_images)
+        classes = list(set(seg.label for seg in all_segmentations))
+        segmentation_types = SegmentationType.objects.filter(is_active=True)
+        
+        # Count annotations by class
+        class_counts = {}
+        for cls in classes:
+            count = all_segmentations.filter(label=cls).count()
+            class_counts[cls] = count
+
+        # Count by segmentation type
+        segtype_counts = {}
+        for segtype in segmentation_types:
+            count = all_segmentations.filter(segmentation_type=segtype).count()
+            segtype_counts[segtype.name] = count
+
         data = {
-            'title': job.title,
-            'unannotated_count': unannotated_count,
-            'in_review_count': in_review_count,
-            'in_rework_count': in_rework_count,
-            'finished_count': finished_count,
-            'issues_count': issues_count,
+            'job_title': job.title,
+            'title': job.title,  # Keep for backward compatibility
+            'status_counts': {
+                'unannotated': unannotated_count,
+                'in_review': in_review_count,
+                'in_rework': in_rework_count,
+                'finished': finished_count,
+                'issues': issues_count
+            },
+            'classes': class_counts,
+            'segmentation_types': segtype_counts,
             'images': []
         }
 
@@ -363,17 +436,78 @@ def issue_detail_view(request, job_id):
 
                 if not image_exists:
                     print(f"WARNING: Image file does not exist at {img.image.path}")
+                    print(f"Skipping missing image file: {img.image.path}")
+                    # Skip this image entirely to prevent 404 errors
                     continue
+                else:
+                    # Build absolute URI for the image
+                    image_url = request.build_absolute_uri(img.image.url)
 
-                # Build absolute URI for the image
-                image_url = request.build_absolute_uri(img.image.url)
                 print(f"Processing image ID {img.id}: {image_url}")
 
+                # Get annotations for this image
+                annotations = Annotation.objects.filter(job_image=img)
+                print(f"Found {annotations.count()} annotations for image ID {img.id}")
+                annotation_data = []
+                
+                for annotation in annotations:
+                    # Calculate bbox format [x, y, width, height]
+                    bbox_x = annotation.x_min if annotation.x_min is not None else annotation.x_coordinate
+                    bbox_y = annotation.y_min if annotation.y_min is not None else annotation.y_coordinate
+                    bbox_width = (annotation.x_max - annotation.x_min) if (annotation.x_max and annotation.x_min) else annotation.width
+                    bbox_height = (annotation.y_max - annotation.y_min) if (annotation.y_max and annotation.y_min) else annotation.height
+                    
+                    ann_data = {
+                        'id': annotation.id,
+                        'class_name': annotation.segmentation.label if annotation.segmentation else getattr(annotation, 'label', f'Annotation {annotation.id}'),
+                        'label': annotation.segmentation.label if annotation.segmentation else getattr(annotation, 'label', f'Annotation {annotation.id}'),
+                        'bbox': [bbox_x or 0, bbox_y or 0, bbox_width or 0, bbox_height or 0],
+                        'x_min': annotation.x_min,
+                        'y_min': annotation.y_min,
+                        'x_max': annotation.x_max,
+                        'y_max': annotation.y_max,
+                        'x_coordinate': annotation.x_coordinate,
+                        'y_coordinate': annotation.y_coordinate,
+                        'width': annotation.width,
+                        'height': annotation.height,
+                        'status': annotation.status,
+                        'confidence_score': annotation.confidence_score,
+                        'created_by_ai': getattr(annotation, 'is_auto_generated', False),
+                        'is_auto_generated': getattr(annotation, 'is_auto_generated', False)
+                    }
+                    
+                    # Add color information
+                    if annotation.segmentation:
+                        ann_data['segmentation'] = {
+                            'name': annotation.segmentation.label,
+                            'color': getattr(annotation.segmentation, 'color', '#22c55e')
+                        }
+                        ann_data['segmentation_color'] = getattr(annotation.segmentation, 'color', '#22c55e')
+                        
+                        # Get polygon points if available
+                        polygon_points = PolygonPoint.objects.filter(segmentation=annotation.segmentation).order_by('order_index')
+                        if polygon_points.exists():
+                            ann_data['polygon_points'] = [{
+                                'x': point.x,
+                                'y': point.y,
+                                'order': point.order_index
+                            } for point in polygon_points]
+                    else:
+                        # Default color for annotations without segmentation
+                        ann_data['annotation_color'] = '#22c55e'
+                    
+                    annotation_data.append(ann_data)
+                    print(f"  Added annotation {annotation.id}: {ann_data['label']} at bbox {ann_data['bbox']}")
+
+                print(f"Total annotations added for image {img.id}: {len(annotation_data)}")
                 # Add image data to response
                 data['images'].append({
                     'url': image_url,
+                    'filename': os.path.basename(img.image.name) if img.image else f'image_{img.id}',
+                    'status': img.status,
                     'annotator': img.annotator.email if img.annotator else 'Unassigned',
-                    'issue_description': img.issue_description or 'No description'
+                    'issue_description': img.issue_description or 'No description',
+                    'annotations': annotation_data
                 })
             except Exception as img_error:
                 print(f"Error processing image ID {img.id}: {str(img_error)}")
@@ -389,7 +523,7 @@ def issue_detail_view(request, job_id):
         print(f"Error in issue_detail_view: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
+@master_required
 def performance_view(request):
     """
     Renders the performance page for authenticated users.
@@ -479,7 +613,7 @@ def performance_view(request):
 
     return render(request, "master/performance.html", context)
 
-@login_required
+@master_required
 def process_validations_view(request, job_id=None):
     try:
         if job_id:
@@ -575,7 +709,7 @@ def add_dataset(request):
             'message': str(e)
         }, status=500)
 
-@login_required
+@master_required
 def add_dataset_view(request):
     if request.method == 'POST':
         try:
@@ -1027,7 +1161,7 @@ def get_job_profile(request, job_id):
         print(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
 
-@login_required
+@master_required
 def issue_solving_view(request):
     """View for handling issue solving page"""
     try:
@@ -1086,7 +1220,7 @@ def finish_image(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-@login_required
+@master_required
 def performance_individual_view(request, user_id):
     """
     Renders the individual performance page for a specific user.
@@ -1223,7 +1357,7 @@ def performance_individual_view(request, user_id):
     
     return render(request, "master/performance_individual.html", context)
 
-@login_required
+@master_required
 @require_http_methods(["POST"])
 def update_user_roles(request):
     """

@@ -16,6 +16,7 @@ from functools import wraps
 from master.models import CustomUser, JobProfile, JobImage, Annotation, Segmentation, Issue
 from .forms import LoginForm  # Only login form needed - signup handled by master app
 import re
+import json
 
 # Create your views here.
 def reviewer_required(view_func):
@@ -33,6 +34,9 @@ def reviewer_required(view_func):
                 return redirect('/annotator/annotate/')
             elif request.user.role == 'master':
                 return redirect('/')
+            elif request.user.role == 'guest':
+                messages.error(request, 'Akun Anda masih dalam status guest. Silakan tunggu admin untuk memberikan akses.')
+                return redirect('/login/')
             else:
                 # Only redirect to login if user role is unknown/invalid
                 return redirect('reviewer:login')
@@ -54,6 +58,9 @@ def reviewer_required(view_func):
                 return redirect('/annotator/annotate/')
             elif request.user.role == 'master':
                 return redirect('/')
+            elif request.user.role == 'guest':
+                messages.error(request, 'Akun Anda masih dalam status guest. Silakan tunggu admin untuk memberikan akses.')
+                return redirect('/login/')
             else:
                 # Only redirect to login if user role is unknown/invalid
                 return redirect('reviewer:login')
@@ -303,7 +310,7 @@ def isu_anotasi(request, index=0):
     job_profile = job_image.job.id
 
     # Ambil data segmentasi & anotasi
-    segmentasi_list = Segmentation.objects.filter(job=job_profile)
+    segmentasi_list = Segmentation.objects.filter(job=job_image)
     anotasi_list = Annotation.objects.filter(job_image=job_image)
 
     anotasi_semantic = anotasi_list.filter(segmentation__segmentation_type__name='semantic')
@@ -342,17 +349,54 @@ def isu_anotasi(request, index=0):
             })
         if anotasi_items:
             segmentasi_anotasi_info.extend(anotasi_items)
+    # Calculate status counts for all job images
+    pending_count = job_images.filter(status='pending').count()
+    in_progress_count = job_images.filter(status='in_progress').count()
+    annotated_count = job_images.filter(status='annotated').count()
+    reviewed_count = job_images.filter(status='reviewed').count()
+    unannotated_count = job_images.filter(status='unannotated').count()
+    in_review_count = job_images.filter(status='in_review').count()
+    in_rework_count = job_images.filter(status='in_rework').count()
+    finished_count = job_images.filter(status='finished').count()
+    
+    # Count issues (assuming there's an Issue model related to JobImage)
+    issues_count = Issue.objects.filter(image__job_id=profile_id).count()
+    
+    # Prepare annotation data for JSON (similar to annotator views)
+    annotation_data = []
+    for ann in anotasi_list:
+        if hasattr(ann, 'x_min') and hasattr(ann, 'y_min') and hasattr(ann, 'x_max') and hasattr(ann, 'y_max'):
+            annotation_data.append({
+                'label': ann.segmentation.label if ann.segmentation else 'Unknown',
+                'bbox': [ann.x_min, ann.y_min, ann.x_max, ann.y_max],
+                'is_auto_generated': getattr(ann, 'is_auto_generated', False)
+            })
+    print(f"DEBUG: Annotation data prepared for reviewer: {annotation_data}")
+    
     print("JobImage ID:", job_image.id)
-    print("Segmentasi count:", Segmentation.objects.filter(job=job_image).count())  
+    print("Segmentasi count:", segmentasi_list.count())
+    print("Anotasi count:", anotasi_list.count())
+    print("Semantic annotations:", anotasi_semantic.count())
+    print("Panoptic annotations:", anotasi_panoptic.count())  
     context = {
         'username': user.username,
         'number_email': user.email or getattr(user, 'phone_number', '') or '',
         'profile_id': profile_id,
         'nama_profile_job': profile.title,
         'filename': gambar.name,
+        'gambar': gambar,
         'gambar_id': job_image.id,
         'image_index': index + 1,
         'total_images': total,
+        'pending_count': pending_count,
+        'in_progress_count': in_progress_count,
+        'annotated_count': annotated_count,
+        'reviewed_count': reviewed_count,
+        'unannotated_count': unannotated_count,
+        'in_review_count': in_review_count,
+        'in_rework_count': in_rework_count,
+        'finished_count': finished_count,
+        'issues_count': issues_count,
         'segmentasi_list': segmentasi_list,
         'anotasi_list': anotasi_list,
         'anotasi_box': anotasi_instance,
@@ -365,6 +409,7 @@ def isu_anotasi(request, index=0):
         'total_instance': anotasi_instance.count(),
         'total_panoptic': anotasi_panoptic.count(),
         'segmentasi_anotasi_info': segmentasi_anotasi_info,
+        'annotations_json': json.dumps(annotation_data),  # Add JSON data for bounding box rendering
         **get_base64_images(),
     }
     return render(request, 'reviewer/isu_anotasi.html', context)
@@ -381,6 +426,55 @@ def isu_image(request):
         **get_base64_images()
     }
     return render(request, 'reviewer/isu_image.html', context)
+
+@csrf_protect
+@reviewer_required
+def finish_review_view(request, image_id):
+    """
+    Mark review as finished and notify master
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+    
+    try:
+        image_obj = get_object_or_404(JobImage, id=image_id)
+        
+        # Check if user is the assigned reviewer for this job
+        if image_obj.job.worker_reviewer != request.user:
+            return JsonResponse({'success': False, 'error': 'You are not assigned to this job'}, status=403)
+        
+        # Update status to 'finished' (completed review)
+        image_obj.status = 'finished'
+        image_obj.review_time = timezone.now()
+        image_obj.save()
+        
+        # Check if all images in the job are finished
+        job_profile = image_obj.job
+        total_images = JobImage.objects.filter(job=job_profile).count()
+        finished_images = JobImage.objects.filter(job=job_profile, status='finished').count()
+        
+        # If all images are finished, update job status to 'finish' (matching JobProfile model)
+        if total_images == finished_images:
+            job_profile.status = 'finish'  # Changed from 'completed' to 'finish' to match JobProfile model
+            job_profile.save()
+            
+            # TODO: Create notification for master
+            # if job_profile.created_by:  # Assuming master is the creator
+            #     Notification.objects.create(
+            #         recipient=job_profile.created_by,
+            #         message=f"Job '{job_profile.title}' has been completed",
+            #         notification_type='job_completed'
+            #     )
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Review marked as finished',
+            'job_completed': total_images == finished_images
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
 
 def logout(request):
     """Logout view for reviewers"""

@@ -2,6 +2,66 @@
 {% block style %}
 {% endblock %}
 
+{% block extra_js %}
+<script>
+function finishReview() {
+    const imageId = {{ gambar_id }};
+    const profileId = {{ profile_id }};
+    
+    if (confirm('Apakah Anda yakin ingin menyelesaikan review untuk gambar ini?')) {
+        fetch(`/reviewer/finish_review/${imageId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                if (data.job_completed) {
+                    alert('Semua gambar telah selesai direview. Job telah diselesaikan!');
+                    window.location.href = `/reviewer/task_review/${profileId}/`;
+                } else {
+                    // Navigate to next image or back to task review
+                    const nextIndex = {{ image_index }};
+                    const totalImages = {{ total_images }};
+                    if (nextIndex < totalImages) {
+                        window.location.href = `/reviewer/isu_anotasi/${nextIndex}/?profile_id=${profileId}`;
+                    } else {
+                        window.location.href = `/reviewer/task_review/${profileId}/`;
+                    }
+                }
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat menyelesaikan review.');
+        });
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}
+
 {% block content-header %}
 <div class="d-flex align-items-center"> 
   <div>
@@ -82,7 +142,7 @@
     </div>
   </div>
   <div class="ms-auto">
-    <button class="btn btn-primary text-white p-0 me-2" style="width: 100px; height: 30px;">Finish</button>
+    <button class="btn btn-primary text-white p-0 me-2" style="width: 100px; height: 30px;" onclick="finishReview()">Finish</button>
   </div>
 </div>
 
@@ -167,12 +227,13 @@
           </div>
           <div class="collapse" id="kontensemantic">
             <ul class="list-group list-group-flush">
+              {% for poly in polygon_semantic_list %}
               <li class="list-group-item d-flex align-items-center justify-content-between p-0">
                 <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: red">
+                  <span class="me-2" style="color: {{ poly.warna }}">
                     {% include "icons/polygon.html" %}
                   </span>
-                  <span>mobil</span>
+                  <span>{{ poly.label }}</span>
                 </div>
                 <div>
                   <span style="color: #f6d35c">●</span>
@@ -202,36 +263,14 @@
                           </a>
                           <ul class="dropdown-menu p-0">
                             <div class="d-flex justify-content-center p-0 m-0 text-white" style="background-color: #0F84D0;width: 100%;"><span>Class Editor</span></div>
+                            {% for segmentasi in segmentasi_list %}
                             <li>
                               <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">1</div>
-                                <div class="ps-2">mobil</div>
+                                <div class="badge text-dark" style="background-color: #d4d4d4">{{ forloop.counter }}</div>
+                                <div class="ps-2">{{ segmentasi.label }}</div>
                               </a>
                             </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">2</div>
-                                <div class="ps-2">motor</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">3</div>
-                                <div class="ps-2">truk</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">4</div>
-                                <div class="ps-2">bus</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">5</div>
-                                <div class="ps-2">kereta</div>
-                              </a>
-                            </li>
+                            {% endfor %}
                           </ul>
                         </div>
                       </li>
@@ -255,66 +294,11 @@
                   </div>
                 </div>
               </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: gold">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>orang</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
+              {% empty %}
+              <li class="list-group-item text-muted text-center p-2">
+                No semantic annotations found
               </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #00d1ff">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>jalanan</span>
-                </div>
-                <div>
-                  <span style="color: #48bf53">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #0047FF">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>gedung</span>
-                </div>
-                <div>
-                  <span style="color: #48bf53">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
+              {% endfor %}
             </ul>
           </div>
         </div>
@@ -448,12 +432,13 @@
           </div>
           <div class="collapse" id="kontenpanoptic">
             <ul class="list-group list-group-flush">
+              {% for poly in polygon_panoptic_list %}
               <li class="list-group-item d-flex align-items-center justify-content-between p-0">
                 <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #118DFF">
+                  <span class="me-2" style="color: {{ poly.warna }}">
                     {% include "icons/polygon.html" %}
                   </span>
-                  <span>mobil 1</span>
+                  <span>{{ poly.label }}</span>
                 </div>
                 <div>
                   <span style="color: #f6d35c">●</span>
@@ -483,36 +468,14 @@
                           </a>
                           <ul class="dropdown-menu p-0">
                             <div class="d-flex justify-content-center p-0 m-0 text-white" style="background-color: #0F84D0;width: 100%;"><span>Class Editor</span></div>
+                            {% for segmentasi in segmentasi_list %}
                             <li>
                               <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">1</div>
-                                <div class="ps-2">mobil</div>
+                                <div class="badge text-dark" style="background-color: #d4d4d4">{{ forloop.counter }}</div>
+                                <div class="ps-2">{{ segmentasi.label }}</div>
                               </a>
                             </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">2</div>
-                                <div class="ps-2">motor</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">3</div>
-                                <div class="ps-2">truk</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">4</div>
-                                <div class="ps-2">bus</div>
-                              </a>
-                            </li>
-                            <li>
-                              <a class="dropdown-item d-flex align-items-center" href="#">
-                                <div class="badge text-dark" style="background-color: #d4d4d4">5</div>
-                                <div class="ps-2">kereta</div>
-                              </a>
-                            </li>
+                            {% endfor %}
                           </ul>
                         </div>
                       </li>
@@ -536,126 +499,11 @@
                   </div>
                 </div>
               </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #00FF29">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>mobil 2</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
+              {% empty %}
+              <li class="list-group-item text-muted text-center p-2">
+                No panoptic annotations found
               </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #9E00FF">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>orang 1</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #072690">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>orang 2</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #FF7A00">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>orang 3</span>
-                </div>
-                <div>
-                  <span style="color: #f6d35c">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #0047FF">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>gedung</span>
-                </div>
-                <div>
-                  <span style="color: #48bf53">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
-              <li class="list-group-item d-flex align-items-center justify-content-between p-0">
-                <div class="d-flex align-items-center ps-1">
-                  <span class="me-2" style="color: #00D1FF">
-                    {% include "icons/polygon.html" %}
-                  </span>
-                  <span>jalanan</span>
-                </div>
-                <div>
-                  <span style="color: #48bf53">
-                    {% include "icons/warning.html" %}
-                  </span>
-                  <span style="color: #48bf53">●</span>
-                  <span class="m-0 p-0">
-                    {% include "icons/eye-show.html" %}
-                  </span>
-                  <span>
-                    {% include "icons/three-dot.html" %}
-                  </span>
-                </div>
-              </li>
+              {% endfor %}
             </ul>
           </div>
         </div>
@@ -667,40 +515,42 @@
       <div class="d-flex gap-1 flex-wrap" style="white-space: nowrap;">
         <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
           <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
-            <div class="fs-4 fw-bold">10</div>
+            <div class="fs-4 fw-bold">{{ unannotated_count }}</div>
             <div class="small text-muted">Unannotated</div>
           </div>
         </div>
         <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
           <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
-            <div class="fs-4 fw-bold">0</div>
+            <div class="fs-4 fw-bold">{{ in_review_count }}</div>
             <div class="small text-muted">In Review</div>
           </div>
         </div>
         <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
           <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
-            <div class="fs-4 fw-bold">0</div>
+            <div class="fs-4 fw-bold">{{ in_rework_count }}</div>
             <div class="small text-muted">In Rework</div>
           </div>
         </div>
         <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
           <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
-            <div class="fs-4 fw-bold">0</div>
+            <div class="fs-4 fw-bold">{{ finished_count }}</div>
             <div class="small text-muted">Finished</div>
           </div>
         </div>
         <div class="d-flex justify-content-center align-items-center text-center rounded p-4 min-w-150 flex-fill">
           <div class="rounded d-flex flex-column justify-content-center align-items-center" style="background-color: rgba(150,182,190,0.4); height: 100px; width: 150px;">
-            <div class="fs-4 fw-bold">0</div>
+            <div class="fs-4 fw-bold">{{ issues_count }}</div>
             <div class="small text-muted">Issues</div>
           </div>
         </div>
       </div>
       <div class="bg-secondary w-100">
         <div class="">
-          <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">n
-            <img id="zoomImage" src="/media/{{ filename }}" alt="Gambar"
-                style="display: block; transform-origin: top left; width: {{ lebar_gambar }}px ; height: {{ tinggi_gambar }}px;">
+          <div id="zoomWrapper" style="width: 100%; height: 580px; overflow: auto; border: 1px solid #ccc; position: relative;">
+            <img id="zoomImage" src="{{ gambar.url }}" alt="Gambar"
+                style="display: block; transform-origin: top left; max-width: 100%; max-height: 100%; width: auto; height: auto;">
+            <!-- Canvas for bounding box rendering -->
+            <canvas id="annotationCanvas" style="position: absolute; top: 0; left: 0; pointer-events: none; z-index: 10;"></canvas>
 <svg id="svgSemantic" width="{{ lebar_gambar }}" height="{{ tinggi_gambar }}"
      style="position: absolute; top: 0; left: 0;">
     {% for poly in polygon_semantic_list %}
@@ -1033,7 +883,87 @@ function applyZoom() {
     svg.style.transform = `scale(${scale})`;
     svg.style.transformOrigin = "top left";
   });
+  
+  // Update canvas for bounding boxes when zoom changes
+  setTimeout(() => {
+    runDrawing();
+  }, 50);
 }
 
+</script>
+
+<!-- Add bounding box rendering script similar to label_image.html -->
+<script>
+  function drawAllAnnotations(annotationsToDraw) {
+    const image = document.getElementById('zoomImage');
+    const canvas = document.getElementById('annotationCanvas');
+    
+    if (!image || !canvas || !annotationsToDraw) {
+      console.log('Debug: Missing elements for annotation drawing');
+      return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    const wrapper = document.getElementById('zoomWrapper');
+    const rect = image.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    canvas.style.left = (rect.left - wrapperRect.left) + 'px';
+    canvas.style.top = (rect.top - wrapperRect.top) + 'px';
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    
+    const scaleX = rect.width / image.naturalWidth;
+    const scaleY = rect.height / image.naturalHeight;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    annotationsToDraw.forEach((ann, index) => {
+      console.log(`Debug: Processing annotation ${index + 1}:`, ann);
+      const box = ann.bbox ? ann.bbox : [ann.x_min, ann.y_min, ann.x_max, ann.y_max];
+      console.log(`Debug: Box coordinates:`, box);
+      const x = box[0] * scaleX;
+      const y = box[1] * scaleY;
+      const width = (box[2] - box[0]) * scaleX;
+      const height = (box[3] - box[1]) * scaleY;
+      const label = ann.label;
+      const color = ann.is_auto_generated ? '#f59e0b' : '#34D399';
+      console.log(`Debug: Drawing box at (${x}, ${y}) with size ${width}x${height}, label: ${label}, color: ${color}`);
+      
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, width, height);
+      
+      const fontSize = 12;
+      ctx.font = `${fontSize}px sans-serif`;
+      const textMetrics = ctx.measureText(label);
+      
+      ctx.fillStyle = color;
+      ctx.fillRect(x - 1, y - fontSize - 5, textMetrics.width + 8, fontSize + 4);
+      
+      ctx.fillStyle = 'white';
+      ctx.textBaseline = 'top';
+      ctx.fillText(label, x + 3, y - fontSize - 2);
+    });
+  }
+  
+  function runDrawing() {
+    const initialAnnotations = JSON.parse('{{ annotations_json|safe }}');
+    console.log('Debug: Initial annotations data:', initialAnnotations);
+    console.log('Debug: Number of annotations:', initialAnnotations.length);
+    setTimeout(() => { drawAllAnnotations(initialAnnotations); }, 50);
+  }
+  
+  window.addEventListener('load', function () {
+    const image = document.getElementById('zoomImage');
+    if (image && image.complete && image.naturalWidth > 0) {
+      runDrawing();
+    } else if (image) {
+      image.onload = runDrawing;
+    }
+    window.onresize = runDrawing;
+  });
 </script>
 {% endblock %}

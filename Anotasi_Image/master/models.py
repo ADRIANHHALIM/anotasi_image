@@ -175,11 +175,12 @@ def job_image_path(instance, filename):
 class JobImage(models.Model):
     STATUS_CHOICES = [
         ('unannotated', 'Unannotated'),
+        ('in_progress', 'In Progress'),
         ('annotated', 'Annotated'),
         ('in_review', 'In Review'),
         ('in_rework', 'In Rework'),
         ('finished', 'Finished'),
-        ('Issue', 'Issue'),  # Make sure 'Issue' is exactly as used in the filter
+        ('issue', 'Issue'),  # Changed to lowercase for consistency
     ]
     
     job = models.ForeignKey(JobProfile, on_delete=models.CASCADE, related_name='images')
@@ -361,35 +362,6 @@ class Notification(models.Model):
         from django.utils.timesince import timesince
         return f"{timesince(self.created_at)} ago"
 
-class Annotation(models.Model):
-    # Menyimpan satu data anotasi (bounding box) pada sebuah gambar
-    image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='annotations')
-
-    # Menyimpan label dari deteksi
-    label = models.CharField(max_length=100)
-
-    # 4 titik koordinat bouning box
-    x_min = models.FloatField()
-    y_min = models.FloatField()
-    x_max = models.FloatField()
-    y_max = models.FloatField()
-
-    # anotasi dibuat otomatis
-    is_auto_generated = models.BooleanField(default=True)
-
-    # siapa yg buat anotasi
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-    
-    # otomatis mencatat waktu saat anotasi 
-    created_at = models.DateTimeField(auto_now_add=True)
-    def __str__(self):
-        return f"Anotasi '{self.label}' pada gambar ID {self.image.id}"
-
 
 # ===== ANNOTATION SYSTEM MODELS (Translated from reviewer models) =====
 
@@ -452,10 +424,26 @@ class Annotation(models.Model):
     ]
 
     job_image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='annotations')
-    segmentation = models.ForeignKey(Segmentation, on_delete=models.CASCADE, related_name='annotations')
+    segmentation = models.ForeignKey(Segmentation, on_delete=models.CASCADE, related_name='annotations', null=True, blank=True)
     tool = models.ForeignKey(AnnotationTool, on_delete=models.SET_NULL, null=True, blank=True)
-    annotator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_annotations')
+    annotator = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_annotations', null=True, blank=True)
     reviewer = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_annotations')
+    
+    # Legacy fields for backward compatibility with annotator views
+    image = models.ForeignKey(JobImage, on_delete=models.CASCADE, related_name='legacy_annotations', null=True, blank=True)
+    label = models.CharField(max_length=100, blank=True, null=True)
+    x_min = models.FloatField(null=True, blank=True)
+    y_min = models.FloatField(null=True, blank=True)
+    x_max = models.FloatField(null=True, blank=True)
+    y_max = models.FloatField(null=True, blank=True)
+    is_auto_generated = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='legacy_created_annotations'
+    )
     
     # Annotation coordinates (translated from koordinat_x, koordinat_y, lebar, tinggi)
     x_coordinate = models.FloatField(null=True, blank=True)  # koordinat_x -> x_coordinate
@@ -467,6 +455,7 @@ class Annotation(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     confidence_score = models.FloatField(null=True, blank=True, help_text="Confidence score (0.0 to 1.0)")
     notes = models.TextField(blank=True, null=True)
+    is_verified = models.BooleanField(default=False)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -486,18 +475,18 @@ class Annotation(models.Model):
 
 class PolygonPoint(models.Model):
     """Model for polygon annotation points (translated from reviewer PolygonTool)"""
-    annotation = models.ForeignKey(Annotation, on_delete=models.CASCADE, related_name='polygon_points')
-    x_coordinate = models.FloatField()  # koordinat_xn -> x_coordinate
-    y_coordinate = models.FloatField()  # koordinat_yn -> y_coordinate
-    order = models.PositiveIntegerField()  # Order of points in the polygon
+    segmentation = models.ForeignKey(Segmentation, on_delete=models.CASCADE, related_name='polygon_points')
+    x = models.FloatField()  # koordinat_xn -> x
+    y = models.FloatField()  # koordinat_yn -> y
+    order_index = models.PositiveIntegerField()  # Order of points in the polygon
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Point {self.order} ({self.x_coordinate}, {self.y_coordinate}) for Annotation {self.annotation.id}"
+        return f"Point {self.order_index} ({self.x}, {self.y}) for Segmentation {self.segmentation.id}"
 
     class Meta:
-        ordering = ['annotation', 'order']
-        unique_together = ['annotation', 'order']
+        ordering = ['segmentation', 'order_index']
+        unique_together = ['segmentation', 'order_index']
 
 
 class AnnotationIssue(models.Model):

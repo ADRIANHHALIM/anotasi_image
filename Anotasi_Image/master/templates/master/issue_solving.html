@@ -98,40 +98,15 @@
                 </div>
 
                 <!-- Class List -->
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
-                        <span>mobil</span>
-                        <span class="bg-gray-200 px-2 rounded">1</span>
-                    </div>
-                    <div class="flex items-center justify-between p-2 hover:bg-gray-100 rounded">
-                        <span>motor</span>
-                        <span class="bg-gray-200 px-2 rounded">2</span>
-                    </div>
-                    <!-- Add more classes as needed -->
+                <div id="classList" class="space-y-2">
+                    <!-- Classes will be populated dynamically -->
                 </div>
 
                 <!-- Segmentation Type -->
                 <div class="mt-6">
                     <h4 class="text-sm font-medium mb-2">SEGMENTATION TYPE</h4>
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between p-2">
-                            <span>Semantic (4)</span>
-                            <svg class="w-4 h-4" viewBox="0 0 20 20">
-                                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor"/>
-                            </svg>
-                        </div>
-                        <div class="flex items-center justify-between p-2">
-                            <span>Instance (5)</span>
-                            <svg class="w-4 h-4" viewBox="0 0 20 20">
-                                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor"/>
-                            </svg>
-                        </div>
-                        <div class="flex items-center justify-between p-2">
-                            <span>Panoptic (8)</span>
-                            <svg class="w-4 h-4" viewBox="0 0 20 20">
-                                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor"/>
-                            </svg>
-                        </div>
+                    <div id="segmentationTypeList" class="space-y-2">
+                        <!-- Segmentation types will be populated dynamically -->
                     </div>
                 </div>
             </div>
@@ -143,12 +118,24 @@
             <div class="border-b border-gray-200">
                 <div class="p-4 flex justify-between items-center">
                     <h2 id="modalJobTitle" class="text-2xl font-bold">Loading...</h2>
-                    <button onclick="closeIssueModal()" 
-                            class="text-gray-500 hover:text-gray-700 p-1">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <!-- Fullscreen Toggle Button -->
+                        <button id="fullscreenToggle" class="text-gray-500 hover:text-gray-700 p-1" onclick="toggleFullscreen()">
+                            <svg id="expandIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                            </svg>
+                            <svg id="compressIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;">
+                                <path d="M9 9V4.5M9 9H4.5M9 9L3.5 3.5M15 9h4.5M15 9V4.5M15 9l5.5-5.5M9 15v4.5M9 15H4.5M9 15l-5.5 5.5M15 15h4.5M15 15v4.5m0-4.5l5.5 5.5"/>
+                            </svg>
+                        </button>
+                        <!-- Close Button -->
+                        <button onclick="closeIssueModal()" 
+                                class="text-gray-500 hover:text-gray-700 p-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -206,7 +193,7 @@
                 </div>
 
                 <!-- Issue Information Box -->
-                <div class="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg w-72">
+                {% comment %} <div class="absolute bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg w-72" style="z-index: 10000;">
                     <h4 class="font-semibold mb-2">Issue Details</h4>
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between">
@@ -221,7 +208,7 @@
                             <p id="issueDescription" class="text-red-600"></p>
                         </div>
                     </div>
-                </div>
+                </div> {% endcomment %}
             </div>
         </div>
 
@@ -232,11 +219,7 @@
                     <path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
                 </svg>
             </button>
-            <button class="text-white p-2 hover:bg-gray-700 rounded">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
-                </svg>
-            </button>
+            
             <button class="text-white p-2 hover:bg-gray-700 rounded">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -254,6 +237,21 @@
 <script>
 let currentImages = [];
 let currentImageIndex = 0;
+let currentJobData = null;
+
+function showError(message) {
+    const imageContainer = document.getElementById('imageContainer');
+    if (imageContainer) {
+        imageContainer.innerHTML = `
+            <div class="text-center text-gray-500">
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+                <p>${message}</p>
+            </div>
+        `;
+    }
+}
 
 function showImage(index) {
     console.log("=== Show Image Debug ===");
@@ -296,23 +294,31 @@ function showImage(index) {
 
     // Set up onload handler
     img.onload = function() {
-        // Clear the container and add the image
+        // Clear the container and create wrapper for image and annotations
         imageContainer.innerHTML = '';
+        
+        // Create wrapper div for image and annotations
+        const wrapper = document.createElement('div');
+        wrapper.className = 'relative inline-block';
+        wrapper.id = 'imageWrapper';
+        
+        // Add image to wrapper
+        wrapper.appendChild(img);
+        
+        // Add wrapper to container
+        imageContainer.appendChild(wrapper);
+        
+        // Render annotations/bounding boxes with consistent colors
+        renderAnnotations(image.annotations || [], wrapper, img);
 
-        // Ensure the image is properly added to the DOM
-        try {
-            imageContainer.appendChild(img);
-            console.log('Image appended to container');
-        } catch (error) {
-            console.error('Error appending image to container:', error);
-            // Try an alternative approach if the first one fails
-            imageContainer.innerHTML = `<img id="mainImage" src="${image.url}" alt="Main Image" class="max-w-full max-h-[70vh] object-contain">`;
-            console.log('Used innerHTML as fallback');
-        }
-
-        // Update issue details
-        document.getElementById('issueAnnotator').textContent = image.annotator || 'Unassigned';
-        document.getElementById('issueDescription').textContent = image.issue_description || 'No description';
+        // Update issue details (only if elements exist)
+        const issueAnnotator = document.getElementById('issueAnnotator');
+        const issueReviewer = document.getElementById('issueReviewer');
+        const issueDescription = document.getElementById('issueDescription');
+        
+        if (issueAnnotator) issueAnnotator.textContent = image.annotator || 'Unassigned';
+        if (issueReviewer) issueReviewer.textContent = image.reviewer || 'Unassigned';
+        if (issueDescription) issueDescription.textContent = image.issue_description || 'No description';
 
         // Update counter
         document.getElementById('currentImageIndex').textContent = (index + 1).toString();
@@ -337,9 +343,151 @@ function showImage(index) {
         `;
     };
 
+    // Process the image URL to replace testserver with localhost
+    let processedUrl = image.url;
+    if (processedUrl.includes('http://testserver')) {
+        processedUrl = processedUrl.replace('http://testserver', 'http://localhost:8001');
+    }
+    
     // Set the source after all handlers are defined
-    console.log('Setting image source to:', image.url);
-    img.src = image.url;
+    console.log('Setting image source to:', processedUrl);
+    img.src = processedUrl;
+}
+
+function renderAnnotations(annotations, wrapper, img) {
+    console.log('Rendering annotations:', annotations);
+    
+    // Remove existing annotation overlays
+    const existingOverlays = wrapper.querySelectorAll('.annotation-overlay');
+    existingOverlays.forEach(overlay => overlay.remove());
+    
+    if (!annotations || annotations.length === 0) {
+        console.log('No annotations to render');
+        return;
+    }
+    
+    // Wait for image to be fully loaded and get dimensions
+    setTimeout(() => {
+        const imgRect = img.getBoundingClientRect();
+        const imgNaturalWidth = img.naturalWidth;
+        const imgNaturalHeight = img.naturalHeight;
+        const imgDisplayWidth = img.offsetWidth;
+        const imgDisplayHeight = img.offsetHeight;
+        
+        console.log('Image dimensions:', {
+            natural: { width: imgNaturalWidth, height: imgNaturalHeight },
+            display: { width: imgDisplayWidth, height: imgDisplayHeight }
+        });
+        
+        annotations.forEach((annotation, index) => {
+            if (annotation.x_min !== null && annotation.y_min !== null && 
+                annotation.x_max !== null && annotation.y_max !== null) {
+                
+                // Calculate scale factors
+                const scaleX = imgDisplayWidth / imgNaturalWidth;
+                const scaleY = imgDisplayHeight / imgNaturalHeight;
+                
+                // Convert coordinates to display coordinates
+                const x = annotation.x_min * scaleX;
+                const y = annotation.y_min * scaleY;
+                const width = (annotation.x_max - annotation.x_min) * scaleX;
+                const height = (annotation.y_max - annotation.y_min) * scaleY;
+                
+                // Determine color with consistent logic across templates
+                let color = '#22c55e'; // Default green for manual annotations
+                
+                if (annotation.is_auto_generated || annotation.created_by_ai) {
+                    color = '#f97316'; // Orange for AI-created annotations
+                } else if (annotation.segmentation && annotation.segmentation.color) {
+                    color = annotation.segmentation.color;
+                } else if (annotation.annotation && annotation.annotation.color) {
+                    color = annotation.annotation.color;
+                } else if (annotation.segmentation_color) {
+                    color = annotation.segmentation_color;
+                } else if (annotation.annotation_color) {
+                    color = annotation.annotation_color;
+                } else if (annotation.color) {
+                    color = annotation.color;
+                }
+                
+                // Create bounding box overlay with consistent styling
+                const bbox = document.createElement('div');
+                bbox.className = 'annotation-overlay absolute border-2';
+                bbox.style.left = `${x}px`;
+                bbox.style.top = `${y}px`;
+                bbox.style.width = `${width}px`;
+                bbox.style.height = `${height}px`;
+                bbox.style.borderColor = color;
+                bbox.style.backgroundColor = color + '20'; // Add transparency
+                bbox.style.pointerEvents = 'none';
+                
+                // Add label with improved text handling
+                const labelText = annotation.label || annotation.class_name || annotation.segmentation?.name || annotation.annotation?.class_name || `Annotation ${index + 1}`;
+                if (labelText) {
+                    const label = document.createElement('div');
+                    label.className = 'absolute -top-6 left-0 text-white text-xs px-2 py-1 rounded font-bold';
+                    label.style.backgroundColor = color;
+                    label.textContent = labelText;
+                    bbox.appendChild(label);
+                }
+                
+                wrapper.appendChild(bbox);
+                
+                console.log(`Rendered bounding box ${index}:`, {
+                    original: { x: annotation.x_min, y: annotation.y_min, w: annotation.x_max - annotation.x_min, h: annotation.y_max - annotation.y_min },
+                    scaled: { x, y, width, height },
+                    color: color,
+                    label: labelText
+                });
+            }
+        });
+    }, 100);
+}
+
+function updateClassList(classes) {
+    const classList = document.getElementById('classList');
+    if (!classList) return;
+    
+    classList.innerHTML = '';
+    
+    if (!classes || Object.keys(classes).length === 0) {
+        classList.innerHTML = '<p class="text-gray-500 text-sm">No classes found</p>';
+        return;
+    }
+    
+    Object.entries(classes).forEach(([className, count]) => {
+        const classItem = document.createElement('div');
+        classItem.className = 'flex items-center justify-between p-2 hover:bg-gray-100 rounded';
+        classItem.innerHTML = `
+            <span>${className}</span>
+            <span class="bg-gray-200 px-2 rounded">${count}</span>
+        `;
+        classList.appendChild(classItem);
+    });
+}
+
+function updateSegmentationTypeList(segmentationTypes) {
+    const segTypeList = document.getElementById('segmentationTypeList');
+    if (!segTypeList) return;
+    
+    segTypeList.innerHTML = '';
+    
+    if (!segmentationTypes || Object.keys(segmentationTypes).length === 0) {
+        segTypeList.innerHTML = '<p class="text-gray-500 text-sm">No segmentation types found</p>';
+        return;
+    }
+    
+    Object.entries(segmentationTypes).forEach(([typeName, count]) => {
+        const typeItem = document.createElement('div');
+        typeItem.className = 'flex items-center justify-between p-2';
+        typeItem.innerHTML = `
+            <span>${typeName} (${count})</span>
+            <svg class="w-4 h-4" viewBox="0 0 20 20">
+                <path d="M6 6L14 14M14 6L6 14" stroke="currentColor"/>
+            </svg>
+        `;
+        segTypeList.appendChild(typeItem);
+    });
 }
 
 function showIssueDetail(jobId) {
@@ -384,15 +532,21 @@ function showIssueDetail(jobId) {
                 console.log("First image URL:", data.images[0].url);
             }
 
-            modalTitle.textContent = data.title || 'No Title';
+            // Store current job data
+            currentJobData = data;
+            modalTitle.textContent = data.job_title || data.title || 'No Title';
             updateStatusCounts(data);
+
+            // Update class list with real data
+            updateClassList(data.classes || data.class_counts || {});
+            
+            // Update segmentation type list with real data
+            updateSegmentationTypeList(data.segmentation_types || data.segmentation_type_counts || {});
 
             if (data.images && data.images.length > 0) {
                 console.log('Found images:', data.images);
                 currentImages = data.images;
                 showImage(0);
-                // Set up image slider controls after images are loaded
-                setupImageSliderControls();
             } else {
                 console.log('No images found');
                 showError('No images available for this job. Please check if there are any issues reported.');
@@ -405,58 +559,117 @@ function showIssueDetail(jobId) {
 }
 
 function updateStatusCounts(data) {
-    document.getElementById('modalUnannotated').textContent = data.unannotated_count || '0';
-    document.getElementById('modalInReview').textContent = data.in_review_count || '0';
-    document.getElementById('modalInRework').textContent = data.in_rework_count || '0';
-    document.getElementById('modalIssues').textContent = data.issues_count || '0';
-    document.getElementById('modalFinished').textContent = data.finished_count || '0';
+    document.getElementById('modalUnannotated').textContent = data.status_counts?.unannotated || 0;
+    document.getElementById('modalInReview').textContent = data.status_counts?.in_review || 0;
+    document.getElementById('modalInRework').textContent = data.status_counts?.in_rework || 0;
+    document.getElementById('modalIssues').textContent = data.status_counts?.issues || 0;
+    document.getElementById('modalFinished').textContent = data.status_counts?.finished || 0;
 }
+
+// Duplicate functions removed - using the ones defined earlier
 
 function updateImageControls() {
     const prevButton = document.getElementById('prevImage');
     const nextButton = document.getElementById('nextImage');
 
-    if (prevButton) prevButton.style.display = currentImageIndex > 0 ? 'block' : 'none';
-    if (nextButton) nextButton.style.display = currentImageIndex < currentImages.length - 1 ? 'block' : 'none';
+    // Always show both buttons for infinite scroll (only hide if less than 2 images)
+    const showButtons = currentImages.length > 1;
+    if (prevButton) prevButton.style.display = showButtons ? 'block' : 'none';
+    if (nextButton) nextButton.style.display = showButtons ? 'block' : 'none';
 }
 
-// Add event listeners for previous and next buttons
+// Add event listeners for previous and next buttons with infinite scroll
 function setupImageSliderControls() {
     const prevButton = document.getElementById('prevImage');
     const nextButton = document.getElementById('nextImage');
 
-    if (prevButton) {
+    if (prevButton && !prevButton.hasAttribute('data-listener-added')) {
         prevButton.addEventListener('click', function() {
+            // Infinite scroll: go to last image if at first image
             if (currentImageIndex > 0) {
                 showImage(currentImageIndex - 1);
+            } else {
+                showImage(currentImages.length - 1);
             }
         });
+        prevButton.setAttribute('data-listener-added', 'true');
     }
 
-    if (nextButton) {
+    if (nextButton && !nextButton.hasAttribute('data-listener-added')) {
         nextButton.addEventListener('click', function() {
+            // Infinite scroll: go to first image if at last image
             if (currentImageIndex < currentImages.length - 1) {
                 showImage(currentImageIndex + 1);
+            } else {
+                showImage(0);
             }
         });
+        nextButton.setAttribute('data-listener-added', 'true');
     }
 
-    console.log('Image slider controls set up');
+    console.log('Image slider controls set up with infinite scroll');
 }
 
-function showError(message) {
-    const imageContainer = document.getElementById('imageContainer');
-    if (imageContainer) {
-        imageContainer.innerHTML = `
-            <div class="text-center text-gray-500">
-                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                </svg>
-                <p>${message}</p>
-            </div>
-        `;
-    }
-}
+let isFullscreen = false;
+        
+        function toggleFullscreen() {
+            const modal = document.getElementById('issueDetailModal');
+            const modalContent = modal.querySelector('.bg-white.rounded-lg');
+            const expandIcon = document.getElementById('expandIcon');
+            const compressIcon = document.getElementById('compressIcon');
+            
+            if (!isFullscreen) {
+                // Enter fullscreen
+                modal.style.position = 'fixed';
+                modal.style.top = '0';
+                modal.style.left = '0';
+                modal.style.right = '0';
+                modal.style.bottom = '0';
+                modal.style.width = '100vw';
+                modal.style.height = '100vh';
+                modal.style.maxWidth = '100vw';
+                modal.style.maxHeight = '100vh';
+                modal.style.margin = '0';
+                modal.style.padding = '0';
+                modal.style.zIndex = '9999';
+                
+                modalContent.style.width = '100%';
+                modalContent.style.height = '100%';
+                modalContent.style.maxWidth = '100%';
+                modalContent.style.maxHeight = '100%';
+                modalContent.style.margin = '0';
+                modalContent.style.borderRadius = '0';
+                
+                expandIcon.style.display = 'none';
+                compressIcon.style.display = 'block';
+                isFullscreen = true;
+            } else {
+                // Exit fullscreen
+                modal.style.position = '';
+                modal.style.top = '';
+                modal.style.left = '';
+                modal.style.right = '';
+                modal.style.bottom = '';
+                modal.style.width = '';
+                modal.style.height = '';
+                modal.style.maxWidth = '';
+                modal.style.maxHeight = '';
+                modal.style.margin = '';
+                modal.style.padding = '';
+                modal.style.zIndex = '';
+                
+                modalContent.style.width = '';
+                modalContent.style.height = '';
+                modalContent.style.maxWidth = '';
+                modalContent.style.maxHeight = '';
+                modalContent.style.margin = '';
+                modalContent.style.borderRadius = '';
+                
+                expandIcon.style.display = 'block';
+                compressIcon.style.display = 'none';
+                isFullscreen = false;
+            }
+        }
 
 function closeIssueModal() {
     const modal = document.getElementById('issueDetailModal');
@@ -467,6 +680,39 @@ function closeIssueModal() {
         // Reset modal state
         currentImages = [];
         currentImageIndex = 0;
+        
+        // Reset fullscreen state
+        const modalContent = modal.querySelector('.bg-white.rounded-lg');
+        const expandIcon = document.getElementById('expandIcon');
+        const compressIcon = document.getElementById('compressIcon');
+        
+        // Reset modal styles
+        modal.style.position = '';
+        modal.style.top = '';
+        modal.style.left = '';
+        modal.style.right = '';
+        modal.style.bottom = '';
+        modal.style.width = '';
+        modal.style.height = '';
+        modal.style.maxWidth = '';
+        modal.style.maxHeight = '';
+        modal.style.margin = '';
+        modal.style.padding = '';
+        modal.style.zIndex = '';
+        
+        if (modalContent) {
+            modalContent.style.width = '';
+            modalContent.style.height = '';
+            modalContent.style.maxWidth = '';
+            modalContent.style.maxHeight = '';
+            modalContent.style.margin = '';
+            modalContent.style.borderRadius = '';
+        }
+        
+        // Reset icons
+        if (expandIcon) expandIcon.style.display = 'block';
+        if (compressIcon) compressIcon.style.display = 'none';
+        isFullscreen = false;
         
         // Clear image container
         const imageContainer = document.getElementById('imageContainer');
@@ -492,12 +738,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Add ESC key listener to close modal
+    // Add keyboard navigation for modal
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            const modal = document.getElementById('issueDetailModal');
-            if (modal && !modal.classList.contains('hidden')) {
+        const modal = document.getElementById('issueDetailModal');
+        if (modal && !modal.classList.contains('hidden')) {
+            if (event.key === 'Escape') {
                 closeIssueModal();
+            } else if (event.key === 'ArrowLeft' && currentImages.length > 1) {
+                // Previous image with infinite scroll
+                if (currentImageIndex > 0) {
+                    showImage(currentImageIndex - 1);
+                } else {
+                    showImage(currentImages.length - 1);
+                }
+            } else if (event.key === 'ArrowRight' && currentImages.length > 1) {
+                // Next image with infinite scroll
+                if (currentImageIndex < currentImages.length - 1) {
+                    showImage(currentImageIndex + 1);
+                } else {
+                    showImage(0);
+                }
             }
         }
     });

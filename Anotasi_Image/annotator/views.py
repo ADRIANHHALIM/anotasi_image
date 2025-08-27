@@ -13,7 +13,7 @@ from django.db.models import Count, Q
 import json
 from django.http import HttpResponse
 import requests
-AI_API_URL = "https://closed-mon-cell-future.trycloudflare.com/api/proses-gambar/"
+AI_API_URL = "https://pursue-various-engineer-corporate.trycloudflare.com/api/proses-gambar/"
 
 # Create your views here.
 
@@ -32,6 +32,9 @@ def annotator_required(view_func):
                 return redirect('/reviewer/')
             elif request.user.role == 'master':
                 return redirect('/')
+            elif request.user.role == 'guest':
+                messages.error(request, 'Akun Anda masih dalam status guest. Silakan tunggu admin untuk memberikan akses.')
+                return redirect('/login/')
             else:
                 # Only redirect to signin if user role is unknown/invalid
                 return redirect('/annotator/signin/')
@@ -292,6 +295,7 @@ def accept_notification_view(request, notification_id):
             'message': str(e)
         }, status=400)
     
+@annotator_required
 def label_image_view(request, job_id, image_id):
 
     job = get_object_or_404(JobProfile, id=job_id, worker_annotator=request.user)
@@ -302,27 +306,42 @@ def label_image_view(request, job_id, image_id):
     image_list = list(all_images.order_by('id'))
     try:
         current_index = image_list.index(image) + 1
+        current_list_index = image_list.index(image)
     except ValueError:
         current_index = 1
+        current_list_index = 0
+    
+    # Calculate prev and next image IDs for navigation
+    prev_image_id = None
+    next_image_id = None
+    if current_list_index > 0:
+        prev_image_id = image_list[current_list_index - 1].id
+    if current_list_index < len(image_list) - 1:
+        next_image_id = image_list[current_list_index + 1].id
 
     status_counts = {
-         'unannotated': all_images.filter(status='unannotated').count(),
+        'unannotated': all_images.filter(status='unannotated').count(),
         'in_progress': all_images.filter(status='in_progress').count(),
+        'annotated': all_images.filter(status='annotated').count(),
         'in_review': all_images.filter(status='in_review').count(),
         'in_rework': all_images.filter(status='in_rework').count(),
-        'annotated': all_images.filter(status='annotated').count(),
         'finished': all_images.filter(status='finished').count(),
+        'issue': all_images.filter(status__in=['issue', 'Issue']).count(),  # Handle both cases
     }
 
-    # Dummy classes - bisa ganti sesuai database
-    classes = ['mobil', 'orang', 'jalan', 'gedung']
+    # For annotator, we don't need 'in_progress' status since AI annotation is fast
+    # Status will go directly from 'unannotated' to 'annotated' when AI processes the image
     
     # ambil data anotasi dari database
     annotations_qs = image.annotations.all()
+    print(f"DEBUG: Total annotations found for image {image_id}: {annotations_qs.count()}")
     
-    # definisikan data json nya
-    annotation_data = 'detections'
-
+    # Get unique classes from existing annotations (real data only)
+    # Only show classes that have actually been detected/annotated for this image
+    classes = list(set(ann.label for ann in annotations_qs if ann.label))
+    classes.sort()  # Sort alphabetically for better display
+    print(f"DEBUG: Classes found: {classes}")
+    
     # format data agar mudah dibaca oleh javascript
     annotation_data = []
     for ann in annotations_qs:
@@ -331,6 +350,7 @@ def label_image_view(request, job_id, image_id):
             'bbox': [ann.x_min, ann.y_min, ann.x_max, ann.y_max],
             'is_auto_generated': ann.is_auto_generated 
         })
+    print(f"DEBUG: Annotation data prepared: {annotation_data}")
 
 
    
@@ -344,6 +364,8 @@ def label_image_view(request, job_id, image_id):
         'total_images': all_images.count(),
         'current_image_index': current_index,
         'total_image': len(image_list),
+        'prev_image_id': prev_image_id,
+        'next_image_id': next_image_id,
         # kirim adta anotasi asli sebagai string json ke template
         'annotations_json': json.dumps(annotation_data)
     }
@@ -378,22 +400,64 @@ def send_image_view(request, image_id):
         for i, ann in enumerate(detections):
             box = ann.get('bbox')
             label = ann.get('label_vgg16')
+            confidence = ann.get('confidence')
 
-            print(f"\nDebug [{i+1}/{len(detections)}]: Memproses label '{label}' dengan box {box}")
+            print(f"\nDebug [{i+1}/{len(detections)}]: Memproses label '{label}' dengan box {box}, confidence: {confidence}")
 
             if box and label and len(box) == 4:
                 try:
-                    Annotation.objects.create(
-                        image=image_obj,
+                    # Import required models
+                    from master.models import Segmentation, SegmentationType, AnnotationTool
+                    
+                    # Get or create segmentation type (default to 'instance')
+                    segmentation_type, _ = SegmentationType.objects.get_or_create(
+                        name='instance',
+                        defaults={'description': 'Instance segmentation for object detection'}
+                    )
+                    
+                    # Get or create annotation tool
+                    annotation_tool, _ = AnnotationTool.objects.get_or_create(
+                        name='AI Detection',
+                        defaults={'description': 'Automatic AI-based object detection'}
+                    )
+                    
+                    # Create or get segmentation for this label and job image
+                    segmentation, created = Segmentation.objects.get_or_create(
+                        job=image_obj,
+                        label=label,
+                        defaults={
+                            'segmentation_type': segmentation_type,
+                            'color': f'#{hash(label) % 0xFFFFFF:06x}',  # Generate color based on label
+                            'coordinates': f'{box[0]},{box[1]},{box[2]},{box[3]}',
+                            'description': f'Auto-detected {label}'
+                        }
+                    )
+                    
+                    # Create annotation with segmentation
+                    annotation = Annotation.objects.create(
+                        job_image=image_obj,  # Use job_image instead of image
+                        image=image_obj,      # Keep legacy field for compatibility
+                        segmentation=segmentation,  # Link to segmentation
+                        tool=annotation_tool,
                         label=label,
                         x_min=box[0],
                         y_min=box[1],
                         x_max=box[2],
                         y_max=box[3],
+                        x_coordinate=box[0],  # Use x_min as x_coordinate
+                        y_coordinate=box[1],  # Use y_min as y_coordinate
+                        width=box[2] - box[0],  # x_max - x_min
+                        height=box[3] - box[1],  # y_max - y_min
+                        confidence_score=confidence,  # Save confidence score
                         is_auto_generated=True,
+                        annotator=request.user,  # Add the current user as annotator
+                        created_by=request.user,  # Add created_by to avoid NOT NULL constraint
+                        notes='',  # Add empty notes to avoid NOT NULL constraint
+                        is_verified=False
                     )
+                    
                     saved_count += 1
-                    print(f"Debug: Anotasi untuk '{label}' BERHASIL disimpan.")
+                    print(f"Debug: Anotasi untuk '{label}' BERHASIL disimpan dengan segmentation dan polygon points.")
                 except Exception as e:
                     print(f"!!! DEBUG: GAGAL menyimpan anotasi untuk '{label}'. Error: {e}")
             else:
@@ -401,6 +465,14 @@ def send_image_view(request, image_id):
         
         print(f"\n--- SELESAI DEBUG ---")
         print(f"Debug: Total anotasi yang berhasil disimpan: {saved_count} dari {len(detections)}")
+        
+        # Update image status to 'annotated' after annotations are created
+        if saved_count > 0:
+            image_obj.status = 'annotated'
+            image_obj.save()
+            print(f"Debug: Status gambar diubah menjadi 'annotated' dari {image_obj.status}")
+        else:
+            print(f"Debug: Tidak ada anotasi yang disimpan, status tetap {image_obj.status}")
         
         return JsonResponse({'success': True, 'message': 'Gambar berhasil dikirim dan anotasi diterima.'})
 
@@ -415,7 +487,43 @@ def send_image_view(request, image_id):
 # menampilkan hasil JSON ke label image
 def get_result_json(request, image_id):
     image_obj = get_object_or_404(JobImage, id=image_id)
-    annotations = Annotation.objects.filter(image=image_obj).values(
+    annotations = Annotation.objects.filter(job_image=image_obj).values(
         'label', 'x_min', 'y_min', 'x_max', 'y_max', 'is_auto_generated'
     )
     return JsonResponse(list(annotations), safe=False)
+
+@csrf_protect
+@annotator_required
+def finish_annotation_view(request, image_id):
+    """
+    Mark annotation as finished and send to reviewer
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+    
+    try:
+        image_obj = get_object_or_404(JobImage, id=image_id)
+        
+        # Check if user is the assigned annotator for this job
+        if image_obj.job.worker_annotator != request.user:
+            return JsonResponse({'success': False, 'error': 'You are not assigned to this job'}, status=403)
+        
+        # Update status to 'in_review' (sent to reviewer)
+        image_obj.status = 'in_review'
+        image_obj.save()
+        
+        # TODO: Create notification for reviewer
+        # if image_obj.job.worker_reviewer:
+        #     Notification.objects.create(
+        #         recipient=image_obj.job.worker_reviewer,
+        #         message=f"New annotation ready for review: {image_obj.image.name}",
+        #         notification_type='annotation_ready'
+        #     )
+        
+        return JsonResponse({
+            'success': True, 
+            'message': 'Annotation marked as finished and sent for review'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

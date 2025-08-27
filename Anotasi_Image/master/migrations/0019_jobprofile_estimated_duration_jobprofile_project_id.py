@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("master", "0018_jobprofile_estimated_duration_jobprofile_project_id_and_more"),
+        ("master", "0002_auto_20250825_1630"),
     ]
 
     operations = [
