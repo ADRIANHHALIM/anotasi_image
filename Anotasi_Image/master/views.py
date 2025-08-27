@@ -1220,6 +1220,27 @@ def finish_image(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
+@login_required
+@require_http_methods(["POST"])
+def finish_job(request):
+    try:
+        data = json.loads(request.body)
+        job_id = data.get('job_id')
+        job = JobProfile.objects.get(id=job_id)
+        
+        # Mark job as completed
+        job.status = 'completed'
+        job.save()
+        
+        # Optionally mark all images as finished if not already
+        job.images.update(status='finished')
+        
+        return JsonResponse({'status': 'success', 'message': 'Job marked as completed successfully'})
+    except JobProfile.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Job not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
 @master_required
 def performance_individual_view(request, user_id):
     """

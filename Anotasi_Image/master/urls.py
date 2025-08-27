@@ -44,4 +44,5 @@ urlpatterns = [
     path("process_validations/", views.process_validations_view, name="process_validations"),
     path('process_validations/<int:job_id>/', views.process_validations_view, name='process_validation_detail'),
     path('finish-image/', views.finish_image, name='finish_image'),
+    path('finish-job/', views.finish_job, name='finish_job'),
 ]

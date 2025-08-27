@@ -173,7 +173,7 @@
 <div id="issueDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4">
     <div class="bg-white rounded-lg w-full max-w-7xl h-auto min-h-[80vh] max-h-[95vh] sm:max-h-screen flex flex-col lg:flex-row overflow-hidden">
         <!-- Left Panel - Classes -->
-        <div class="w-full lg:w-64 bg-gray-50 p-4 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto">
+        <div class="w-full lg:w-64 bg-gray-50 p-4 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-y-auto relative">
             <div class="mb-6">
                 <h3 class="font-semibold mb-2 text-sm md:text-base">Annotations</h3>
                 <div class="border-b-2 border-red-500 w-16 mb-4"></div>
@@ -205,6 +205,17 @@
                     <div id="segmentationTypeList" class="space-y-2">
                         <!-- Segmentation types will be populated dynamically -->
                     </div>
+                </div>
+
+                <!-- Finish Job Button -->
+                <div class="absolute bottom-4 left-4 right-4">
+                    <button onclick="finishJob()" 
+                            class="w-full bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center space-x-2 shadow-lg">
+                        <span>Finish Job</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -311,16 +322,7 @@
                     </div>
                 </div> {% endcomment %}
 
-                <!-- Finish Button -->
-                <div class="absolute top-4 right-4">
-                    <button onclick="finishImage()" 
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-full font-medium flex items-center space-x-2">
-                        <span>Finish</span>
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                    </button>
-                </div>
+
             </div>
         </div>
 
@@ -1108,6 +1110,67 @@ function finishImage() {
     .catch(error => {
         console.error('Error finishing image:', error);
         alert('Error finishing image: ' + error.message);
+    });
+}
+
+function finishJob() {
+    if (!currentJobId) {
+        alert('No job selected. Please select a job first.');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to mark this job as completed? This action cannot be undone.')) {
+        return;
+    }
+
+    fetch("{% url 'master:finish_job' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            job_id: currentJobId
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            console.log('Job marked as completed successfully:', currentJobId);
+            
+            // Update the job status in the Job Profile List
+            const jobCard = document.querySelector(`div[data-job-id="${currentJobId}"]`);
+            if (jobCard) {
+                const statusSpan = jobCard.querySelector('.px-2.py-1.rounded-full');
+                if (statusSpan) {
+                    statusSpan.className = 'px-2 py-1 rounded-full text-xs md:text-sm font-medium bg-green-100 text-green-700';
+                    statusSpan.textContent = 'Completed';
+                }
+            }
+
+            // Show success message
+            alert('Job marked as completed successfully!');
+            
+            // Close the modal and redirect to job list
+            closeModal();
+            
+            // Optionally redirect to the main validation page
+            setTimeout(() => {
+                window.location.href = '/process_validations/';
+            }, 1000);
+        } else {
+            console.error('Failed to finish job:', data.message || 'Unknown error');
+            alert('Failed to mark job as completed: ' + (data.message || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error finishing job:', error);
+        alert('Error finishing job: ' + error.message);
     });
 }
 
