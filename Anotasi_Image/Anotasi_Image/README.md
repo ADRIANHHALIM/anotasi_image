@@ -1,1 +1,0 @@
-# Anotasi Image

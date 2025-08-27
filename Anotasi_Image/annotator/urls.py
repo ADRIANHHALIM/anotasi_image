@@ -26,6 +26,10 @@ urlpatterns = [
 
     # menerima filejson
     path('result-json/<int:image_id>/', views.get_result_json, name='get_result_json'),
+
+    
+    # finish annotation
+    path('finish-annotation/<int:image_id>/', views.finish_annotation_view, name='finish_annotation'),
 ]
 
 
